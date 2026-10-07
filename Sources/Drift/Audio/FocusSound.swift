@@ -91,23 +91,40 @@ final class FocusSoundPlayer {
     /// A short linear ramp — music should never snap on or off.
     private func fade(to target: Float, duration: TimeInterval = 1.4, completion: (() -> Void)? = nil) {
         fadeTimer?.invalidate()
+        activeFade = Fade(from: currentVolume, to: target, began: Date(), duration: duration, completion: completion)
         targetVolume = target
-        let start = currentVolume
-        let began = Date()
-        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] t in
-            Task { @MainActor in
-                guard let self else { t.invalidate(); return }
-                let p = Float(min(1, Date().timeIntervalSince(began) / duration))
-                self.currentVolume = start + (target - start) * p
-                self.engine?.mainMixerNode.outputVolume = self.currentVolume
-                if p >= 1 {
-                    t.invalidate()
-                    completion?()
-                }
-            }
+        let timer = Timer(timeInterval: 1.0 / 30.0, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.fadeStep() }
         }
         RunLoop.main.add(timer, forMode: .common)
         fadeTimer = timer
+    }
+
+    private struct Fade {
+        var from: Float
+        var to: Float
+        var began: Date
+        var duration: TimeInterval
+        var completion: (() -> Void)?
+    }
+
+    private var activeFade: Fade?
+
+    private func fadeStep() {
+        guard let fade = activeFade else {
+            fadeTimer?.invalidate()
+            return
+        }
+        let p = Float(min(1, Date().timeIntervalSince(fade.began) / fade.duration))
+        currentVolume = fade.from + (fade.to - fade.from) * p
+        engine?.mainMixerNode.outputVolume = currentVolume
+        if p >= 1 {
+            fadeTimer?.invalidate()
+            fadeTimer = nil
+            activeFade = nil
+            fade.completion?()
+        }
     }
 }
 

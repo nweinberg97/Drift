@@ -42,10 +42,12 @@ final class TimerStore: ObservableObject {
 
         let center = NSWorkspace.shared.notificationCenter
         observers.append(center.addObserver(forName: NSWorkspace.didWakeNotification, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let self else { return }
+            Task { @MainActor in self.tick() }
         })
         observers.append(NotificationCenter.default.addObserver(forName: .NSSystemClockDidChange, object: nil, queue: .main) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let self else { return }
+            Task { @MainActor in self.tick() }
         })
     }
 
@@ -208,7 +210,8 @@ final class TimerStore: ObservableObject {
         guard let next = delays.filter({ $0 > -1 }).min() else { return }
 
         let timer = Timer(timeInterval: max(0.02, next + 0.005), repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.tick() }
+            guard let self else { return }
+            Task { @MainActor in self.tick() }
         }
         timer.tolerance = 0.02
         // .common so the clock keeps moving while menus are open.

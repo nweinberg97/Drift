@@ -102,7 +102,8 @@ final class VoiceController: ObservableObject {
         }
 
         Self.installTap(on: input, format: format, request: request) { [weak self] level in
-            Task { @MainActor in self?.level = level }
+            guard let self else { return }
+            Task { @MainActor in self.level = level }
         }
 
         engine.prepare()
@@ -122,8 +123,9 @@ final class VoiceController: ObservableObject {
             let text = result?.bestTranscription.formattedString
             let isFinal = result?.isFinal ?? false
             let failed = error != nil
+            guard let self else { return }
             Task { @MainActor in
-                guard let self, !self.delivered else { return }
+                guard !self.delivered else { return }
                 if let text, !text.isEmpty {
                     self.transcript = text
                     self.armSilenceTimer()
@@ -140,7 +142,8 @@ final class VoiceController: ObservableObject {
         // Stop on our own if nothing is said, and never listen for long.
         armSilenceTimer(interval: 4)
         limitTimer = Timer.scheduledTimer(withTimeInterval: 12, repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.finish() }
+            guard let self else { return }
+            Task { @MainActor in self.finish() }
         }
     }
 
@@ -152,7 +155,8 @@ final class VoiceController: ObservableObject {
         engine?.inputNode.removeTap(onBus: 0)
         // Give the recognizer a moment to produce its final result.
         Timer.scheduledTimer(withTimeInterval: 0.8, repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.deliver() }
+            guard let self else { return }
+            Task { @MainActor in self.deliver() }
         }
     }
 
@@ -172,7 +176,8 @@ final class VoiceController: ObservableObject {
     private func armSilenceTimer(interval: TimeInterval = 1.3) {
         silenceTimer?.invalidate()
         silenceTimer = Timer.scheduledTimer(withTimeInterval: interval, repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.finish() }
+            guard let self else { return }
+            Task { @MainActor in self.finish() }
         }
     }
 
