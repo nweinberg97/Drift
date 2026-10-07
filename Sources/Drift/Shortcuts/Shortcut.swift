@@ -17,13 +17,17 @@ enum ShortcutAction: String, CaseIterable, Identifiable, Codable {
         }
     }
 
-    /// Defaults avoid ⌘⇧T (reopen closed tab in every browser) and other
-    /// common bindings. ⌥⌘T is free in most apps; the other two add ⌃ to the
-    /// same family so they're easy to remember.
+    /// Two-key defaults, easy to hit one-handed:
+    ///   ⌥Space  new timer (Spotlight-like)
+    ///   ⌥V      voice
+    ///   ⌥T      show / hide widget
+    /// They avoid ⌘-combos that apps use (⌘⇧T reopens tabs in every browser).
+    /// ⌥-letter normally types a rarely used symbol (√, †), and ⌥Space a
+    /// non-breaking space, so claiming them costs almost nothing.
     static let defaults: [ShortcutAction: Shortcut] = [
-        .newTimer: Shortcut(keyCode: UInt16(kVK_ANSI_T), modifiers: [.option, .command], key: "T"),
-        .toggleWidget: Shortcut(keyCode: UInt16(kVK_ANSI_T), modifiers: [.control, .option, .command], key: "T"),
-        .voice: Shortcut(keyCode: UInt16(kVK_ANSI_V), modifiers: [.control, .option, .command], key: "V"),
+        .newTimer: Shortcut(keyCode: UInt16(kVK_Space), modifiers: [.option], key: "Space"),
+        .voice: Shortcut(keyCode: UInt16(kVK_ANSI_V), modifiers: [.option], key: "V"),
+        .toggleWidget: Shortcut(keyCode: UInt16(kVK_ANSI_T), modifiers: [.option], key: "T"),
     ]
 
     var hotKeyID: UInt32 {
@@ -66,12 +70,13 @@ struct Shortcut: Codable, Equatable, Hashable {
         if modifiers.contains(.option) { s += "⌥" }
         if modifiers.contains(.shift) { s += "⇧" }
         if modifiers.contains(.command) { s += "⌘" }
-        return s + key
+        return key.count > 1 ? s + " " + key : s + key
     }
 
     /// For NSMenuItem.keyEquivalent display.
     var menuKeyEquivalent: String {
-        key.count == 1 ? key.lowercased() : ""
+        if key == "Space" { return " " }
+        return key.count == 1 ? key.lowercased() : ""
     }
 
     /// Builds a shortcut from a key-down event, or nil if it has no

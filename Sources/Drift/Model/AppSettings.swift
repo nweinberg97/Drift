@@ -72,8 +72,8 @@ final class AppSettings: ObservableObject {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        defaultDuration = defaults.object(forKey: "defaultDuration") as? Double ?? 25 * 60
-        presets = defaults.array(forKey: "presets") as? [Double] ?? [5 * 60, 15 * 60, 25 * 60, 45 * 60, 60 * 60]
+        defaultDuration = defaults.object(forKey: "defaultDuration") as? Double ?? 1_500.0
+        presets = defaults.array(forKey: "presets") as? [Double] ?? [300.0, 900.0, 1_500.0, 2_700.0, 3_600.0]
         finishedRetention = FinishedRetention(rawValue: defaults.string(forKey: "finishedRetention") ?? "") ?? .untilDismissed
         appearance = Appearance(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .compact
