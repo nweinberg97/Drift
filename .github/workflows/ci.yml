@@ -28,8 +28,11 @@ jobs:
           sw_vers
           swift --version
 
+      - name: Compile
+        run: scripts/ci-run.sh swift build
+
       - name: Test core logic
-        run: swift test
+        run: scripts/ci-run.sh swift test
 
       - name: Build Drift.app (universal)
         run: ./scripts/build-app.sh --universal
