@@ -1,0 +1,54 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+# Least privilege: the workflow can read the repo and nothing else.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Toolchain
+        run: |
+          sw_vers
+          swift --version
+
+      - name: Test core logic
+        run: swift test
+
+      - name: Build Drift.app (universal)
+        run: ./scripts/build-app.sh --universal
+
+      - name: Verify signature & entitlements
+        run: |
+          codesign --verify --strict --verbose=2 build/Drift.app
+          codesign -d --entitlements - build/Drift.app
+          lipo -info build/Drift.app/Contents/MacOS/Drift
+
+      - name: Package with checksum
+        run: |
+          ditto -c -k --keepParent build/Drift.app build/Drift.zip
+          shasum -a 256 build/Drift.zip | tee build/Drift.zip.sha256
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Drift
+          path: |
+            build/Drift.zip
+            build/Drift.zip.sha256
+          retention-days: 30
