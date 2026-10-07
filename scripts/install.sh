@@ -41,8 +41,17 @@ else
   SRC="$WORK/Drift"
 fi
 
-say "Building (about a minute)…"
-(cd "$SRC" && ./scripts/build-app.sh >/dev/null)
+say "Building (a minute or two the first time)…"
+LOG="$WORK/build.log"
+if ! (cd "$SRC" && ./scripts/build-app.sh) >"$LOG" 2>&1; then
+  echo
+  echo "Build failed. Last lines of the log:" >&2
+  grep -v "could not determine XCTest paths\|unable to lookup item 'PlatformPath'" "$LOG" | tail -40 >&2
+  echo >&2
+  echo "Your setup: macOS $(sw_vers -productVersion), $(swift --version 2>/dev/null | head -1)" >&2
+  echo "Please share the lines above so it can be fixed." >&2
+  exit 1
+fi
 
 say "Installing to /Applications…"
 if pgrep -x Drift >/dev/null 2>&1; then
