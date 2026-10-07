@@ -42,7 +42,7 @@ Requirements: macOS 13 Ventura or newer. If the build fails on an older Mac, upd
 | Show / hide the widget | **⌥ T**. While hidden, the time shows in the menu bar and timers keep running. |
 | Pause / resume | Click ⏸ on the widget, or type `pause` / `resume` in the launcher. |
 | Adjust | Click the time to expand: **−5m · +5m · Edit · Cancel**. |
-| Multiple timers | Start as many as you like. The widget shows one with a `+2` badge; click it to see them all. |
+| Multiple timers | Click the ⌄ button on the widget to expand it, then **+ Add timer**. With several running, the button shows `+2`; click it to see them all. |
 | Pomodoro | Type `pomodoro` or `50/10`, or press **⌘P** in the launcher. Focus and break alternate until you cancel. |
 | Move it | Drag the widget anywhere. It remembers the position and display. |
 

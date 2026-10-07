@@ -185,6 +185,21 @@ private struct PrimaryRow: View {
                     .accessibilityLabel(timer.isRunning ? "Pause" : "Resume")
                 }
 
+                // Always-visible expand toggle: reveals all timers and the
+                // "Add timer" button. Shows "+N" when other timers exist.
+                Button { ui.expanded.toggle() } label: {
+                    if othersCount > 0 && !ui.expanded {
+                        Text("+\(othersCount)")
+                            .font(.system(size: 10.5 * scale, weight: .semibold).monospacedDigit())
+                    } else {
+                        Image(systemName: ui.expanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 9.5 * scale, weight: .bold))
+                    }
+                }
+                .buttonStyle(IconButtonStyle(size: 24 * scale, tint: Theme.tertiaryText))
+                .help(ui.expanded ? "Collapse" : "Show all timers and add another")
+                .accessibilityLabel(ui.expanded ? "Collapse" : (othersCount > 0 ? "Show \(othersCount) more \(othersCount == 1 ? "timer" : "timers") and add a timer" : "Expand to add a timer"))
+
                 if hovering && !ui.expanded {
                     Button { actions.hide() } label: { Image(systemName: "minus") }
                         .buttonStyle(IconButtonStyle(size: 22 * scale, tint: Theme.tertiaryText))
@@ -348,10 +363,10 @@ private struct ExpandedSection: View {
                 Button { actions.openComposer() } label: {
                     HStack(spacing: 6) {
                         Image(systemName: "plus").font(.system(size: 10, weight: .bold))
-                        Text("New timer")
+                        Text("Add timer")
                     }
                 }
-                .buttonStyle(QuietButtonStyle())
+                .buttonStyle(QuietButtonStyle(prominent: true))
                 if let shortcut = settings.shortcuts[.newTimer] {
                     KeyCaps(text: shortcut.display)
                 }
