@@ -5,7 +5,8 @@ final class DriftTimerTests: XCTestCase {
     let t0 = Date(timeIntervalSinceReferenceDate: 1_000_000)
 
     func testAccuracyIsTimestampBased() {
-        for duration: TimeInterval in [5, 25 * 60, 90 * 60, 24 * 3_600, 36 * 3_600] {
+        let durations: [TimeInterval] = [5, 1_500, 5_400, 86_400, 129_600]
+        for duration in durations {
             var timer = DriftTimer(duration: duration)
             timer.start(at: t0)
             XCTAssertEqual(timer.remaining(at: t0), duration)
