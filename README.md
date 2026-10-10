@@ -7,6 +7,8 @@ Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, type `
 
 It's free, open source, needs no account and never touches the network.
 
+**Website:** https://nweinberg97.github.io/Drift/
+
 ---
 
 ## Install

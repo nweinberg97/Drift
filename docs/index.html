@@ -1,0 +1,599 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Drift — a quiet focus timer for Mac</title>
+<meta name="description" content="Drift is a free, open-source focus timer for macOS. Press ⌥ Space, type 25, keep working.">
+<meta property="og:title" content="Drift — Stay with it.">
+<meta property="og:description" content="A quiet focus timer for your Mac. Press ⌥ Space, type 25, keep working.">
+<meta property="og:image" content="icon.png">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+  :root {
+    --page: #E8E7E3;
+    --desk: #DCDAD5;
+    --ink: #1D1B19;
+    --muted: #6B655F;
+    --faint: #9A948D;
+    --ember: #B0522A;
+    --ember-soft: rgba(176, 82, 42, 0.12);
+    --surface: rgba(251, 249, 246, 0.86);
+    --hairline: rgba(29, 27, 25, 0.10);
+    --control: rgba(29, 27, 25, 0.06);
+    --shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 12px 32px -12px rgba(40, 30, 20, 0.28), 0 2px 6px rgba(40, 30, 20, 0.08);
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    color-scheme: light dark;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --page: #161513;
+      --desk: #1F1D1B;
+      --ink: #F4F1EC;
+      --muted: #A8A19A;
+      --faint: #756F69;
+      --ember: #F2A36E;
+      --ember-soft: rgba(242, 163, 110, 0.14);
+      --surface: rgba(34, 32, 30, 0.88);
+      --hairline: rgba(255, 255, 255, 0.10);
+      --control: rgba(255, 255, 255, 0.08);
+      --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+  }
+
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--ink);
+    font: 17px/1.55 var(--sans);
+    -webkit-font-smoothing: antialiased;
+  }
+  a { color: inherit; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 4px; }
+  .num { font-variant-numeric: tabular-nums; }
+
+  /* ---------- The desktop (hero) ---------- */
+  .desktop {
+    position: relative;
+    min-height: min(92vh, 860px);
+    background: var(--desk);
+    border-bottom: 1px solid var(--hairline);
+    display: grid;
+    grid-template-rows: auto 1fr;
+    grid-template-columns: minmax(0, 1fr);
+    overflow: hidden;
+  }
+  .menubar {
+    height: 30px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 0 16px;
+    font-size: 13px;
+    color: var(--ink);
+    background: color-mix(in srgb, var(--page) 70%, transparent);
+    backdrop-filter: blur(20px);
+    border-bottom: 1px solid var(--hairline);
+  }
+  .menubar .left { display: flex; gap: 18px; align-items: center; }
+  .menubar .left b { font-weight: 600; }
+  .menubar .right { display: flex; gap: 14px; align-items: center; color: var(--muted); }
+  .menubar .drift-item { display: flex; gap: 6px; align-items: center; color: var(--ink); }
+  .ring { width: 14px; height: 14px; }
+
+  .widget {
+    position: absolute;
+    top: 48px; left: 20px;
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px 7px 14px;
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(1.2);
+    border: 0.5px solid var(--hairline);
+    border-radius: 12px;
+    box-shadow: var(--shadow);
+    user-select: none;
+    z-index: 2;
+  }
+  .dot { width: 7px; height: 7px; border-radius: 50%; border: 1.25px solid var(--faint); flex: none; transition: background .2s, border-color .2s; }
+  .widget[data-state="running"] .dot { background: var(--ember); border-color: var(--ember); }
+  .widget[data-state="done"] .dot { background: var(--ember); border-color: var(--ember); }
+  .w-name { font-size: 12px; font-weight: 500; color: var(--muted); max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .w-name:empty { display: none; }
+  .w-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 3.1em; }
+  .widget[data-state="paused"] .w-time, .widget[data-state="idle"] .w-time { color: var(--muted); }
+  .widget[data-state="done"] .w-time, .widget[data-warn] .w-time { color: var(--ember); }
+  .w-btn {
+    width: 26px; height: 26px; border-radius: 50%;
+    border: 0; background: transparent; color: var(--ember);
+    display: grid; place-items: center; cursor: pointer;
+  }
+  .w-btn:hover { background: var(--control); }
+  .w-btn svg { width: 10px; height: 10px; fill: currentColor; }
+
+  .hero {
+    align-self: center;
+    justify-self: center;
+    width: 100%;
+    max-width: 720px;
+    padding: 120px 20px 72px;
+    text-align: center;
+  }
+  .hero img { width: 72px; height: 72px; display: block; margin: 0 auto 22px; }
+  .hero h1 {
+    font: 600 clamp(56px, 11vw, 112px)/0.95 var(--display);
+    letter-spacing: -0.045em;
+    margin: 0;
+  }
+  .hero .tagline {
+    font: 400 clamp(22px, 3.2vw, 30px)/1.2 var(--display);
+    letter-spacing: -0.02em;
+    color: var(--muted);
+    margin: 10px 0 0;
+  }
+  .hero .lede { margin: 26px auto 0; max-width: 34em; color: var(--muted); }
+
+  /* The launcher demo */
+  .launcher {
+    margin: 40px auto 0;
+    max-width: 480px;
+    text-align: left;
+    background: var(--surface);
+    backdrop-filter: blur(24px) saturate(1.2);
+    border: 0.5px solid var(--hairline);
+    border-radius: 16px;
+    box-shadow: var(--shadow);
+    overflow: hidden;
+  }
+  .launcher label { display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 16px; cursor: text; }
+  .launcher .accent-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); flex: none; margin: 0 7px; }
+  .launcher input {
+    flex: 1; min-width: 0;
+    font: 400 22px var(--display);
+    color: var(--ink);
+    background: transparent; border: 0; outline: none;
+  }
+  .launcher input::placeholder { color: var(--faint); }
+  .launcher .preview {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    height: 36px; padding: 0 16px;
+    border-top: 0.5px solid var(--hairline);
+    font-size: 13px; font-weight: 500;
+  }
+  .preview .what { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .preview .what.invalid { color: var(--faint); font-weight: 400; }
+  .preview .name { color: var(--muted); }
+  kbd {
+    font: 500 11px/1 var(--sans);
+    color: var(--muted);
+    background: var(--control);
+    border-radius: 4px;
+    padding: 3px 6px;
+  }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 12px 12px; }
+  .chips button {
+    font: 500 12px var(--sans);
+    font-variant-numeric: tabular-nums;
+    color: var(--muted);
+    background: var(--control);
+    border: 0; border-radius: 7px;
+    height: 26px; padding: 0 10px;
+    cursor: pointer;
+  }
+  .chips button:hover { color: var(--ink); }
+  .hint { margin-top: 14px; font-size: 13px; color: var(--faint); }
+
+  /* ---------- Body sections ---------- */
+  main { width: min(100%, 980px); margin: 0 auto; padding: 0 20px; }
+  section { padding: 96px 0 0; }
+  h2 {
+    font: 600 clamp(30px, 4.4vw, 44px)/1.08 var(--display);
+    letter-spacing: -0.03em;
+    margin: 0 0 14px;
+    max-width: 16em;
+  }
+  .sub { color: var(--muted); max-width: 36em; margin: 0; }
+
+  /* What you can type */
+  .phrasebook {
+    margin-top: 40px;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 56px;
+  }
+  .phrase {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: baseline;
+    gap: 16px;
+    padding: 14px 0;
+    border-bottom: 1px solid var(--hairline);
+  }
+  .phrase code { font: 400 16px var(--mono); color: var(--ink); }
+  .phrase span { color: var(--muted); font-size: 15px; text-align: right; }
+  .phrase span b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+
+  /* Keys */
+  .keys { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+  .key-combo { display: flex; gap: 6px; margin-bottom: 14px; }
+  .key-combo kbd {
+    font: 500 20px/1 var(--sans);
+    color: var(--ink);
+    min-width: 44px; height: 44px;
+    display: grid; place-items: center;
+    padding: 0 12px;
+    background: var(--surface);
+    border: 0.5px solid var(--hairline);
+    border-radius: 9px;
+    box-shadow: 0 1.5px 0 var(--hairline);
+  }
+  .keys h3 { font: 600 18px/1.3 var(--display); margin: 0 0 4px; letter-spacing: -0.01em; }
+  .keys p { margin: 0; color: var(--muted); font-size: 15.5px; }
+
+  /* Without */
+  .without {
+    margin-top: 40px;
+    display: flex; flex-wrap: wrap; gap: 10px 28px;
+    font: 500 clamp(20px, 2.6vw, 26px)/1.3 var(--display);
+    letter-spacing: -0.015em;
+    color: var(--faint);
+  }
+  .without s { text-decoration-thickness: 1.5px; text-decoration-color: var(--ember); }
+  .privacy { margin-top: 36px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 32px; }
+  .privacy h3 { font: 600 16px/1.3 var(--display); margin: 0 0 4px; }
+  .privacy p { margin: 0; color: var(--muted); font-size: 15px; }
+
+  /* Install */
+  .install { padding-bottom: 112px; }
+  .terminal {
+    margin-top: 32px;
+    background: #1D1B19;
+    color: #EDE8E2;
+    border-radius: 12px;
+    padding: 18px 20px;
+    display: flex; align-items: center; gap: 16px;
+    box-shadow: var(--shadow);
+  }
+  @media (prefers-color-scheme: dark) { .terminal { background: #0E0D0C; border: 0.5px solid var(--hairline); } }
+  .terminal code {
+    flex: 1; min-width: 0;
+    font: 400 14.5px/1.5 var(--mono);
+    overflow-x: auto; white-space: nowrap;
+    scrollbar-width: none;
+  }
+  .terminal code::-webkit-scrollbar { display: none; }
+  .terminal code .prompt { color: #F2A36E; user-select: none; }
+  .copy {
+    flex: none;
+    font: 500 13px var(--sans);
+    color: #EDE8E2;
+    background: rgba(255,255,255,0.1);
+    border: 0; border-radius: 7px;
+    height: 30px; padding: 0 12px;
+    cursor: pointer;
+  }
+  .copy:hover { background: rgba(255,255,255,0.16); }
+  .steps { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 40em; counter-reset: s; }
+  .steps li { display: grid; grid-template-columns: 26px 1fr; color: var(--muted); font-size: 15.5px; counter-increment: s; }
+  .steps li::before { content: counter(s); color: var(--ember); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .steps b { color: var(--ink); font-weight: 600; }
+  .links { margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 15.5px; }
+  .links a { color: var(--ink); text-decoration-color: var(--faint); text-underline-offset: 3px; }
+  .links a:hover { text-decoration-color: var(--ember); }
+
+  footer {
+    border-top: 1px solid var(--hairline);
+    padding: 28px 20px 40px;
+    text-align: center;
+    color: var(--faint);
+    font-size: 13.5px;
+  }
+
+  @media (max-width: 760px) {
+    body { font-size: 16px; }
+    .menubar .left span:not(:first-child) { display: none; }
+    .widget { top: 42px; left: 12px; }
+    .hero { padding-top: 104px; }
+    .phrasebook { grid-template-columns: 1fr; }
+    .keys, .privacy { grid-template-columns: 1fr; gap: 28px; }
+    section { padding-top: 72px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+
+<div class="desktop">
+  <div class="menubar" aria-hidden="true">
+    <div class="left"><span><b>Finder</b></span><span>File</span><span>Edit</span><span>View</span></div>
+    <div class="right">
+      <span class="drift-item">
+        <svg class="ring" viewBox="0 0 16 16" id="menu-ring"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/><path id="menu-wedge" fill="currentColor" d=""/></svg>
+      </span>
+      <span class="clock num" id="clock"></span>
+    </div>
+  </div>
+
+  <div class="widget" id="widget" data-state="idle" role="timer" aria-live="off" aria-label="Demo timer">
+    <span class="dot"></span>
+    <span class="w-name" id="w-name"></span>
+    <span class="w-time num" id="w-time">25:00</span>
+    <button class="w-btn" id="w-toggle" aria-label="Start demo timer">
+      <svg viewBox="0 0 10 10" id="w-icon"><path d="M2 1l7 4-7 4z"/></svg>
+    </button>
+  </div>
+
+  <div class="hero">
+    <img src="icon.png" alt="" width="72" height="72">
+    <h1>Drift</h1>
+    <p class="tagline">Stay with it.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press ⌥&nbsp;Space from any app, type how long, and get back to work. The time waits in the corner of your screen until you need it.</p>
+
+    <form class="launcher" id="launcher" autocomplete="off">
+      <label>
+        <span class="accent-dot" aria-hidden="true"></span>
+        <input id="q" type="text" placeholder="25m, 1:30, 45m writing…" aria-label="Try it: type a duration" spellcheck="false">
+      </label>
+      <div class="preview" aria-live="polite">
+        <span class="what" id="what">Start 25:00</span>
+        <kbd>return</kbd>
+      </div>
+      <div class="chips">
+        <button type="button" data-q="5m">5m</button>
+        <button type="button" data-q="15m">15m</button>
+        <button type="button" data-q="25m">25m</button>
+        <button type="button" data-q="45m">45m</button>
+        <button type="button" data-q="1h">1h</button>
+      </div>
+    </form>
+    <p class="hint">Try it here. The timer starts in the top-left corner, just like on your Mac.</p>
+  </div>
+</div>
+
+<main>
+  <section>
+    <h2>Type it the way you'd say it.</h2>
+    <p class="sub">No fields, no pickers. Drift reads what you type, and any extra words become the timer's name.</p>
+    <div class="phrasebook">
+      <div class="phrase"><code>25</code><span><b>25:00</b></span></div>
+      <div class="phrase"><code>45m writing</code><span>Writing <b>45:00</b></span></div>
+      <div class="phrase"><code>1:30</code><span><b>1:30:00</b></span></div>
+      <div class="phrase"><code>90s</code><span><b>1:30</b></span></div>
+      <div class="phrase"><code>2h 15m</code><span><b>2:15:00</b></span></div>
+      <div class="phrase"><code>half an hour</code><span><b>30:00</b></span></div>
+      <div class="phrase"><code>36h</code><span><b>36h 0m</b></span></div>
+      <div class="phrase"><code>pomodoro</code><span>25 focus, 5 break</span></div>
+      <div class="phrase"><code>add 5 minutes</code><span>+5 to the current timer</span></div>
+      <div class="phrase"><code>pause laundry</code><span>Pauses “Laundry”</span></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Three keys, from anywhere.</h2>
+    <p class="sub">They work in every app, including full-screen ones. Change them in Settings if you like.</p>
+    <div class="keys">
+      <div>
+        <div class="key-combo"><kbd>⌥</kbd><kbd>Space</kbd></div>
+        <h3>New timer</h3>
+        <p>Type a duration, press Return. Return on its own starts your default.</p>
+      </div>
+      <div>
+        <div class="key-combo"><kbd>⌥</kbd><kbd>V</kbd></div>
+        <h3>Say it</h3>
+        <p>“Start a ten minute timer called break.” Drift stops listening when you do.</p>
+      </div>
+      <div>
+        <div class="key-combo"><kbd>⌥</kbd><kbd>T</kbd></div>
+        <h3>Hide or show</h3>
+        <p>Hidden timers keep running, and the time moves into the menu bar.</p>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Nothing to sign up for.</h2>
+    <p class="sub">Drift is a timer, not a productivity platform.</p>
+    <div class="without" aria-label="What Drift doesn't have">
+      <s>Accounts</s><s>Streaks</s><s>Dashboards</s><s>Subscriptions</s><s>Analytics</s><s>Nagging</s>
+    </div>
+    <div class="privacy">
+      <div>
+        <h3>Offline, always</h3>
+        <p>The app has no network access at all. Timers and settings stay on your Mac.</p>
+      </div>
+      <div>
+        <h3>Voice stays local</h3>
+        <p>Speech is recognised on-device, only while you're talking, and never stored.</p>
+      </div>
+      <div>
+        <h3>Free and open source</h3>
+        <p>Every line is on GitHub. You build it yourself, so you run exactly that code.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="install" id="install">
+    <h2>Install in one line.</h2>
+    <p class="sub">Paste this into Terminal. It builds Drift on your Mac, moves it to Applications and opens it.</p>
+    <div class="terminal">
+      <code id="cmd"><span class="prompt">$ </span>curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash</code>
+      <button class="copy" id="copy" type="button">Copy</button>
+    </div>
+    <ol class="steps">
+      <li><span>Open <b>Terminal</b> (⌘ Space, then type Terminal).</span></li>
+      <li><span>Paste the line and press Return. If macOS offers to install the free <b>Command Line Tools</b>, accept, then run it again.</span></li>
+      <li><span>Drift opens in the top-left corner. Press <b>⌥ Space</b> and type 25.</span></li>
+    </ol>
+    <div class="links">
+      <a href="https://github.com/nweinberg97/Drift">Source on GitHub</a>
+      <a href="https://github.com/nweinberg97/Drift#readme">Full guide</a>
+      <span style="color:var(--faint)">macOS 13 Ventura or newer</span>
+    </div>
+  </section>
+</main>
+
+<footer>Drift is free and open source. Made to stay out of the way.</footer>
+
+<script>
+(() => {
+  // ---------- Duration parsing (a small mirror of the app's parser) ----------
+  const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60,
+                  h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
+  const WORDS = { one:1, two:2, three:3, four:4, five:5, ten:10, fifteen:15, twenty:20, thirty:30, forty:40, fortyfive:45, sixty:60 };
+  const FILLER = new Set(['a','an','the','for','timer','called','named','start','set','my','of','minute','and']);
+
+  function parse(input) {
+    let text = input.toLowerCase().trim();
+    if (!text) return null;
+    if (/^(pomodoro|pomo)\b/.test(text)) return { pomodoro: true, seconds: 1500, name: 'Focus' };
+    if (text === 'half an hour') return { seconds: 1800 };
+    let total = 0, found = false, rest = [];
+    const clock = text.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
+    if (clock) {
+      total += (+clock[2]) * 3600 + (+clock[3]) * 60 + (+(clock[4] || 0));
+      found = true;
+      text = text.replace(clock[0], ' ');
+    }
+    const tokens = text.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
+    let bare = null;
+    for (let i = 0; i < tokens.length; i++) {
+      const t = tokens[i];
+      const n = /^\d+(\.\d+)?$/.test(t) ? parseFloat(t) : WORDS[t];
+      if (n !== undefined && UNITS[tokens[i + 1]]) { total += n * UNITS[tokens[i + 1]]; found = true; i++; continue; }
+      if (n !== undefined && bare === null) { bare = n; continue; }
+      rest.push(t);
+    }
+    if (!found && bare !== null) { total = bare * 60; found = true; }
+    else if (bare !== null) rest.unshift(String(bare));
+    if (!found || total < 1 || total > 366 * 86400) return null;
+    while (rest.length && FILLER.has(rest[0])) rest.shift();
+    while (rest.length && FILLER.has(rest[rest.length - 1])) rest.pop();
+    const name = rest.join(' ');
+    return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
+  }
+
+  function clockText(sec) {
+    const s = Math.max(0, Math.ceil(sec - 0.0005));
+    const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60;
+    const p = n => String(n).padStart(2, '0');
+    if (s < 3600) return `${m}:${p(r)}`;
+    if (s < 86400) return `${h}:${p(m)}:${p(r)}`;
+    if (s < 3 * 86400) return `${h}h ${m}m`;
+    return `${Math.floor(s / 86400)}d ${h % 24}h`;
+  }
+
+  // ---------- Demo widget ----------
+  const widget = document.getElementById('widget');
+  const wTime = document.getElementById('w-time');
+  const wName = document.getElementById('w-name');
+  const wToggle = document.getElementById('w-toggle');
+  const wIcon = document.getElementById('w-icon');
+  const wedge = document.getElementById('menu-wedge');
+  const PLAY = '<path d="M2 1l7 4-7 4z"/>';
+  const PAUSE = '<path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/>';
+  const CLOSE = '<path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/>';
+
+  let state = 'idle', duration = 1500, endAt = 0, remaining = 1500, frame = 0;
+
+  function render() {
+    const now = Date.now();
+    if (state === 'running') {
+      remaining = (endAt - now) / 1000;
+      if (remaining <= 0) { state = 'done'; remaining = 0; }
+    }
+    widget.dataset.state = state;
+    widget.toggleAttribute('data-warn', state === 'running' && remaining <= 60 && duration > 90);
+    wTime.textContent = state === 'done' ? 'Done' : clockText(remaining);
+    wIcon.innerHTML = state === 'running' ? PAUSE : state === 'done' ? CLOSE : PLAY;
+    wToggle.setAttribute('aria-label', state === 'running' ? 'Pause' : state === 'done' ? 'Dismiss' : 'Start');
+    wToggle.style.color = state === 'running' ? 'var(--faint)' : 'var(--ember)';
+    // Menu bar ring empties clockwise as time passes.
+    const frac = state === 'idle' ? 0 : Math.max(0, Math.min(1, remaining / duration));
+    wedge.setAttribute('d', wedgePath(frac));
+    if (state === 'running') {
+      clearTimeout(frame);
+      const msToNext = ((remaining % 1) * 1000) || 1000;
+      frame = setTimeout(render, Math.max(30, msToNext + 5));
+    }
+  }
+
+  function wedgePath(frac) {
+    if (frac <= 0) return '';
+    if (frac >= 0.999) return 'M8 2a6 6 0 1 1 0 12a6 6 0 1 1 0-12z';
+    const a = (-90 + 360 * frac) * Math.PI / 180;
+    const x = 8 + 6 * Math.cos(a), y = 8 + 6 * Math.sin(a);
+    return `M8 8 L8 2 A6 6 0 ${frac > 0.5 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z`;
+  }
+
+  function start(seconds, name) {
+    duration = seconds; remaining = seconds;
+    endAt = Date.now() + seconds * 1000;
+    wName.textContent = name || '';
+    state = 'running';
+    render();
+  }
+
+  wToggle.addEventListener('click', () => {
+    if (state === 'running') { remaining = (endAt - Date.now()) / 1000; state = 'paused'; clearTimeout(frame); }
+    else if (state === 'paused') { endAt = Date.now() + remaining * 1000; state = 'running'; }
+    else if (state === 'done') { state = 'idle'; duration = remaining = 1500; wName.textContent = ''; }
+    else start(1500, '');
+    render();
+  });
+
+  // ---------- Launcher ----------
+  const form = document.getElementById('launcher');
+  const q = document.getElementById('q');
+  const what = document.getElementById('what');
+
+  function preview() {
+    const text = q.value.trim();
+    if (!text) { what.className = 'what'; what.innerHTML = 'Start <span class="num">25:00</span>'; return; }
+    const p = parse(text);
+    if (!p) { what.className = 'what invalid'; what.textContent = 'Try 25, 1:30, 90s or 45m writing'; return; }
+    what.className = 'what';
+    what.innerHTML = p.pomodoro
+      ? 'Pomodoro <span class="name">· 25m focus, 5m break</span>'
+      : `Start <span class="num">${clockText(p.seconds)}</span>${p.name ? ` <span class="name">· ${p.name.replace(/[<>&]/g, '')}</span>` : ''}`;
+  }
+
+  form.addEventListener('submit', e => {
+    e.preventDefault();
+    const text = q.value.trim();
+    const p = text ? parse(text) : { seconds: 1500, name: '' };
+    if (!p) { q.focus(); return; }
+    start(p.seconds, p.name);
+    q.value = ''; preview(); q.blur();
+  });
+  q.addEventListener('input', preview);
+  form.querySelectorAll('.chips button').forEach(b => b.addEventListener('click', () => {
+    const p = parse(b.dataset.q); start(p.seconds, '');
+  }));
+
+  // ---------- Menu bar clock ----------
+  const clock = document.getElementById('clock');
+  const tick = () => {
+    clock.textContent = new Date().toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+  };
+  tick(); setInterval(tick, 15000);
+
+  // ---------- Copy ----------
+  const copy = document.getElementById('copy');
+  copy.addEventListener('click', async () => {
+    const cmd = 'curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash';
+    try { await navigator.clipboard.writeText(cmd); copy.textContent = 'Copied'; }
+    catch { copy.textContent = 'Select and copy'; }
+    setTimeout(() => (copy.textContent = 'Copy'), 1800);
+  });
+
+  render();
+})();
+</script>
+</body>
+</html>
