@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Drift — a quiet focus timer for Mac</title>
 <meta name="description" content="Drift is a free, open-source focus timer for macOS. Press ⌥ Space, type 25, keep working.">
+<meta name="theme-color" content="#171513">
 <meta property="og:title" content="Drift — Stay with it.">
 <meta property="og:description" content="A quiet focus timer for your Mac. Press ⌥ Space, type 25, keep working.">
 <meta property="og:image" content="icon.png">
@@ -12,386 +13,546 @@
 <link rel="apple-touch-icon" href="icon.png">
 <style>
   :root {
-    --page: #E8E7E3;
-    --desk: #DCDAD5;
-    --ink: #1D1B19;
-    --muted: #6B655F;
-    --faint: #9A948D;
-    --ember: #B0522A;
-    --ember-soft: rgba(176, 82, 42, 0.12);
-    --surface: rgba(251, 249, 246, 0.86);
-    --hairline: rgba(29, 27, 25, 0.10);
-    --control: rgba(29, 27, 25, 0.06);
-    --shadow: 0 1px 0 rgba(255,255,255,.6) inset, 0 12px 32px -12px rgba(40, 30, 20, 0.28), 0 2px 6px rgba(40, 30, 20, 0.08);
+    --night: #171513;
+    --coal: #201D1B;
+    --ash: #2B2825;
+    --ember: #F2A36E;
+    --ember-hot: #F7B98C;
+    --ember-deep: #C9774A;
+    --ember-wash: rgba(242, 163, 110, 0.12);
+    --cream: #F4EEE6;
+    --muted: #A69D93;
+    --faint: #6F675F;
+    --line: rgba(244, 238, 230, 0.09);
+    --glass: rgba(42, 38, 35, 0.86);
     --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
     --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
     --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
-    color-scheme: light dark;
+    color-scheme: dark;
   }
-  @media (prefers-color-scheme: dark) {
-    :root {
-      --page: #161513;
-      --desk: #1F1D1B;
-      --ink: #F4F1EC;
-      --muted: #A8A19A;
-      --faint: #756F69;
-      --ember: #F2A36E;
-      --ember-soft: rgba(242, 163, 110, 0.14);
-      --surface: rgba(34, 32, 30, 0.88);
-      --hairline: rgba(255, 255, 255, 0.10);
-      --control: rgba(255, 255, 255, 0.08);
-      --shadow: 0 1px 0 rgba(255,255,255,.05) inset, 0 16px 40px -12px rgba(0, 0, 0, 0.6), 0 2px 6px rgba(0, 0, 0, 0.3);
-    }
-  }
-
   * { box-sizing: border-box; }
-  html { -webkit-text-size-adjust: 100%; }
+  html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; }
   body {
     margin: 0;
-    background: var(--page);
-    color: var(--ink);
+    background: var(--night);
+    color: var(--cream);
     font: 17px/1.55 var(--sans);
     -webkit-font-smoothing: antialiased;
+    overflow-x: hidden;
   }
   a { color: inherit; }
-  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 4px; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 6px; }
   .num { font-variant-numeric: tabular-nums; }
+  .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding: 0 24px; }
 
-  /* ---------- The desktop (hero) ---------- */
-  .desktop {
-    position: relative;
-    min-height: min(92vh, 860px);
-    background: var(--desk);
-    border-bottom: 1px solid var(--hairline);
-    display: grid;
-    grid-template-rows: auto 1fr;
-    grid-template-columns: minmax(0, 1fr);
-    overflow: hidden;
+  /* ---------- Nav ---------- */
+  nav {
+    position: absolute; inset: 0 0 auto 0; z-index: 5;
+    display: flex; align-items: center; justify-content: space-between;
+    max-width: 1120px; margin: 0 auto; padding: 22px 24px;
   }
-  .menubar {
-    height: 30px;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 0 16px;
-    font-size: 13px;
-    color: var(--ink);
-    background: color-mix(in srgb, var(--page) 70%, transparent);
-    backdrop-filter: blur(20px);
-    border-bottom: 1px solid var(--hairline);
-  }
-  .menubar .left { display: flex; gap: 18px; align-items: center; }
-  .menubar .left b { font-weight: 600; }
-  .menubar .right { display: flex; gap: 14px; align-items: center; color: var(--muted); }
-  .menubar .drift-item { display: flex; gap: 6px; align-items: center; color: var(--ink); }
-  .ring { width: 14px; height: 14px; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 600 17px var(--display); text-decoration: none; letter-spacing: -0.01em; }
+  .brand img { width: 28px; height: 28px; }
+  nav ul { display: flex; gap: 28px; list-style: none; margin: 0; padding: 0; font-size: 15px; color: var(--muted); }
+  nav ul a { text-decoration: none; }
+  nav ul a:hover { color: var(--cream); }
 
-  .widget {
-    position: absolute;
-    top: 48px; left: 20px;
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 8px 7px 14px;
-    background: var(--surface);
-    backdrop-filter: blur(24px) saturate(1.2);
-    border: 0.5px solid var(--hairline);
-    border-radius: 12px;
-    box-shadow: var(--shadow);
-    user-select: none;
-    z-index: 2;
-  }
-  .dot { width: 7px; height: 7px; border-radius: 50%; border: 1.25px solid var(--faint); flex: none; transition: background .2s, border-color .2s; }
-  .widget[data-state="running"] .dot { background: var(--ember); border-color: var(--ember); }
-  .widget[data-state="done"] .dot { background: var(--ember); border-color: var(--ember); }
-  .w-name { font-size: 12px; font-weight: 500; color: var(--muted); max-width: 110px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .w-name:empty { display: none; }
-  .w-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 3.1em; }
-  .widget[data-state="paused"] .w-time, .widget[data-state="idle"] .w-time { color: var(--muted); }
-  .widget[data-state="done"] .w-time, .widget[data-warn] .w-time { color: var(--ember); }
-  .w-btn {
-    width: 26px; height: 26px; border-radius: 50%;
-    border: 0; background: transparent; color: var(--ember);
-    display: grid; place-items: center; cursor: pointer;
-  }
-  .w-btn:hover { background: var(--control); }
-  .w-btn svg { width: 10px; height: 10px; fill: currentColor; }
-
+  /* ---------- Hero ---------- */
   .hero {
-    align-self: center;
-    justify-self: center;
-    width: 100%;
-    max-width: 720px;
-    padding: 120px 20px 72px;
+    position: relative;
+    min-height: 100vh;
+    display: grid; place-items: center;
+    padding: 110px 24px 80px;
     text-align: center;
+    isolation: isolate;
   }
-  .hero img { width: 72px; height: 72px; display: block; margin: 0 auto 22px; }
+  .hero::before {
+    content: ""; position: absolute; inset: 0; z-index: -1;
+    background: radial-gradient(48% 42% at 50% 46%, rgba(242,163,110,0.16), transparent 70%);
+  }
+  .dial { position: relative; width: min(560px, 88vw); aspect-ratio: 1; margin: 0 auto; }
+  .dial svg { position: absolute; inset: 0; width: 100%; height: 100%; transform: rotate(-90deg); overflow: visible; }
+  .dial .track { stroke: rgba(244,238,230,0.07); }
+  .dial .arc { stroke: var(--ember); filter: drop-shadow(0 0 22px rgba(242,163,110,0.35)); transition: stroke-dashoffset 1s linear; }
+  .dial .tip { fill: var(--cream); }
+  .dial-inner { position: absolute; inset: 0; display: grid; place-content: center; gap: 2px; }
   .hero h1 {
-    font: 600 clamp(56px, 11vw, 112px)/0.95 var(--display);
-    letter-spacing: -0.045em;
+    font: 650 clamp(64px, 13vw, 132px)/0.9 var(--display);
+    letter-spacing: -0.05em;
     margin: 0;
   }
-  .hero .tagline {
-    font: 400 clamp(22px, 3.2vw, 30px)/1.2 var(--display);
-    letter-spacing: -0.02em;
-    color: var(--muted);
-    margin: 10px 0 0;
+  .tagline { font: 400 clamp(20px, 3vw, 28px)/1.2 var(--display); color: var(--ember); margin: 8px 0 0; letter-spacing: -0.015em; }
+  .hero-time { margin-top: 18px; font: 500 15px var(--display); color: var(--muted); letter-spacing: 0.01em; }
+  .hero-time b { color: var(--cream); font-weight: 500; }
+  .lede { max-width: 32em; margin: 40px auto 0; color: var(--muted); font-size: 18px; }
+  .lede kbd { color: var(--cream); }
+  .actions { display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; margin-top: 28px; }
+  .btn {
+    display: inline-flex; align-items: center; gap: 8px;
+    height: 46px; padding: 0 22px; border-radius: 23px;
+    font: 600 15.5px var(--sans); text-decoration: none; cursor: pointer; border: 0;
+    transition: transform .15s, background .15s;
   }
-  .hero .lede { margin: 26px auto 0; max-width: 34em; color: var(--muted); }
+  .btn:active { transform: scale(0.97); }
+  .btn-ember { background: var(--ember); color: #1B1714; }
+  .btn-ember:hover { background: var(--ember-hot); }
+  .btn-ghost { background: rgba(244,238,230,0.07); color: var(--cream); }
+  .btn-ghost:hover { background: rgba(244,238,230,0.12); }
+  kbd { font: 500 0.92em var(--sans); }
 
-  /* The launcher demo */
-  .launcher {
-    margin: 40px auto 0;
-    max-width: 480px;
-    text-align: left;
-    background: var(--surface);
-    backdrop-filter: blur(24px) saturate(1.2);
-    border: 0.5px solid var(--hairline);
-    border-radius: 16px;
-    box-shadow: var(--shadow);
+  /* ---------- Section heads ---------- */
+  section { padding: 120px 0 0; }
+  h2 {
+    font: 650 clamp(34px, 5vw, 56px)/1.02 var(--display);
+    letter-spacing: -0.035em;
+    margin: 0;
+    max-width: 14em;
+  }
+  .sub { color: var(--muted); max-width: 34em; margin: 16px 0 0; font-size: 18px; }
+
+  /* ---------- Demo ---------- */
+  .demo { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: 48px; margin-top: 56px; align-items: start; }
+  .stage-wrap {
+    position: relative; width: 100%; aspect-ratio: 800 / 500;
+    border-radius: 18px; overflow: hidden;
+    box-shadow: 0 0 0 1px var(--line), 0 40px 80px -30px rgba(0,0,0,0.8), 0 0 120px -40px rgba(242,163,110,0.35);
+  }
+  .screen {
+    position: absolute; top: 0; left: 0; width: 800px; height: 500px; transform-origin: 0 0;
+    background:
+      radial-gradient(70% 55% at 78% 105%, rgba(247,185,140,0.75), rgba(242,163,110,0.35) 35%, transparent 70%),
+      radial-gradient(60% 50% at 10% 110%, rgba(201,119,74,0.55), transparent 65%),
+      linear-gradient(170deg, #1C1917 0%, #2A211B 60%, #3A2619 100%);
+    overflow: hidden; font-family: var(--sans); color: var(--cream);
+    user-select: none;
+  }
+  .s-menubar {
+    position: absolute; inset: 0 0 auto 0; height: 26px;
+    display: flex; align-items: center; justify-content: space-between; padding: 0 14px;
+    font-size: 12.5px; background: rgba(20,18,16,0.55); backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+  }
+  .s-menubar .l { display: flex; gap: 16px; color: rgba(244,238,230,0.85); }
+  .s-menubar .l b { font-weight: 600; color: var(--cream); }
+  .s-menubar .r { display: flex; gap: 14px; align-items: center; color: rgba(244,238,230,0.8); }
+  .s-mb { display: flex; align-items: center; gap: 5px; padding: 1px 6px; border-radius: 4px; transition: background .2s; }
+  .s-mb.open { background: rgba(255,255,255,0.14); }
+  .s-mb svg { width: 14px; height: 14px; }
+  .s-mb-time { font-variant-numeric: tabular-nums; max-width: 0; overflow: hidden; transition: max-width .35s; white-space: nowrap; }
+  .s-mb-time.on { max-width: 60px; }
+
+  .s-window {
+    position: absolute; left: 250px; top: 70px; width: 470px; height: 330px;
+    background: #2A2623; border-radius: 12px; border: 1px solid rgba(255,255,255,0.07);
+    box-shadow: 0 30px 60px -20px rgba(0,0,0,0.6);
     overflow: hidden;
   }
-  .launcher label { display: flex; align-items: center; gap: 12px; height: 62px; padding: 0 16px; cursor: text; }
-  .launcher .accent-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); flex: none; margin: 0 7px; }
-  .launcher input {
-    flex: 1; min-width: 0;
-    font: 400 22px var(--display);
-    color: var(--ink);
-    background: transparent; border: 0; outline: none;
+  .s-window .bar { height: 34px; display: flex; gap: 7px; align-items: center; padding: 0 13px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+  .s-window .bar i { width: 11px; height: 11px; border-radius: 50%; background: rgba(255,255,255,0.13); }
+  .s-window .doc { padding: 26px 40px; display: grid; gap: 13px; }
+  .s-window .doc i { display: block; height: 9px; border-radius: 5px; background: rgba(244,238,230,0.1); }
+  .s-window .doc i.h { height: 16px; width: 55%; background: rgba(244,238,230,0.2); margin-bottom: 10px; }
+  .s-window .doc i.c { height: 13px; width: 2px; background: var(--ember); animation: blink 1.1s steps(1) infinite; margin-top: -4px; }
+  @keyframes blink { 50% { opacity: 0; } }
+
+  /* Widget inside the stage */
+  .s-widget {
+    position: absolute; left: 16px; top: 40px; z-index: 4;
+    min-width: 0;
+    background: var(--glass); backdrop-filter: blur(20px) saturate(1.2);
+    border: 0.5px solid rgba(255,255,255,0.12); border-radius: 12px;
+    box-shadow: 0 14px 34px -12px rgba(0,0,0,0.7);
+    transition: opacity .3s, transform .35s cubic-bezier(.2,.8,.2,1), width .3s;
+    overflow: hidden;
   }
+  .s-widget.hidden { opacity: 0; transform: translateY(-6px) scale(0.96); }
+  .sw-row { display: flex; align-items: center; gap: 9px; height: 42px; padding: 0 7px 0 13px; }
+  .sw-dot { width: 7px; height: 7px; border-radius: 50%; border: 1.25px solid var(--faint); flex: none; transition: all .2s; }
+  .s-widget[data-run="1"] .sw-dot { background: var(--ember); border-color: var(--ember); box-shadow: 0 0 10px rgba(242,163,110,0.6); }
+  .sw-name { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .sw-name:empty { display: none; }
+  .sw-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 64px; transition: color .3s; }
+  .s-widget.done .sw-time { color: var(--ember); }
+  .sw-time.bump { animation: bump .45s cubic-bezier(.2,.8,.2,1); }
+  @keyframes bump { 30% { transform: translateY(-3px); color: var(--ember); } }
+  .sw-chip { height: 24px; min-width: 24px; padding: 0 6px; border-radius: 12px; display: grid; place-items: center; font-size: 10.5px; font-weight: 650; color: var(--muted); transition: background .15s; }
+  .sw-chip.hot { background: rgba(255,255,255,0.1); color: var(--cream); }
+  .sw-btn { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--faint); transition: background .15s; }
+  .sw-btn svg { width: 10px; height: 10px; fill: currentColor; }
+  .sw-exp { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
+  .s-widget.open .sw-exp { grid-template-rows: 1fr; }
+  .sw-exp > div { overflow: hidden; min-height: 0; }
+  .sw-progress { height: 2px; margin: 0 13px 6px; background: rgba(255,255,255,0.08); border-radius: 2px; overflow: hidden; }
+  .sw-progress i { display: block; height: 100%; width: 30%; background: var(--ember); transition: width .5s; }
+  .sw-controls { display: flex; gap: 2px; padding: 2px 7px 7px; font-size: 11.5px; font-weight: 500; color: var(--muted); }
+  .sw-controls span { padding: 4px 8px; border-radius: 6px; transition: background .15s, color .15s; }
+  .sw-controls span.hot { background: rgba(255,255,255,0.12); color: var(--cream); }
+  .sw-controls .sp { flex: 1; padding: 0; }
+  .sw-tray { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 4px 0; }
+  .sw-tray:empty { display: none; }
+  .sw-tray div { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 13px; font-size: 12px; color: var(--muted); }
+  .sw-tray div .sw-dot { width: 6px; height: 6px; }
+  .sw-tray div .run { background: var(--ember); border-color: var(--ember); }
+  .sw-tray div b { margin-left: auto; font: 500 13px var(--display); color: var(--cream); font-variant-numeric: tabular-nums; }
+  .sw-tray div b.p { color: var(--faint); }
+  .sw-foot { border-top: 0.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; padding: 6px 7px; font-size: 11.5px; font-weight: 500; }
+  .sw-foot .add { color: var(--ember); padding: 3px 8px; border-radius: 6px; transition: background .15s; }
+  .sw-foot .add.hot { background: rgba(255,255,255,0.12); }
+  .sw-foot kbd { font-size: 10px; color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 4px; }
+
+  /* Composer inside the stage */
+  .s-composer {
+    position: absolute; left: 50%; top: 110px; width: 440px; margin-left: -220px; z-index: 5;
+    background: rgba(44,40,37,0.94); backdrop-filter: blur(24px);
+    border: 0.5px solid rgba(255,255,255,0.13); border-radius: 16px;
+    box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8);
+    opacity: 0; transform: scale(0.97) translateY(-4px); pointer-events: none;
+    transition: opacity .18s, transform .22s cubic-bezier(.2,.8,.2,1);
+  }
+  .s-composer.on { opacity: 1; transform: none; }
+  .sc-in { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 16px; font: 400 21px var(--display); }
+  .sc-in .ed { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); margin: 0 7px; flex: none; transition: transform .1s; }
+  .s-composer.listening .sc-in .ed { animation: listen .5s ease-in-out infinite alternate; }
+  @keyframes listen { to { transform: scale(2.1); box-shadow: 0 0 14px rgba(242,163,110,0.8); } }
+  .sc-text:empty::before { content: attr(data-ph); color: var(--faint); }
+  .sc-caret { width: 2px; height: 24px; background: var(--ember); margin-left: -10px; animation: blink 1s steps(1) infinite; }
+  .s-composer.listening .sc-caret { display: none; }
+  .sc-mic { margin-left: auto; color: var(--muted); }
+  .s-composer.listening .sc-mic { color: var(--ember); }
+  .sc-mic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
+  .sc-pre { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px; border-top: 0.5px solid rgba(255,255,255,0.1); font-size: 12.5px; font-weight: 500; }
+  .sc-pre .m { color: var(--muted); }
+  .sc-pre kbd { margin-left: auto; font-size: 10.5px; color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; }
+  .sc-chips { display: flex; gap: 6px; padding: 2px 12px 12px; }
+  .sc-chips span { font-size: 11.5px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,0.07); border-radius: 7px; padding: 5px 9px; }
+
+  /* Menu dropdown */
+  .s-menu {
+    position: absolute; right: 70px; top: 30px; width: 250px; z-index: 6;
+    background: rgba(44,40,37,0.95); backdrop-filter: blur(24px);
+    border: 0.5px solid rgba(255,255,255,0.13); border-radius: 10px;
+    box-shadow: 0 24px 50px -16px rgba(0,0,0,0.8);
+    padding: 5px; font-size: 13px;
+    opacity: 0; transform: translateY(-4px); transition: opacity .15s, transform .2s;
+  }
+  .s-menu.on { opacity: 1; transform: none; }
+  .s-menu div { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 10px; border-radius: 5px; color: rgba(244,238,230,0.9); }
+  .s-menu div.sep { height: 1px; background: rgba(255,255,255,0.1); margin: 4px 8px; padding: 0; }
+  .s-menu div.hot { background: var(--ember-deep); color: #fff; }
+  .s-menu div.ind { padding-left: 26px; color: var(--muted); }
+  .s-menu .chk { width: 10px; color: var(--ember); }
+  .s-menu b { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .waves { position: absolute; left: 16px; top: 92px; display: flex; gap: 3px; align-items: flex-end; height: 18px; padding-left: 14px; opacity: 0; transition: opacity .6s; z-index: 4; }
+  .waves.on { opacity: 1; }
+  .waves i { width: 3px; border-radius: 2px; background: var(--ember); animation: wave 1.2s ease-in-out infinite alternate; }
+  .waves i:nth-child(2) { animation-delay: -.3s; } .waves i:nth-child(3) { animation-delay: -.7s; } .waves i:nth-child(4) { animation-delay: -.5s; } .waves i:nth-child(5) { animation-delay: -.9s; }
+  @keyframes wave { from { height: 3px; opacity: .5; } to { height: 16px; opacity: 1; } }
+  .waves span { font-size: 11px; color: var(--muted); margin-left: 8px; align-self: center; }
+
+  /* Notification */
+  .s-note {
+    position: absolute; right: 14px; top: 36px; width: 300px; z-index: 6;
+    display: flex; gap: 10px; align-items: center;
+    background: rgba(48,44,40,0.95); backdrop-filter: blur(24px);
+    border: 0.5px solid rgba(255,255,255,0.12); border-radius: 14px; padding: 11px 13px;
+    box-shadow: 0 18px 40px -14px rgba(0,0,0,0.8);
+    transform: translateX(340px); transition: transform .45s cubic-bezier(.2,.8,.2,1);
+  }
+  .s-note.on { transform: none; }
+  .s-note img { width: 34px; height: 34px; }
+  .s-note b { display: block; font-size: 12.5px; }
+  .s-note span { font-size: 12px; color: var(--muted); }
+
+  /* Keys overlay */
+  .s-keys { position: absolute; left: 0; right: 0; bottom: 34px; display: flex; justify-content: center; gap: 8px; z-index: 7; pointer-events: none; }
+  .s-keys kbd {
+    min-width: 58px; height: 58px; padding: 0 16px; display: grid; place-items: center;
+    font: 500 24px var(--sans); color: var(--cream);
+    background: rgba(44,40,37,0.92); border: 0.5px solid rgba(255,255,255,0.16); border-radius: 12px;
+    box-shadow: 0 3px 0 rgba(0,0,0,0.5), 0 20px 40px -10px rgba(0,0,0,0.7);
+    animation: keyin .28s cubic-bezier(.2,.9,.3,1.3) both;
+  }
+  .s-keys kbd.down { transform: translateY(2px); box-shadow: 0 1px 0 rgba(0,0,0,0.5); background: var(--ember-deep); }
+  @keyframes keyin { from { opacity: 0; transform: translateY(10px) scale(0.9); } }
+
+  /* Cursor */
+  .s-cursor { position: absolute; left: 600px; top: 380px; width: 20px; height: 26px; z-index: 9; transition: left .7s cubic-bezier(.4,0,.2,1), top .7s cubic-bezier(.4,0,.2,1), opacity .3s; pointer-events: none; }
+  .s-cursor.click svg { transform: scale(0.85); }
+  .s-cursor svg { transition: transform .1s; transform-origin: 2px 2px; filter: drop-shadow(0 2px 3px rgba(0,0,0,0.6)); }
+
+  /* Feature list */
+  .features { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+  .features button {
+    all: unset; box-sizing: border-box; display: block; width: 100%; cursor: pointer;
+    padding: 13px 16px 14px; border-radius: 12px; position: relative; overflow: hidden;
+    transition: background .2s;
+  }
+  .features button:hover { background: rgba(244,238,230,0.04); }
+  .features button:focus-visible { outline: 2px solid var(--ember); outline-offset: -2px; }
+  .features b { display: block; font: 600 16px/1.3 var(--display); color: var(--muted); transition: color .2s; letter-spacing: -0.01em; }
+  .features span { display: block; font-size: 14px; color: var(--faint); margin-top: 3px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s, opacity .3s; }
+  .features .active { background: rgba(244,238,230,0.05); }
+  .features .active b { color: var(--cream); }
+  .features .active span { max-height: 60px; opacity: 1; color: var(--muted); }
+  .features i { position: absolute; left: 16px; right: 16px; bottom: 6px; height: 2px; border-radius: 2px; background: rgba(244,238,230,0.08); opacity: 0; }
+  .features .active i { opacity: 1; }
+  .features i::after { content: ""; position: absolute; inset: 0; width: var(--p, 0%); background: var(--ember); border-radius: 2px; }
+
+  /* ---------- Try it ---------- */
+  .try { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 64px; align-items: center; margin-top: 56px; }
+  .launcher {
+    background: var(--coal);
+    border: 1px solid rgba(242,163,110,0.25);
+    border-radius: 18px;
+    box-shadow: 0 0 0 6px rgba(242,163,110,0.05), 0 40px 80px -30px rgba(0,0,0,0.8);
+    overflow: hidden;
+  }
+  .launcher label { display: flex; align-items: center; gap: 12px; height: 70px; padding: 0 20px; cursor: text; }
+  .launcher .ed { width: 9px; height: 9px; border-radius: 50%; background: var(--ember); flex: none; margin: 0 6px; box-shadow: 0 0 12px rgba(242,163,110,0.7); }
+  .launcher input { flex: 1; min-width: 0; font: 400 24px var(--display); color: var(--cream); background: transparent; border: 0; outline: none; }
   .launcher input::placeholder { color: var(--faint); }
-  .launcher .preview {
-    display: flex; align-items: center; justify-content: space-between; gap: 10px;
-    height: 36px; padding: 0 16px;
-    border-top: 0.5px solid var(--hairline);
-    font-size: 13px; font-weight: 500;
-  }
-  .preview .what { color: var(--ink); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-  .preview .what.invalid { color: var(--faint); font-weight: 400; }
-  .preview .name { color: var(--muted); }
-  kbd {
-    font: 500 11px/1 var(--sans);
-    color: var(--muted);
-    background: var(--control);
-    border-radius: 4px;
-    padding: 3px 6px;
-  }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 12px 12px; }
-  .chips button {
-    font: 500 12px var(--sans);
-    font-variant-numeric: tabular-nums;
-    color: var(--muted);
-    background: var(--control);
-    border: 0; border-radius: 7px;
-    height: 26px; padding: 0 10px;
-    cursor: pointer;
-  }
-  .chips button:hover { color: var(--ink); }
-  .hint { margin-top: 14px; font-size: 13px; color: var(--faint); }
+  .launcher .pre { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 20px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 500; }
+  .pre .what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .pre .what.bad { color: var(--faint); font-weight: 400; }
+  .pre .nm { color: var(--muted); }
+  .pre kbd { margin-left: auto; font-size: 11px; color: var(--muted); background: rgba(255,255,255,0.07); border-radius: 5px; padding: 3px 7px; }
+  .launcher .chips { display: flex; flex-wrap: wrap; gap: 6px; padding: 4px 16px 16px; }
+  .launcher .chips button { font: 500 13px var(--sans); font-variant-numeric: tabular-nums; color: var(--muted); background: rgba(255,255,255,0.06); border: 0; border-radius: 8px; height: 30px; padding: 0 12px; cursor: pointer; }
+  .launcher .chips button:hover { color: var(--cream); background: rgba(255,255,255,0.1); }
+  .try-note { margin-top: 14px; font-size: 14px; color: var(--faint); }
+  .phrasebook { margin-top: 32px; display: grid; }
+  .phrase { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
+  .phrase code { font: 400 15px var(--mono); color: var(--cream); }
+  .phrase span { color: var(--muted); text-align: right; }
+  .phrase span b { color: var(--ember); font-weight: 600; font-variant-numeric: tabular-nums; }
 
-  /* ---------- Body sections ---------- */
-  main { width: min(100%, 980px); margin: 0 auto; padding: 0 20px; }
-  section { padding: 96px 0 0; }
-  h2 {
-    font: 600 clamp(30px, 4.4vw, 44px)/1.08 var(--display);
-    letter-spacing: -0.03em;
-    margin: 0 0 14px;
-    max-width: 16em;
+  /* The real floating widget, summoned by "Try it" */
+  .float {
+    position: fixed; left: 16px; top: 16px; z-index: 50;
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 7px 7px 14px;
+    background: rgba(42,38,35,0.9); backdrop-filter: blur(24px) saturate(1.2);
+    border: 0.5px solid rgba(255,255,255,0.14); border-radius: 13px;
+    box-shadow: 0 18px 40px -12px rgba(0,0,0,0.8);
+    transform: translateY(-80px); opacity: 0; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .3s;
   }
-  .sub { color: var(--muted); max-width: 36em; margin: 0; }
+  .float.on { transform: none; opacity: 1; }
+  .float .sw-dot { background: var(--ember); border-color: var(--ember); box-shadow: 0 0 10px rgba(242,163,110,0.6); }
+  .float.paused .sw-dot { background: transparent; border-color: var(--faint); box-shadow: none; }
+  .float.done .f-time { color: var(--ember); }
+  .float .f-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 62px; }
+  .float button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+  .float button:hover { background: rgba(255,255,255,0.1); color: var(--cream); }
+  .float button svg { width: 10px; height: 10px; fill: currentColor; }
 
-  /* What you can type */
-  .phrasebook {
-    margin-top: 40px;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    column-gap: 56px;
-  }
-  .phrase {
-    display: grid;
-    grid-template-columns: minmax(0, 1fr) auto;
-    align-items: baseline;
-    gap: 16px;
-    padding: 14px 0;
-    border-bottom: 1px solid var(--hairline);
-  }
-  .phrase code { font: 400 16px var(--mono); color: var(--ink); }
-  .phrase span { color: var(--muted); font-size: 15px; text-align: right; }
-  .phrase span b { color: var(--ink); font-weight: 600; font-variant-numeric: tabular-nums; }
+  /* ---------- Without ---------- */
+  .without { margin-top: 48px; display: flex; flex-wrap: wrap; gap: 8px 32px; font: 600 clamp(26px, 4vw, 44px)/1.15 var(--display); letter-spacing: -0.03em; color: rgba(244,238,230,0.22); }
+  .without s { text-decoration-thickness: 3px; text-decoration-color: var(--ember); }
+  .facts { margin-top: 56px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
+  .facts h3 { font: 600 18px/1.3 var(--display); margin: 0 0 6px; letter-spacing: -0.01em; }
+  .facts p { margin: 0; color: var(--muted); font-size: 15.5px; }
+  .facts svg { width: 26px; height: 26px; stroke: var(--ember); fill: none; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round; margin-bottom: 14px; }
 
-  /* Keys */
-  .keys { margin-top: 40px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 40px; }
-  .key-combo { display: flex; gap: 6px; margin-bottom: 14px; }
-  .key-combo kbd {
-    font: 500 20px/1 var(--sans);
-    color: var(--ink);
-    min-width: 44px; height: 44px;
-    display: grid; place-items: center;
-    padding: 0 12px;
-    background: var(--surface);
-    border: 0.5px solid var(--hairline);
-    border-radius: 9px;
-    box-shadow: 0 1.5px 0 var(--hairline);
+  /* ---------- Install ---------- */
+  .install { padding-bottom: 140px; }
+  .install-card {
+    margin-top: 48px; padding: 44px; border-radius: 24px;
+    background: radial-gradient(90% 120% at 100% 0%, rgba(242,163,110,0.2), transparent 60%), var(--coal);
+    border: 1px solid var(--line);
   }
-  .keys h3 { font: 600 18px/1.3 var(--display); margin: 0 0 4px; letter-spacing: -0.01em; }
-  .keys p { margin: 0; color: var(--muted); font-size: 15.5px; }
-
-  /* Without */
-  .without {
-    margin-top: 40px;
-    display: flex; flex-wrap: wrap; gap: 10px 28px;
-    font: 500 clamp(20px, 2.6vw, 26px)/1.3 var(--display);
-    letter-spacing: -0.015em;
-    color: var(--faint);
-  }
-  .without s { text-decoration-thickness: 1.5px; text-decoration-color: var(--ember); }
-  .privacy { margin-top: 36px; display: grid; grid-template-columns: repeat(3, minmax(0,1fr)); gap: 32px; }
-  .privacy h3 { font: 600 16px/1.3 var(--display); margin: 0 0 4px; }
-  .privacy p { margin: 0; color: var(--muted); font-size: 15px; }
-
-  /* Install */
-  .install { padding-bottom: 112px; }
-  .terminal {
-    margin-top: 32px;
-    background: #1D1B19;
-    color: #EDE8E2;
-    border-radius: 12px;
-    padding: 18px 20px;
-    display: flex; align-items: center; gap: 16px;
-    box-shadow: var(--shadow);
-  }
-  @media (prefers-color-scheme: dark) { .terminal { background: #0E0D0C; border: 0.5px solid var(--hairline); } }
-  .terminal code {
-    flex: 1; min-width: 0;
-    font: 400 14.5px/1.5 var(--mono);
-    overflow-x: auto; white-space: nowrap;
-    scrollbar-width: none;
-  }
+  .terminal { display: flex; align-items: center; gap: 16px; background: #0F0E0D; border-radius: 12px; padding: 16px 18px; border: 1px solid var(--line); }
+  .terminal code { flex: 1; min-width: 0; font: 400 14.5px/1.5 var(--mono); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
   .terminal code::-webkit-scrollbar { display: none; }
-  .terminal code .prompt { color: #F2A36E; user-select: none; }
-  .copy {
-    flex: none;
-    font: 500 13px var(--sans);
-    color: #EDE8E2;
-    background: rgba(255,255,255,0.1);
-    border: 0; border-radius: 7px;
-    height: 30px; padding: 0 12px;
-    cursor: pointer;
-  }
-  .copy:hover { background: rgba(255,255,255,0.16); }
-  .steps { margin: 28px 0 0; padding: 0; list-style: none; display: grid; gap: 10px; max-width: 40em; counter-reset: s; }
-  .steps li { display: grid; grid-template-columns: 26px 1fr; color: var(--muted); font-size: 15.5px; counter-increment: s; }
-  .steps li::before { content: counter(s); color: var(--ember); font-weight: 600; font-variant-numeric: tabular-nums; }
-  .steps b { color: var(--ink); font-weight: 600; }
-  .links { margin-top: 32px; display: flex; gap: 24px; flex-wrap: wrap; font-size: 15.5px; }
-  .links a { color: var(--ink); text-decoration-color: var(--faint); text-underline-offset: 3px; }
+  .terminal .pr { color: var(--ember); user-select: none; }
+  .copy { flex: none; height: 34px; padding: 0 16px; border-radius: 17px; border: 0; background: var(--ember); color: #1B1714; font: 600 13.5px var(--sans); cursor: pointer; }
+  .copy:hover { background: var(--ember-hot); }
+  .steps { margin: 32px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; counter-reset: s; }
+  .steps li { counter-increment: s; color: var(--muted); font-size: 15.5px; }
+  .steps li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--ember); color: var(--ember); font: 600 14px var(--display); margin-bottom: 12px; }
+  .steps b { color: var(--cream); font-weight: 600; }
+  .links { margin-top: 36px; display: flex; gap: 28px; flex-wrap: wrap; font-size: 15.5px; color: var(--faint); }
+  .links a { color: var(--cream); text-decoration-color: var(--faint); text-underline-offset: 4px; }
   .links a:hover { text-decoration-color: var(--ember); }
 
-  footer {
-    border-top: 1px solid var(--hairline);
-    padding: 28px 20px 40px;
-    text-align: center;
-    color: var(--faint);
-    font-size: 13.5px;
-  }
+  footer { border-top: 1px solid var(--line); padding: 32px 24px 44px; text-align: center; color: var(--faint); font-size: 14px; }
+  footer img { width: 22px; height: 22px; vertical-align: -6px; margin-right: 8px; }
 
-  @media (max-width: 760px) {
+  @media (max-width: 900px) {
+    .demo { grid-template-columns: minmax(0, 1fr); gap: 20px; }
+    .features { grid-auto-flow: column; grid-auto-columns: max-content; overflow-x: auto; scrollbar-width: none; gap: 6px; margin: 0 -24px; padding: 0 24px; }
+    .features::-webkit-scrollbar { display: none; }
+    .features button { padding: 9px 14px 12px; background: rgba(244,238,230,0.04); }
+    .features b { font-size: 14px; }
+    .features span { display: none; }
+    .features i { left: 14px; right: 14px; bottom: 5px; }
+    .try { grid-template-columns: minmax(0, 1fr); gap: 40px; }
+    .facts, .steps { grid-template-columns: 1fr; gap: 28px; }
+  }
+  @media (max-width: 600px) {
     body { font-size: 16px; }
-    .menubar .left span:not(:first-child) { display: none; }
-    .widget { top: 42px; left: 12px; }
-    .hero { padding-top: 104px; }
-    .phrasebook { grid-template-columns: 1fr; }
-    .keys, .privacy { grid-template-columns: 1fr; gap: 28px; }
-    section { padding-top: 72px; }
+    nav ul li:not(:last-child) { display: none; }
+    section { padding-top: 88px; }
+    .install-card { padding: 24px; }
+    .lede { font-size: 16.5px; }
   }
   @media (prefers-reduced-motion: reduce) {
-    * { transition: none !important; animation: none !important; }
+    *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
   }
 </style>
 </head>
 <body>
 
-<div class="desktop">
-  <div class="menubar" aria-hidden="true">
-    <div class="left"><span><b>Finder</b></span><span>File</span><span>Edit</span><span>View</span></div>
-    <div class="right">
-      <span class="drift-item">
-        <svg class="ring" viewBox="0 0 16 16" id="menu-ring"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".35"/><path id="menu-wedge" fill="currentColor" d=""/></svg>
-      </span>
-      <span class="clock num" id="clock"></span>
+<nav>
+  <a class="brand" href="#top"><img src="icon.png" alt="">Drift</a>
+  <ul>
+    <li><a href="#features">Features</a></li>
+    <li><a href="#try">Try it</a></li>
+    <li><a href="https://github.com/nweinberg97/Drift">GitHub</a></li>
+    <li><a href="#install">Install</a></li>
+  </ul>
+</nav>
+
+<header class="hero" id="top">
+  <div>
+    <div class="dial">
+      <svg viewBox="0 0 600 600" aria-hidden="true">
+        <circle class="track" cx="300" cy="300" r="282" fill="none" stroke-width="14"/>
+        <circle class="arc" id="arc" cx="300" cy="300" r="282" fill="none" stroke-width="14" stroke-linecap="round"/>
+      </svg>
+      <div class="dial-inner">
+        <h1>Drift</h1>
+        <p class="tagline">Stay with it.</p>
+        <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
+      </div>
+    </div>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, type how long, and get back to work.</p>
+    <div class="actions">
+      <a class="btn btn-ember" href="#install">Install for Mac</a>
+      <a class="btn btn-ghost" href="#features">Watch it work</a>
     </div>
   </div>
+</header>
 
-  <div class="widget" id="widget" data-state="idle" role="timer" aria-live="off" aria-label="Demo timer">
-    <span class="dot"></span>
-    <span class="w-name" id="w-name"></span>
-    <span class="w-time num" id="w-time">25:00</span>
-    <button class="w-btn" id="w-toggle" aria-label="Start demo timer">
-      <svg viewBox="0 0 10 10" id="w-icon"><path d="M2 1l7 4-7 4z"/></svg>
-    </button>
-  </div>
+<main class="wrap">
 
-  <div class="hero">
-    <img src="icon.png" alt="" width="72" height="72">
-    <h1>Drift</h1>
-    <p class="tagline">Stay with it.</p>
-    <p class="lede">A quiet focus timer for your Mac. Press ⌥&nbsp;Space from any app, type how long, and get back to work. The time waits in the corner of your screen until you need it.</p>
+  <section id="features">
+    <h2>Everything a timer should do. Nothing else.</h2>
+    <p class="sub">A small widget in the corner of your screen, a launcher you can reach from any app, and your voice.</p>
 
-    <form class="launcher" id="launcher" autocomplete="off">
-      <label>
-        <span class="accent-dot" aria-hidden="true"></span>
-        <input id="q" type="text" placeholder="25m, 1:30, 45m writing…" aria-label="Try it: type a duration" spellcheck="false">
-      </label>
-      <div class="preview" aria-live="polite">
-        <span class="what" id="what">Start 25:00</span>
-        <kbd>return</kbd>
+    <div class="demo">
+      <div class="stage-wrap" id="stage-wrap">
+        <div class="screen" id="screen" aria-hidden="true">
+          <div class="s-menubar">
+            <div class="l"><b>Pages</b><span>File</span><span>Edit</span><span>Insert</span><span>Format</span><span>View</span></div>
+            <div class="r">
+              <span class="s-mb" id="s-mb">
+                <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".4"/><path id="s-wedge" fill="currentColor" d="M8 8 L8 2 A6 6 0 1 1 2.6 10.6 Z"/></svg>
+                <span class="s-mb-time" id="s-mb-time">19:58</span>
+              </span>
+              <span>Fri 9:41 AM</span>
+            </div>
+          </div>
+
+          <div class="s-window">
+            <div class="bar"><i></i><i></i><i></i></div>
+            <div class="doc">
+              <i class="h"></i>
+              <i style="width:92%"></i><i style="width:86%"></i><i style="width:95%"></i><i style="width:60%"></i>
+              <i style="width:0;height:6px;background:none"></i>
+              <i style="width:90%"></i><i style="width:82%"></i><i style="width:74%"></i>
+              <i class="c"></i>
+            </div>
+          </div>
+
+          <div class="s-widget hidden" id="sw" data-run="1">
+            <div class="sw-row">
+              <span class="sw-dot"></span>
+              <span class="sw-name" id="sw-name"></span>
+              <span class="sw-time num" id="sw-time">45:00</span>
+              <span class="sw-chip" id="sw-chip">
+                <svg width="9" height="9" viewBox="0 0 10 10"><path d="M1.5 3.5L5 7l3.5-3.5" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+              </span>
+              <span class="sw-btn"><svg viewBox="0 0 10 10"><path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/></svg></span>
+            </div>
+            <div class="sw-exp"><div>
+              <div class="sw-progress"><i id="sw-prog"></i></div>
+              <div class="sw-controls"><span id="c-minus">−5m</span><span id="c-plus">+5m</span><span>Edit</span><span class="sp"></span><span>Cancel</span></div>
+              <div class="sw-tray" id="sw-tray"></div>
+              <div class="sw-foot"><span class="add" id="c-add">+ Add timer</span><kbd>⌥ Space</kbd></div>
+            </div></div>
+          </div>
+          <div class="waves" id="waves"><i></i><i></i><i></i><i></i><i></i><span>Rain</span></div>
+
+          <div class="s-composer" id="sc">
+            <div class="sc-in">
+              <span class="ed"></span>
+              <span class="sc-text" id="sc-text" data-ph="25m, 1:30, 45m writing…"></span><span class="sc-caret"></span>
+              <span class="sc-mic"><svg viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2.5"/></svg></span>
+            </div>
+            <div class="sc-pre"><span id="sc-pre">Start 25:00</span><span class="m" id="sc-name"></span><kbd>return</kbd></div>
+            <div class="sc-chips"><span>5m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span><span>25 / 5</span></div>
+          </div>
+
+          <div class="s-menu" id="s-menu">
+            <div><span class="chk"></span>Writing<b>19:42</b></div>
+            <div class="sep"></div>
+            <div><span class="chk"></span>New Timer…</div>
+            <div class="ind">Start 25m</div>
+            <div class="sep"></div>
+            <div id="m-focus"><span class="chk" id="m-check"></span>Focus Sound</div>
+            <div class="ind">Soundscape</div>
+            <div class="sep"></div>
+            <div><span class="chk"></span>Settings…</div>
+          </div>
+
+          <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Focus complete</b><span id="note-b">25 minutes done. Break for 5 minutes.</span></div></div>
+          <div class="s-keys" id="s-keys"></div>
+          <div class="s-cursor" id="cursor"><svg width="20" height="26" viewBox="0 0 20 26"><path d="M2 2v19l5-4.5 3.5 7.5 3-1.4-3.4-7.3H17z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
+        </div>
       </div>
-      <div class="chips">
-        <button type="button" data-q="5m">5m</button>
-        <button type="button" data-q="15m">15m</button>
-        <button type="button" data-q="25m">25m</button>
-        <button type="button" data-q="45m">45m</button>
-        <button type="button" data-q="1h">1h</button>
-      </div>
-    </form>
-    <p class="hint">Try it here. The timer starts in the top-left corner, just like on your Mac.</p>
-  </div>
-</div>
 
-<main>
-  <section>
-    <h2>Type it the way you'd say it.</h2>
-    <p class="sub">No fields, no pickers. Drift reads what you type, and any extra words become the timer's name.</p>
-    <div class="phrasebook">
-      <div class="phrase"><code>25</code><span><b>25:00</b></span></div>
-      <div class="phrase"><code>45m writing</code><span>Writing <b>45:00</b></span></div>
-      <div class="phrase"><code>1:30</code><span><b>1:30:00</b></span></div>
-      <div class="phrase"><code>90s</code><span><b>1:30</b></span></div>
-      <div class="phrase"><code>2h 15m</code><span><b>2:15:00</b></span></div>
-      <div class="phrase"><code>half an hour</code><span><b>30:00</b></span></div>
-      <div class="phrase"><code>36h</code><span><b>36h 0m</b></span></div>
-      <div class="phrase"><code>pomodoro</code><span>25 focus, 5 break</span></div>
-      <div class="phrase"><code>add 5 minutes</code><span>+5 to the current timer</span></div>
-      <div class="phrase"><code>pause laundry</code><span>Pauses “Laundry”</span></div>
+      <ol class="features" id="features-list">
+        <li><button data-scene="0"><b>Start with a keystroke</b><span>⌥ Space, type 45m writing, press Return.</span><i></i></button></li>
+        <li><button data-scene="1"><b>Or just say it</b><span>⌥ V, then talk. It stops listening when you do.</span><i></i></button></li>
+        <li><button data-scene="2"><b>Change it mid-run</b><span>Add or take off five minutes without stopping.</span><i></i></button></li>
+        <li><button data-scene="3"><b>Run several at once</b><span>One stays in view. The rest wait in a tray.</span><i></i></button></li>
+        <li><button data-scene="4"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
+        <li><button data-scene="5"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
+        <li><button data-scene="6"><b>Soft focus sound</b><span>Brown noise, rain or a low drone, made on your Mac.</span><i></i></button></li>
+      </ol>
     </div>
   </section>
 
-  <section>
-    <h2>Three keys, from anywhere.</h2>
-    <p class="sub">They work in every app, including full-screen ones. Change them in Settings if you like.</p>
-    <div class="keys">
+  <section id="try">
+    <div class="try">
       <div>
-        <div class="key-combo"><kbd>⌥</kbd><kbd>Space</kbd></div>
-        <h3>New timer</h3>
-        <p>Type a duration, press Return. Return on its own starts your default.</p>
+        <h2>Type it the way you'd say it.</h2>
+        <p class="sub">No fields or pickers. Extra words become the timer's name.</p>
+        <div class="phrasebook">
+          <div class="phrase"><code>25</code><span><b>25:00</b></span></div>
+          <div class="phrase"><code>45m writing</code><span>Writing <b>45:00</b></span></div>
+          <div class="phrase"><code>1:30</code><span><b>1:30:00</b></span></div>
+          <div class="phrase"><code>half an hour</code><span><b>30:00</b></span></div>
+          <div class="phrase"><code>36h</code><span><b>36h 0m</b></span></div>
+          <div class="phrase"><code>add 5 minutes</code><span>to the timer that's running</span></div>
+        </div>
       </div>
       <div>
-        <div class="key-combo"><kbd>⌥</kbd><kbd>V</kbd></div>
-        <h3>Say it</h3>
-        <p>“Start a ten minute timer called break.” Drift stops listening when you do.</p>
-      </div>
-      <div>
-        <div class="key-combo"><kbd>⌥</kbd><kbd>T</kbd></div>
-        <h3>Hide or show</h3>
-        <p>Hidden timers keep running, and the time moves into the menu bar.</p>
+        <form class="launcher" id="launcher" autocomplete="off">
+          <label>
+            <span class="ed" aria-hidden="true"></span>
+            <input id="q" type="text" placeholder="Try 10s, or 25m reading" aria-label="Type a duration to start a demo timer" spellcheck="false">
+          </label>
+          <div class="pre" aria-live="polite"><span class="what" id="what">Start 25:00</span><kbd>return</kbd></div>
+          <div class="chips">
+            <button type="button" data-q="10s">10s</button>
+            <button type="button" data-q="5m">5m</button>
+            <button type="button" data-q="25m">25m</button>
+            <button type="button" data-q="45m">45m</button>
+            <button type="button" data-q="1h">1h</button>
+          </div>
+        </form>
+        <p class="try-note">Press Return and watch the top-left corner of this page.</p>
       </div>
     </div>
   </section>
@@ -399,84 +560,64 @@
   <section>
     <h2>Nothing to sign up for.</h2>
     <p class="sub">Drift is a timer, not a productivity platform.</p>
-    <div class="without" aria-label="What Drift doesn't have">
+    <div class="without" aria-label="Things Drift doesn't have: accounts, streaks, dashboards, subscriptions, analytics, nagging">
       <s>Accounts</s><s>Streaks</s><s>Dashboards</s><s>Subscriptions</s><s>Analytics</s><s>Nagging</s>
     </div>
-    <div class="privacy">
+    <div class="facts">
       <div>
+        <svg viewBox="0 0 24 24"><path d="M4 9.5a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10.2 16.4a3 3 0 0 1 3.6 0M3 3l18 18"/></svg>
         <h3>Offline, always</h3>
         <p>The app has no network access at all. Timers and settings stay on your Mac.</p>
       </div>
       <div>
+        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
         <h3>Voice stays local</h3>
         <p>Speech is recognised on-device, only while you're talking, and never stored.</p>
       </div>
       <div>
+        <svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>
         <h3>Free and open source</h3>
-        <p>Every line is on GitHub. You build it yourself, so you run exactly that code.</p>
+        <p>Every line is on GitHub. You build it on your own Mac, so you run exactly that code.</p>
       </div>
     </div>
   </section>
 
   <section class="install" id="install">
     <h2>Install in one line.</h2>
-    <p class="sub">Paste this into Terminal. It builds Drift on your Mac, moves it to Applications and opens it.</p>
-    <div class="terminal">
-      <code id="cmd"><span class="prompt">$ </span>curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash</code>
-      <button class="copy" id="copy" type="button">Copy</button>
-    </div>
-    <ol class="steps">
-      <li><span>Open <b>Terminal</b> (⌘ Space, then type Terminal).</span></li>
-      <li><span>Paste the line and press Return. If macOS offers to install the free <b>Command Line Tools</b>, accept, then run it again.</span></li>
-      <li><span>Drift opens in the top-left corner. Press <b>⌥ Space</b> and type 25.</span></li>
-    </ol>
-    <div class="links">
-      <a href="https://github.com/nweinberg97/Drift">Source on GitHub</a>
-      <a href="https://github.com/nweinberg97/Drift#readme">Full guide</a>
-      <span style="color:var(--faint)">macOS 13 Ventura or newer</span>
+    <p class="sub">It builds Drift on your Mac, moves it to Applications and opens it. About two minutes.</p>
+    <div class="install-card">
+      <div class="terminal">
+        <code><span class="pr">$ </span>curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash</code>
+        <button class="copy" id="copy" type="button">Copy</button>
+      </div>
+      <ol class="steps">
+        <li>Open <b>Terminal</b>. Press ⌘ Space and type Terminal.</li>
+        <li>Paste the line and press Return. If macOS offers the free <b>Command Line Tools</b>, install them and run it again.</li>
+        <li>Drift appears in the top-left corner. Press <b>⌥ Space</b> and type 25.</li>
+      </ol>
+      <div class="links">
+        <a href="https://github.com/nweinberg97/Drift">Source on GitHub</a>
+        <a href="https://github.com/nweinberg97/Drift#readme">Full guide</a>
+        <span>macOS 13 Ventura or newer</span>
+      </div>
     </div>
   </section>
 </main>
 
-<footer>Drift is free and open source. Made to stay out of the way.</footer>
+<footer><img src="icon.png" alt="">Drift is free and open source.</footer>
+
+<div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
+  <span class="sw-dot"></span>
+  <span class="sw-name" id="f-name"></span>
+  <span class="f-time num" id="f-time">25:00</span>
+  <button id="f-toggle" aria-label="Pause"><svg viewBox="0 0 10 10" id="f-icon"></svg></button>
+  <button id="f-close" aria-label="Dismiss demo timer"><svg viewBox="0 0 10 10"><path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/></svg></button>
+</div>
 
 <script>
 (() => {
-  // ---------- Duration parsing (a small mirror of the app's parser) ----------
-  const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60,
-                  h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
-  const WORDS = { one:1, two:2, three:3, four:4, five:5, ten:10, fifteen:15, twenty:20, thirty:30, forty:40, fortyfive:45, sixty:60 };
-  const FILLER = new Set(['a','an','the','for','timer','called','named','start','set','my','of','minute','and']);
-
-  function parse(input) {
-    let text = input.toLowerCase().trim();
-    if (!text) return null;
-    if (/^(pomodoro|pomo)\b/.test(text)) return { pomodoro: true, seconds: 1500, name: 'Focus' };
-    if (text === 'half an hour') return { seconds: 1800 };
-    let total = 0, found = false, rest = [];
-    const clock = text.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
-    if (clock) {
-      total += (+clock[2]) * 3600 + (+clock[3]) * 60 + (+(clock[4] || 0));
-      found = true;
-      text = text.replace(clock[0], ' ');
-    }
-    const tokens = text.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
-    let bare = null;
-    for (let i = 0; i < tokens.length; i++) {
-      const t = tokens[i];
-      const n = /^\d+(\.\d+)?$/.test(t) ? parseFloat(t) : WORDS[t];
-      if (n !== undefined && UNITS[tokens[i + 1]]) { total += n * UNITS[tokens[i + 1]]; found = true; i++; continue; }
-      if (n !== undefined && bare === null) { bare = n; continue; }
-      rest.push(t);
-    }
-    if (!found && bare !== null) { total = bare * 60; found = true; }
-    else if (bare !== null) rest.unshift(String(bare));
-    if (!found || total < 1 || total > 366 * 86400) return null;
-    while (rest.length && FILLER.has(rest[0])) rest.shift();
-    while (rest.length && FILLER.has(rest[rest.length - 1])) rest.pop();
-    const name = rest.join(' ');
-    return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
-  }
+  const $ = id => document.getElementById(id);
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
 
   function clockText(sec) {
     const s = Math.max(0, Math.ceil(sec - 0.0005));
@@ -488,111 +629,348 @@
     return `${Math.floor(s / 86400)}d ${h % 24}h`;
   }
 
-  // ---------- Demo widget ----------
-  const widget = document.getElementById('widget');
-  const wTime = document.getElementById('w-time');
-  const wName = document.getElementById('w-name');
-  const wToggle = document.getElementById('w-toggle');
-  const wIcon = document.getElementById('w-icon');
-  const wedge = document.getElementById('menu-wedge');
-  const PLAY = '<path d="M2 1l7 4-7 4z"/>';
-  const PAUSE = '<path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/>';
-  const CLOSE = '<path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/>';
+  /* ---------------- Hero dial: a real countdown ---------------- */
+  {
+    const arc = $('arc'), label = $('hero-time');
+    const C = 2 * Math.PI * 282, total = 1500;
+    const end = Date.now() + 1080 * 1000;
+    arc.style.strokeDasharray = C;
+    const tick = () => {
+      let left = (end - Date.now()) / 1000;
+      if (left < 0) left = 0;
+      arc.style.strokeDashoffset = C * (1 - left / total);
+      label.textContent = clockText(left);
+      if (left > 0) setTimeout(tick, 1000 - (Date.now() % 1000) + 5);
+    };
+    arc.style.transition = 'none';
+    arc.style.strokeDashoffset = C;
+    requestAnimationFrame(() => requestAnimationFrame(() => {
+      arc.style.transition = reduce ? 'none' : 'stroke-dashoffset 1.6s cubic-bezier(.2,.8,.2,1)';
+      tick();
+      setTimeout(() => { arc.style.transition = 'stroke-dashoffset 1s linear'; }, 1700);
+    }));
+  }
 
-  let state = 'idle', duration = 1500, endAt = 0, remaining = 1500, frame = 0;
+  /* ---------------- Stage scaling ---------------- */
+  const wrap = $('stage-wrap'), screen = $('screen');
+  let scale = 1;
+  const fit = () => { scale = wrap.clientWidth / 800; screen.style.transform = `scale(${scale})`; };
+  new ResizeObserver(fit).observe(wrap); fit();
 
-  function render() {
-    const now = Date.now();
-    if (state === 'running') {
-      remaining = (endAt - now) / 1000;
-      if (remaining <= 0) { state = 'done'; remaining = 0; }
+  /* ---------------- Demo engine ---------------- */
+  const sw = $('sw'), swName = $('sw-name'), swTime = $('sw-time'), swChip = $('sw-chip'), swTray = $('sw-tray'), swProg = $('sw-prog');
+  const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scName = $('sc-name');
+  const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
+  const CANCEL = Symbol('cancel');
+  let run = 0;
+
+  // Widget model, counts down in real seconds (or faster when asked).
+  const W = { remaining: 2700, total: 2700, speed: 1, timer: 0 };
+  function setTime(sec, bump) {
+    W.remaining = sec;
+    swTime.textContent = clockText(sec);
+    mbTime.textContent = clockText(sec);
+    swProg.style.width = (100 * (1 - sec / W.total)).toFixed(1) + '%';
+    if (bump) { swTime.classList.remove('bump'); void swTime.offsetWidth; swTime.classList.add('bump'); }
+  }
+  function startClock(total, remaining = total, speed = 1) {
+    clearInterval(W.timer);
+    W.total = total; W.speed = speed; setTime(remaining);
+    W.timer = setInterval(() => {
+      const next = Math.max(0, W.remaining - Math.max(1, speed / 10));
+      setTime(next);
+      if (next <= 0) clearInterval(W.timer);
+    }, speed > 1 ? 100 : 1000);
+  }
+  const stopClock = () => clearInterval(W.timer);
+
+  function guard(id) { if (id !== run) throw CANCEL; }
+  const wait = (ms, id) => new Promise((res, rej) => setTimeout(() => (id !== run ? rej(CANCEL) : res()), reduce ? Math.min(ms, 60) : ms));
+
+  async function typeInto(el, text, id, speed = 70) {
+    for (const ch of text) { el.textContent += ch; await wait(speed + Math.random() * 40, id); }
+  }
+  async function pressKeys(list, id, hold = 700) {
+    keys.innerHTML = list.map(k => `<kbd>${k}</kbd>`).join('');
+    await wait(260, id);
+    keys.querySelectorAll('kbd').forEach(k => k.classList.add('down'));
+    await wait(hold, id);
+    keys.innerHTML = '';
+  }
+  function cursorTo(el, id, dx = 0, dy = 0) {
+    const s = screen.getBoundingClientRect(), r = el.getBoundingClientRect();
+    cursor.style.opacity = 1;
+    cursor.style.left = ((r.left - s.left) / scale + r.width / scale / 2 + dx) + 'px';
+    cursor.style.top = ((r.top - s.top) / scale + r.height / scale / 2 + dy) + 'px';
+    return wait(800, id);
+  }
+  async function click(el, id) {
+    el.classList.add('hot'); cursor.classList.add('click');
+    await wait(160, id);
+    cursor.classList.remove('click');
+    await wait(160, id);
+    el.classList.remove('hot');
+  }
+  function chip(mode) {
+    swChip.innerHTML = typeof mode === 'number'
+      ? `+${mode}`
+      : `<svg width="9" height="9" viewBox="0 0 10 10"><path d="${mode === 'up' ? 'M1.5 6.5L5 3l3.5 3.5' : 'M1.5 3.5L5 7l3.5-3.5'}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
+  }
+  async function launch(text, name, secs, id) {
+    await pressKeys(['⌥', 'Space'], id, 380);
+    sc.classList.add('on'); scText.textContent = ''; scPre.textContent = 'Start 25:00'; scName.textContent = '';
+    await wait(450, id);
+    await typeInto(scText, text, id);
+    scPre.textContent = secs ? `Start ${clockText(secs)}` : 'Pomodoro'; scName.textContent = name ? '· ' + name : (secs ? '' : '· 25m focus, 5m break');
+    await wait(700, id);
+    await pressKeys(['return'], id, 300);
+    sc.classList.remove('on');
+  }
+
+  function reset() {
+    stopClock();
+    sw.classList.add('hidden'); sw.classList.remove('open', 'done');
+    sw.dataset.run = '1';
+    swName.textContent = ''; chip('down'); swTray.innerHTML = '';
+    sc.classList.remove('on', 'listening'); scText.textContent = '';
+    menu.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
+    note.classList.remove('on'); waves.classList.remove('on'); $('m-check').textContent = '';
+    keys.innerHTML = '';
+    cursor.style.opacity = 0; cursor.style.left = '600px'; cursor.style.top = '380px';
+    setTime(2700);
+  }
+  function showWidget(name, total, remaining = total) {
+    swName.textContent = name; startClock(total, remaining);
+    sw.classList.remove('hidden');
+  }
+
+  const scenes = [
+    // Start with a keystroke
+    async id => {
+      await wait(500, id);
+      await launch('45m writing', 'Writing', 2700, id);
+      await wait(120, id);
+      showWidget('Writing', 2700);
+      await wait(2600, id);
+    },
+    // Voice
+    async id => {
+      showWidget('Writing', 2700, 2694);
+      await wait(700, id);
+      await pressKeys(['⌥', 'V'], id, 380);
+      sc.classList.add('on', 'listening'); scText.textContent = ''; scPre.textContent = 'Listening…'; scName.textContent = '';
+      await wait(600, id);
+      for (const w of 'start a ten minute timer called break'.split(' ')) { scText.textContent += (scText.textContent ? ' ' : '') + w; await wait(230, id); }
+      scPre.textContent = 'Start 10:00'; scName.textContent = '· Break';
+      await wait(1000, id);
+      sc.classList.remove('on', 'listening');
+      showWidget('Break', 600); chip(1);
+      await wait(2200, id);
+    },
+    // Adjust
+    async id => {
+      showWidget('Writing', 2700, 1196);
+      await wait(600, id);
+      await cursorTo(swTime, id, 6, 4);
+      await click(swTime, id);
+      sw.classList.add('open'); chip('up');
+      await wait(700, id);
+      const plus = $('c-plus');
+      await cursorTo(plus, id, 2, 4);
+      await click(plus, id); setTime(W.remaining + 300, true);
+      await wait(500, id);
+      await click(plus, id); setTime(W.remaining + 300, true);
+      await wait(800, id);
+      const minus = $('c-minus');
+      await cursorTo(minus, id, 2, 4);
+      await click(minus, id); setTime(W.remaining - 300, true);
+      await wait(1400, id);
+    },
+    // Several timers
+    async id => {
+      showWidget('Writing', 2700, 1620); chip(2);
+      await wait(800, id);
+      await cursorTo(swChip, id, 3, 4);
+      await click(swChip, id);
+      swTray.innerHTML = '<div><span class="sw-dot run"></span>Tea<b>3:12</b></div><div><span class="sw-dot run"></span>Laundry<b>41:02</b></div>';
+      sw.classList.add('open'); chip('up');
+      await wait(1100, id);
+      const add = $('c-add');
+      await cursorTo(add, id, 4, 4);
+      await click(add, id);
+      cursor.style.opacity = 0;
+      sc.classList.add('on'); scText.textContent = ''; scPre.textContent = 'Start 25:00'; scName.textContent = '';
+      await wait(350, id);
+      await typeInto(scText, '20m call', id);
+      scPre.textContent = 'Start 20:00'; scName.textContent = '· Call';
+      await wait(500, id);
+      sc.classList.remove('on');
+      swTray.insertAdjacentHTML('beforeend', '<div><span class="sw-dot run"></span>Call<b>20:00</b></div>');
+      await wait(1800, id);
+    },
+    // Hide
+    async id => {
+      showWidget('Writing', 2700, 1198);
+      await wait(1100, id);
+      await pressKeys(['⌥', 'T'], id, 380);
+      sw.classList.add('hidden'); mbTime.classList.add('on');
+      await wait(1900, id);
+      await pressKeys(['⌥', 'T'], id, 380);
+      sw.classList.remove('hidden'); mbTime.classList.remove('on');
+      await wait(1500, id);
+    },
+    // Pomodoro
+    async id => {
+      await wait(400, id);
+      await launch('pomodoro', '', 0, id);
+      swName.textContent = 'Focus'; sw.classList.remove('hidden');
+      startClock(1500, 1500, 1);
+      await wait(900, id);
+      startClock(1500, W.remaining, 4200);
+      await wait(1300, id);
+      stopClock(); setTime(0); sw.classList.add('done');
+      note.classList.add('on');
+      await wait(1500, id);
+      sw.classList.remove('done'); swName.textContent = 'Break'; startClock(300, 300);
+      await wait(1600, id);
+      note.classList.remove('on');
+      await wait(500, id);
+    },
+    // Focus sound
+    async id => {
+      showWidget('Writing', 2700, 1190);
+      await wait(600, id);
+      await cursorTo(mb, id, 2, 4);
+      mb.classList.add('open'); menu.classList.add('on');
+      await wait(600, id);
+      const focus = $('m-focus');
+      await cursorTo(focus, id, -60, 2);
+      await click(focus, id);
+      $('m-check').textContent = '✓';
+      await wait(500, id);
+      menu.classList.remove('on'); mb.classList.remove('open');
+      cursor.style.opacity = 0;
+      waves.classList.add('on');
+      await wait(2800, id);
+    },
+  ];
+
+  const items = [...document.querySelectorAll('#features-list button')];
+  let current = 0, progressAnim;
+  async function play(i, auto = true) {
+    const id = ++run;
+    current = i;
+    items.forEach((b, j) => b.classList.toggle('active', j === i));
+    if (window.innerWidth <= 900 && wrap.getBoundingClientRect().top < innerHeight) items[i].scrollIntoView({ block: 'nearest', inline: 'center', behavior: 'smooth' });
+    reset();
+    if (!reduce) screen.animate([{ opacity: 0.15 }, { opacity: 1 }], { duration: 450, easing: 'ease-out' });
+    const bar = items[i].querySelector('i');
+    items.forEach(b => b.querySelector('i').style.setProperty('--p', '0%'));
+    const started = performance.now();
+    cancelAnimationFrame(progressAnim);
+    const est = [5600, 6400, 7000, 7400, 5800, 7600, 6200][i];
+    const step = () => {
+      bar.style.setProperty('--p', Math.min(100, (performance.now() - started) / est * 100) + '%');
+      if (id === run) progressAnim = requestAnimationFrame(step);
+    };
+    step();
+    try {
+      await scenes[i](id);
+      guard(id);
+      if (auto && !reduce) play((i + 1) % scenes.length);
+    } catch (e) { if (e !== CANCEL) console.error(e); }
+  }
+  items.forEach((b, i) => b.addEventListener('click', () => play(i)));
+
+  // Only run while the demo is on screen.
+  let started = false;
+  new IntersectionObserver(([e]) => {
+    if (e.isIntersecting && !started) { started = true; play(current); }
+    else if (!e.isIntersecting && started) { started = false; run++; stopClock(); }
+  }, { threshold: 0.25 }).observe(wrap);
+  if (reduce) { reset(); }
+
+  /* ---------------- Try it: a real floating widget ---------------- */
+  const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60, h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
+  const WORDS = { one:1, two:2, three:3, five:5, ten:10, fifteen:15, twenty:20, thirty:30, forty:40, sixty:60 };
+  const FILL = new Set(['a','an','the','for','timer','called','named','start','set','my','of','and']);
+  function parse(input) {
+    let t = input.toLowerCase().trim();
+    if (!t) return null;
+    if (/^(pomodoro|pomo)\b/.test(t)) return { seconds: 1500, name: 'Focus' };
+    if (t === 'half an hour') return { seconds: 1800, name: '' };
+    let total = 0, found = false, rest = [], bare = null;
+    const c = t.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
+    if (c) { total += +c[2] * 3600 + +c[3] * 60 + +(c[4] || 0); found = true; t = t.replace(c[0], ' '); }
+    const tk = t.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
+    for (let i = 0; i < tk.length; i++) {
+      const n = /^\d+(\.\d+)?$/.test(tk[i]) ? parseFloat(tk[i]) : WORDS[tk[i]];
+      if (n !== undefined && UNITS[tk[i + 1]]) { total += n * UNITS[tk[i + 1]]; found = true; i++; continue; }
+      if (n !== undefined && bare === null) { bare = n; continue; }
+      rest.push(tk[i]);
     }
-    widget.dataset.state = state;
-    widget.toggleAttribute('data-warn', state === 'running' && remaining <= 60 && duration > 90);
-    wTime.textContent = state === 'done' ? 'Done' : clockText(remaining);
-    wIcon.innerHTML = state === 'running' ? PAUSE : state === 'done' ? CLOSE : PLAY;
-    wToggle.setAttribute('aria-label', state === 'running' ? 'Pause' : state === 'done' ? 'Dismiss' : 'Start');
-    wToggle.style.color = state === 'running' ? 'var(--faint)' : 'var(--ember)';
-    // Menu bar ring empties clockwise as time passes.
-    const frac = state === 'idle' ? 0 : Math.max(0, Math.min(1, remaining / duration));
-    wedge.setAttribute('d', wedgePath(frac));
-    if (state === 'running') {
-      clearTimeout(frame);
-      const msToNext = ((remaining % 1) * 1000) || 1000;
-      frame = setTimeout(render, Math.max(30, msToNext + 5));
+    if (!found && bare !== null) { total = bare * 60; found = true; } else if (bare !== null) rest.unshift(String(bare));
+    if (!found || total < 1 || total > 366 * 86400) return null;
+    while (rest.length && FILL.has(rest[0])) rest.shift();
+    while (rest.length && FILL.has(rest.at(-1))) rest.pop();
+    const name = rest.join(' ').replace(/[<>&"]/g, '');
+    return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
+  }
+
+  const fl = $('float'), fTime = $('f-time'), fName = $('f-name'), fIcon = $('f-icon'), fToggle = $('f-toggle');
+  const PAUSE = '<path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/>', PLAY = '<path d="M2 1l7 4-7 4z"/>';
+  const F = { end: 0, left: 0, state: 'off', t: 0 };
+  function fRender() {
+    clearTimeout(F.t);
+    if (F.state === 'run') {
+      F.left = (F.end - Date.now()) / 1000;
+      if (F.left <= 0) { F.left = 0; F.state = 'done'; }
     }
+    fl.classList.toggle('paused', F.state === 'pause');
+    fl.classList.toggle('done', F.state === 'done');
+    fTime.textContent = F.state === 'done' ? 'Done' : clockText(F.left);
+    fIcon.innerHTML = F.state === 'run' ? PAUSE : PLAY;
+    fToggle.style.display = F.state === 'done' ? 'none' : '';
+    fToggle.setAttribute('aria-label', F.state === 'run' ? 'Pause' : 'Resume');
+    if (F.state === 'run') F.t = setTimeout(fRender, ((F.left % 1) * 1000 || 1000) + 5);
   }
-
-  function wedgePath(frac) {
-    if (frac <= 0) return '';
-    if (frac >= 0.999) return 'M8 2a6 6 0 1 1 0 12a6 6 0 1 1 0-12z';
-    const a = (-90 + 360 * frac) * Math.PI / 180;
-    const x = 8 + 6 * Math.cos(a), y = 8 + 6 * Math.sin(a);
-    return `M8 8 L8 2 A6 6 0 ${frac > 0.5 ? 1 : 0} 1 ${x.toFixed(2)} ${y.toFixed(2)} Z`;
+  function fStart(sec, name) {
+    F.end = Date.now() + sec * 1000; F.state = 'run'; fName.textContent = name || '';
+    fl.setAttribute('aria-hidden', 'false'); fl.classList.add('on'); fRender();
   }
-
-  function start(seconds, name) {
-    duration = seconds; remaining = seconds;
-    endAt = Date.now() + seconds * 1000;
-    wName.textContent = name || '';
-    state = 'running';
-    render();
-  }
-
-  wToggle.addEventListener('click', () => {
-    if (state === 'running') { remaining = (endAt - Date.now()) / 1000; state = 'paused'; clearTimeout(frame); }
-    else if (state === 'paused') { endAt = Date.now() + remaining * 1000; state = 'running'; }
-    else if (state === 'done') { state = 'idle'; duration = remaining = 1500; wName.textContent = ''; }
-    else start(1500, '');
-    render();
+  fToggle.addEventListener('click', () => {
+    if (F.state === 'run') { F.left = (F.end - Date.now()) / 1000; F.state = 'pause'; }
+    else if (F.state === 'pause') { F.end = Date.now() + F.left * 1000; F.state = 'run'; }
+    fRender();
   });
+  $('f-close').addEventListener('click', () => { F.state = 'off'; clearTimeout(F.t); fl.classList.remove('on'); fl.setAttribute('aria-hidden', 'true'); });
 
-  // ---------- Launcher ----------
-  const form = document.getElementById('launcher');
-  const q = document.getElementById('q');
-  const what = document.getElementById('what');
-
-  function preview() {
-    const text = q.value.trim();
-    if (!text) { what.className = 'what'; what.innerHTML = 'Start <span class="num">25:00</span>'; return; }
-    const p = parse(text);
-    if (!p) { what.className = 'what invalid'; what.textContent = 'Try 25, 1:30, 90s or 45m writing'; return; }
+  const q = $('q'), what = $('what');
+  const preview = () => {
+    const v = q.value.trim();
+    if (!v) { what.className = 'what'; what.innerHTML = 'Start <span class="num">25:00</span>'; return; }
+    const p = parse(v);
+    if (!p) { what.className = 'what bad'; what.textContent = 'Try 25, 1:30, 90s or 45m writing'; return; }
     what.className = 'what';
-    what.innerHTML = p.pomodoro
-      ? 'Pomodoro <span class="name">· 25m focus, 5m break</span>'
-      : `Start <span class="num">${clockText(p.seconds)}</span>${p.name ? ` <span class="name">· ${p.name.replace(/[<>&]/g, '')}</span>` : ''}`;
-  }
-
-  form.addEventListener('submit', e => {
-    e.preventDefault();
-    const text = q.value.trim();
-    const p = text ? parse(text) : { seconds: 1500, name: '' };
-    if (!p) { q.focus(); return; }
-    start(p.seconds, p.name);
-    q.value = ''; preview(); q.blur();
-  });
-  q.addEventListener('input', preview);
-  form.querySelectorAll('.chips button').forEach(b => b.addEventListener('click', () => {
-    const p = parse(b.dataset.q); start(p.seconds, '');
-  }));
-
-  // ---------- Menu bar clock ----------
-  const clock = document.getElementById('clock');
-  const tick = () => {
-    clock.textContent = new Date().toLocaleString(undefined, { weekday: 'short', hour: 'numeric', minute: '2-digit' });
+    what.innerHTML = `Start <span class="num">${clockText(p.seconds)}</span>${p.name ? ` <span class="nm">· ${p.name}</span>` : ''}`;
   };
-  tick(); setInterval(tick, 15000);
+  q.addEventListener('input', preview);
+  $('launcher').addEventListener('submit', e => {
+    e.preventDefault();
+    const v = q.value.trim();
+    const p = v ? parse(v) : { seconds: 1500, name: '' };
+    if (!p) { q.focus(); return; }
+    fStart(p.seconds, p.name); q.value = ''; preview();
+  });
+  document.querySelectorAll('.launcher .chips button').forEach(b => b.addEventListener('click', () => fStart(parse(b.dataset.q).seconds, '')));
 
-  // ---------- Copy ----------
-  const copy = document.getElementById('copy');
+  /* ---------------- Copy ---------------- */
+  const copy = $('copy');
   copy.addEventListener('click', async () => {
-    const cmd = 'curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash';
-    try { await navigator.clipboard.writeText(cmd); copy.textContent = 'Copied'; }
-    catch { copy.textContent = 'Select and copy'; }
+    try { await navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash'); copy.textContent = 'Copied'; }
+    catch { copy.textContent = 'Select to copy'; }
     setTimeout(() => (copy.textContent = 'Copy'), 1800);
   });
-
-  render();
 })();
 </script>
 </body>
