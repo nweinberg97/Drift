@@ -91,8 +91,17 @@ jobs:
       - name: Render snapshots
         run: |
           mkdir -p snapshots
-          DRIFT_SNAPSHOT_DIR="$PWD/snapshots" timeout 180 .build/debug/Drift
+          set +e
+          DRIFT_SNAPSHOT_DIR="$PWD/snapshots" perl -e 'alarm 240; exec @ARGV' .build/debug/Drift > snapshot.log 2>&1
+          status=$?
+          set -e
+          cat snapshot.log
           ls -la snapshots
+          if [ $status -ne 0 ] || [ -z "$(ls snapshots)" ]; then
+            tail -n 12 snapshot.log | while IFS= read -r line; do echo "::warning::${line}"; done
+            echo "::error::Snapshot run exited with $status"
+            exit 1
+          fi
       - name: Publish to ci-snapshots branch
         env:
           TOKEN: ${{ secrets.GITHUB_TOKEN }}
