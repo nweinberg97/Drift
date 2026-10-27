@@ -1,3 +1,4 @@
+#if DEBUG
 import AppKit
 import DriftCore
 import SwiftUI
@@ -420,3 +421,4 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         window.orderOut(nil)
     }
 }
+#endif

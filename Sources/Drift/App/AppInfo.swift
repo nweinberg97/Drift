@@ -10,6 +10,11 @@ enum AppInfo {
         return "Drift"
     }
 
+    /// Help pages on the website. Opening a link uses the browser, so the app
+    /// itself still needs no network access.
+    static let supportURL = URL(string: "https://nweinberg97.github.io/Drift/support.html")!
+    static let guideURL = URL(string: "https://nweinberg97.github.io/Drift/guide.html")!
+
     static var version: String {
         let info = Bundle.main.infoDictionary
         let short = info?["CFBundleShortVersionString"] as? String ?? "1.0"

@@ -227,6 +227,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
         menu.addItem(action("Getting Started", #selector(gettingStarted)))
+        menu.addItem(action("Help & Support", #selector(openSupport)))
         let settingsItem = action("Settings…", #selector(openSettings))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
@@ -333,6 +334,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     @objc private func newTimer() { actions.newTimer() }
     @objc private func newBlock() { actions.editBlock(nil) }
     @objc private func gettingStarted() { actions.gettingStarted() }
+    @objc private func openSupport() { NSWorkspace.shared.open(AppInfo.supportURL) }
     @objc private func editBlock(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID else { return }
         actions.editBlock(id)

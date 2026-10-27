@@ -19,7 +19,7 @@ Where it says **Drift**, use the final name if it changes (`scripts/rename.py` u
 | **Age rating** | 4+ (answer "None" / "No" to every question; see `app-store-connect.md`) |
 | **Copyright** | 2026 *your legal name or company* |
 
-> "Drift" alone is very likely taken on the App Store, so the store name adds a short descriptor. The name on your Mac stays "Drift". If you rename, try `Name: Focus Timer` first.
+> **Pick the final name before submitting.** "Drift Focus: Study Timer" and "DRIFT: Tide Focus Timer" are already on the App Store, so "Drift: Focus Timer" is too close and risks rejection or confusion. Ingle and Irori were the low-risk options from the name check. After `scripts/rename.py "Ingle"` this line becomes "Ingle: Focus Timer".
 
 ## Pricing
 

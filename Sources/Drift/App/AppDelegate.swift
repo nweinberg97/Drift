@@ -8,7 +8,9 @@ enum DriftMain {
     @MainActor
     static func main() {
         let app = NSApplication.shared
+        #if DEBUG
         // CI renders every widget state to PNGs instead of running normally.
+        // Debug builds only: the store build doesn't contain this.
         if let dir = ProcessInfo.processInfo.environment["DRIFT_SNAPSHOT_DIR"] {
             let runner = SnapshotRunner(directory: URL(fileURLWithPath: dir))
             app.delegate = runner
@@ -16,6 +18,7 @@ enum DriftMain {
             withExtendedLifetime(runner) { app.run() }
             return
         }
+        #endif
         let delegate = AppDelegate()
         app.delegate = delegate
         // A menu-bar utility: no Dock icon, no app switcher entry.
