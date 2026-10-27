@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Support · Drift</title>
+<meta name="description" content="How to use Drift: shortcuts, scheduling, voice, and fixes for common problems.">
+<meta name="theme-color" content="#171513">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+  :root {
+    --night: #171513; --coal: #201D1B; --ember: #F2A36E; --ember-deep: #C9774A;
+    --cream: #F4EEE6; --muted: #A69D93; --faint: #6F675F; --line: rgba(244, 238, 230, 0.09);
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--night); color: var(--cream); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--ember); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 6px; }
+  nav { max-width: 760px; margin: 0 auto; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 600 17px var(--display); color: var(--cream); text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  nav .links { display: flex; gap: 22px; font-size: 15px; }
+  nav .links a { color: var(--muted); text-decoration: none; }
+  nav .links a:hover, nav .links a[aria-current] { color: var(--cream); }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px 100px; }
+  h1 { font: 650 clamp(34px, 6vw, 48px)/1.1 var(--display); letter-spacing: -0.03em; margin: 0 0 12px; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0 0 36px; }
+  h2 { font: 600 22px/1.3 var(--display); letter-spacing: -0.01em; margin: 44px 0 10px; }
+  h3 { font: 600 17px/1.35 var(--display); margin: 26px 0 6px; }
+  p, li { color: rgba(244, 238, 230, 0.86); }
+  ul { padding-left: 20px; }
+  li { margin: 6px 0; }
+  .card { background: var(--coal); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; margin: 22px 0; }
+  .card p { margin: 0; }
+  .card b { color: var(--ember); }
+  kbd { font: 500 0.85em var(--sans); background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.14); border-radius: 5px; padding: 1px 6px; color: var(--cream); white-space: nowrap; }
+  code { overflow-wrap: anywhere; font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; margin: 10px 0; }
+  td { padding: 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: rgba(244, 238, 230, 0.86); }
+  td:first-child { width: 42%; padding-right: 16px; }
+  details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+  summary { cursor: pointer; padding: 12px 0; font: 600 17px var(--display); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--ember); font-weight: 500; }
+  details[open] summary::after { content: "–"; }
+  details > *:not(summary) { margin-top: 0; }
+  .muted { color: var(--muted); }
+  footer { border-top: 1px solid var(--line); padding: 28px 24px 40px; text-align: center; color: var(--faint); font-size: 14px; }
+  footer a { color: var(--muted); margin: 0 10px; }
+  @media (max-width: 520px) { td:first-child { width: 50%; } nav .links { gap: 14px; } }
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="./"><img src="icon.png" alt="">Drift</a>
+  <div class="links"><a href="./">Home</a><a href="support.html" aria-current="page">Support</a><a href="privacy.html">Privacy</a></div>
+</nav>
+<main>
+<h1>Support</h1>
+<p class="lede">Everything about using Drift, and quick fixes when something's off.</p>
+
+<div class="card" data-contact hidden><p><b>Need a hand?</b> Email <a data-email href="#"></a>. Include your macOS version and what you tried.</p></div>
+
+<h2>Getting started</h2>
+<p>Drift lives in the menu bar and a small widget in the top-left corner of your screen. There's no Dock icon. To reopen the welcome guide, click the menu bar icon → <b>Getting Started</b>.</p>
+<ol>
+  <li>Press <kbd>⌥ Space</kbd> from any app.</li>
+  <li>Write what you're working on and for how long: <code>Write intro 25m</code>. Press Return.</li>
+  <li>The timer starts in the widget. Click its name to rename it, its time to change it.</li>
+</ol>
+
+<h2>What you can type</h2>
+<table>
+  <tr><td><code>Write intro 45m</code></td><td>"Write intro", 45 minutes</td></tr>
+  <tr><td><code>Write intro</code></td><td>Your default length (press Tab to accept it)</td></tr>
+  <tr><td><code>25</code></td><td>25 minutes; name it later</td></tr>
+  <tr><td><code>Reading for an hour and a half</code></td><td>1 hour 30 minutes</td></tr>
+  <tr><td><code>1:30</code></td><td>1 hour 30 minutes</td></tr>
+  <tr><td><code>pomodoro</code> or <code>50/10</code></td><td>Focus and break, alternating</td></tr>
+  <tr><td><code>Deep work 9-10:30 weekdays</code></td><td>A scheduled block, every weekday</td></tr>
+  <tr><td><code>Email at 1pm for 30m</code></td><td>A one-off block today (or tomorrow if it's past 1)</td></tr>
+  <tr><td><code>add 5 minutes</code>, <code>pause</code>, <code>cancel laundry</code></td><td>Change a timer that's running</td></tr>
+</table>
+
+<h2>Keyboard shortcuts</h2>
+<table>
+  <tr><td><kbd>⌥ Space</kbd></td><td>New timer, from any app. Press twice to speak instead.</td></tr>
+  <tr><td><kbd>⌥ V</kbd></td><td>Speak a timer</td></tr>
+  <tr><td><kbd>⌥ T</kbd></td><td>Hide or show the widget (the time moves to the menu bar)</td></tr>
+  <tr><td><kbd>Tab</kbd> in the launcher</td><td>Take the suggested length</td></tr>
+  <tr><td><kbd>⌘ 1</kbd>–<kbd>⌘ 9</kbd> in the launcher</td><td>5, 10, 15, 20, 25, 30, 45 min, 1 h, 2 h</td></tr>
+  <tr><td><kbd>⌘ P</kbd> in the launcher</td><td>Start a Pomodoro</td></tr>
+  <tr><td>On the dial</td><td>Drag, scroll, or <kbd>↑</kbd> <kbd>↓</kbd> (hold <kbd>⇧</kbd> for 5 min); <kbd>Return</kbd> done, <kbd>Esc</kbd> cancel</td></tr>
+</table>
+<p class="muted">Change any global shortcut in Settings.</p>
+
+<h2>Scheduling</h2>
+<p>Type when instead of how long, and Drift adds a block to today's plan (expand the widget, or look in the menu bar). When a block's time comes, Drift chimes and shows a card: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you ignore it, it starts by itself after a minute. A block's timer ends when the block ends, so starting late keeps the time box.</p>
+<p>Click any block to change it: drag it along the timeline, drag its right edge to change the length, or pick the days it repeats. For a repeating block, choose <b>Just today</b> or every day it repeats.</p>
+
+<h2>Common questions</h2>
+<details><summary>The widget disappeared</summary>
+  <p>Press <kbd>⌥ T</kbd>, or click the menu bar icon → <b>Show Timer Widget</b>. If it's off-screen after changing displays: Settings → Appearance → <b>Move to Top Left</b>.</p></details>
+<details><summary><kbd>⌥ Space</kbd> doesn't open the launcher</summary>
+  <p>Another app (Raycast, Alfred, an input-source shortcut) may already use it. Open Settings and pick another combination for New timer, or change the other app's shortcut.</p></details>
+<details><summary>Voice doesn't work</summary>
+  <p>Allow Drift in System Settings → Privacy &amp; Security → <b>Microphone</b> and <b>Speech Recognition</b>. Drift only uses on-device recognition; if it says that isn't available, turn on Dictation once in System Settings → Keyboard so macOS downloads your language.</p></details>
+<details><summary>I don't get notifications</summary>
+  <p>System Settings → Notifications → Drift → Allow notifications. Also check Settings → Sound → <b>Notification when a timer finishes</b>. The chime plays even when notifications are off.</p></details>
+<details><summary>The chime keeps going</summary>
+  <p>By design, it repeats every few seconds (for up to two minutes) until you look. Click the widget, dismiss, or add five minutes. Prefer one chime? Settings → Sound → When a timer finishes → <b>Chime once</b>.</p></details>
+<details><summary>Start Drift when I log in</summary>
+  <p>Settings → <b>Open Drift at login</b>.</p></details>
+<details><summary>Does it work offline? Does it sync?</summary>
+  <p>It only works offline: Drift has no network access at all. Nothing syncs between Macs.</p></details>
+<details><summary>Uninstall</summary>
+  <p>Quit from the menu bar icon, then drag Drift from Applications to the Trash. To remove its saved timers and settings too, delete <code>~/Library/Containers/com.nweinberg.drift</code>.</p></details>
+<details><summary>Refunds</summary>
+  <p>Mac App Store purchases are refunded by Apple: <a href="https://reportaproblem.apple.com">reportaproblem.apple.com</a>.</p></details>
+
+<p class="muted" style="margin-top:40px">Drift needs macOS 13 Ventura or newer.</p>
+</main>
+<footer><a href="./">Drift</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></footer>
+<script>
+  // Support contact. Fill in to show it on this page (and the privacy page).
+  const SUPPORT_EMAIL = '';
+  document.querySelectorAll('[data-contact]').forEach(el => {
+    if (!SUPPORT_EMAIL) return;
+    el.hidden = false;
+    el.querySelectorAll('a[data-email]').forEach(a => { a.href = 'mailto:' + SUPPORT_EMAIL; a.textContent = SUPPORT_EMAIL; });
+  });
+</script>
+</body>
+</html>

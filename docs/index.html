@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Drift — a quiet focus timer for Mac</title>
-<meta name="description" content="Drift is a free, open-source focus timer for macOS. Press ⌥ Space, type 25, keep working.">
+<meta name="description" content="Drift is a quiet focus timer for macOS. Press ⌥ Space, write what you're working on and for how long, and keep working. Plan your day and each block starts on time.">
 <meta name="theme-color" content="#171513">
 <meta property="og:title" content="Drift — Stay with it.">
-<meta property="og:description" content="A quiet focus timer for your Mac. Press ⌥ Space, type 25, keep working.">
+<meta property="og:description" content="A quiet focus timer for your Mac. Press ⌥ Space, write the task and the time, keep working.">
 <meta property="og:image" content="icon.png">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -464,6 +464,10 @@
   .links a:hover { text-decoration-color: var(--ember); }
 
   footer { border-top: 1px solid var(--line); padding: 32px 24px 44px; text-align: center; color: var(--faint); font-size: 14px; }
+  .foot-links { display: inline-flex; gap: 18px; margin-left: 22px; }
+  .foot-links a { color: var(--muted); }
+  .store-card { margin-top: 48px; padding: 44px; border-radius: 24px; background: radial-gradient(90% 120% at 100% 0%, rgba(242,163,110,0.2), transparent 60%), var(--coal); border: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 20px 32px; }
+  .store-card p { margin: 0; color: var(--muted); }
   footer img { width: 22px; height: 22px; vertical-align: -6px; margin-right: 8px; }
 
   @media (max-width: 900px) {
@@ -703,6 +707,16 @@
   </section>
 
   <section class="install" id="install">
+    <!-- Shown instead of the Terminal install once APP_STORE_URL is set (bottom of the page). -->
+    <div id="store-install" hidden>
+      <h2>Get Drift.</h2>
+      <p class="sub">One price, no subscription. On the Mac App Store.</p>
+      <div class="store-card">
+        <a class="btn btn-ember" id="store-link" href="#">Download on the Mac App Store</a>
+        <p>macOS 13 Ventura or newer · Apple silicon and Intel</p>
+      </div>
+    </div>
+    <div id="terminal-install">
     <h2>Install in one line.</h2>
     <p class="sub">It builds Drift on your Mac, moves it to Applications and opens it. About two minutes.</p>
     <div class="install-card">
@@ -721,10 +735,11 @@
         <span>macOS 13 Ventura or newer</span>
       </div>
     </div>
+    </div>
   </section>
 </main>
 
-<footer><img src="icon.png" alt="">Drift. Stay with it.</footer>
+<footer><img src="icon.png" alt="">Drift. Stay with it.<span class="foot-links"><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
 
 <div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
   <span class="sw-dot"></span>
@@ -1378,6 +1393,17 @@
     q.value = ''; preview();
   }));
   preview();
+
+  /* ---------------- App Store switch ---------------- */
+  // Paste the App Store link here when Drift is live: the Terminal install is
+  // replaced by an App Store button, and "Install" links point to the store.
+  const APP_STORE_URL = '';
+  if (APP_STORE_URL) {
+    $('store-install').hidden = false;
+    $('terminal-install').hidden = true;
+    $('store-link').href = APP_STORE_URL;
+    document.querySelectorAll('a[href="#install"]').forEach(a => { a.href = APP_STORE_URL; if (a.textContent.trim() === 'Install for Mac') a.textContent = 'Get it on the Mac App Store'; });
+  }
 
   /* ---------------- Copy ---------------- */
   const copy = $('copy');

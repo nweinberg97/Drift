@@ -34,6 +34,10 @@ Requirements: macOS 13 Ventura or newer. If the build fails on an older Mac, upd
 
 </details>
 
+## Mac App Store build
+
+`Drift.xcodeproj` is the App Store build (sandboxed, asset-catalog icon, privacy manifest, export compliance set). Everything for submission is in [`appstore/`](appstore/): a step-by-step guide, the listing copy, App Store Connect answers and screenshots. CI archives the project on every push to keep it working.
+
 ## Using Drift
 
 | Do this | How |

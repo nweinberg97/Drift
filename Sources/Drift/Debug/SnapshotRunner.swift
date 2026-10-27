@@ -204,6 +204,178 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             )
             await render(view, name: name, dark: dark)
         }
+
+        // First-launch guide.
+        settings.hasSeenWelcome = false
+        await render(WelcomeView(settings: settings, tryIt: {}, close: {}).background(Color(nsColor: .windowBackgroundColor)), name: "40-welcome", dark: false)
+        await render(WelcomeView(settings: settings, tryIt: {}, close: {}).background(Color(nsColor: .windowBackgroundColor)), name: "41-welcome-dark", dark: true)
+
+        await renderStoreShots(runner: runner)
+    }
+
+    // MARK: - App Store screenshots
+
+    private enum ShotLayout { case stacked, side }
+
+    /// Marketing screenshots at 2880×1800 (Apple's largest Mac size): a headline
+    /// beside the real UI, scaled up, on a dark ember backdrop.
+    private func renderStoreShots(runner: CommandRunner) async {
+        let writing = running("Write intro", total: 2_700, left: 2_699.4)
+        let email = running("Email", total: 1_500, left: 1_453.4)
+        let laundry = running("Laundry", total: 3_600, left: 2_462.4)
+        let tea = paused("Tea", total: 300, left: 192)
+        let reading = running("Reading", total: 1_800, left: 1_312.4)
+        let plan = self.plan()
+
+        func widget(_ timers: [DriftTimer], primary: UUID?, blocks: [ScheduledBlock] = [], prompt: Int? = nil,
+                    focus: Bool = false, configure: (WidgetUIState) -> Void = { _ in }) -> WidgetView {
+            store.replaceAll(timers, primary: primary)
+            settings.focusSoundEnabled = focus
+            var p: ScheduleStore.Prompt?
+            if let prompt { p = .init(blockID: blocks[prompt].id, deadline: Date().addingTimeInterval(52)) }
+            schedule.replaceAll(blocks, prompt: p)
+            let ui = WidgetUIState()
+            configure(ui)
+            let actions = WidgetActions(openComposer: {}, openVoice: {}, acknowledge: {}, hide: {},
+                                        resize: { _ in }, focusPanel: {}, releaseFocus: {})
+            return WidgetView(store: store, settings: settings, ui: ui, schedule: schedule, actions: actions)
+        }
+
+        // 1. The launcher.
+        settings.forgetRecents()
+        settings.hasWrittenTask = true
+        let model = ComposerModel()
+        model.text = "Write intro 45m"
+        let launcher = ComposerView(
+            model: model, settings: settings, voice: voice,
+            preview: { runner.preview($0) }, plan: { runner.plan($0) },
+            submit: {}, startPreset: { _ in }, startRecent: { _ in }, startPomodoro: {},
+            toggleVoice: {}, close: {}, resize: { _ in }
+        )
+        let w1 = widget([writing], primary: writing.id)
+        await renderShot(
+            name: "store-1-launcher",
+            headline: "Write the task.\nDrift keeps the time.",
+            sub: "Press ⌥ Space in any app and type what you're working on and for how long.",
+            layout: .stacked
+        ) {
+            ZStack {
+                launcher.fixedSize().scaleEffect(1.45).position(x: 720, y: 470)
+                w1.fixedSize().scaleEffect(1.8).position(x: 720, y: 740)
+            }
+        }
+
+        // 2. The dial.
+        let w2 = widget([writing], primary: writing.id) { ui in
+            ui.dialID = writing.id
+            ui.dialValue = 1_920
+        }
+        await renderShot(name: "store-2-dial", headline: "Click the time.\nTurn the dial.",
+                         sub: "Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30 or 45 minutes, 1 or 2 hours.",
+                         layout: .side) {
+            w2.fixedSize().scaleEffect(1.55).position(x: 1_040, y: 460)
+        }
+
+        // 3. Plan your day.
+        let w3 = widget([email], primary: email.id, blocks: plan, prompt: 0) { ui in ui.expanded = true }
+        await renderShot(name: "store-3-plan", headline: "Plan your day.\nBlocks start on time.",
+                         sub: "Type “Deep work 9–10:30 weekdays”. When it's time, Drift asks, then starts it. Move any block just for today.",
+                         layout: .side) {
+            w3.fixedSize().scaleEffect(1.5).position(x: 1_040, y: 450)
+        }
+
+        // 4. Several timers, named in place.
+        let w4 = widget([email, laundry, tea, reading], primary: email.id) { ui in
+            ui.expanded = true
+            ui.renamingID = email.id
+            ui.draft = "Email inbox"
+        }
+        await renderShot(name: "store-4-several", headline: "Name it in place.\nRun several at once.",
+                         sub: "Click a name to type, a time to change it. Every timer in one small widget.",
+                         layout: .side) {
+            w4.fixedSize().scaleEffect(1.65).position(x: 1_040, y: 450)
+        }
+
+        // 5. Focus sound.
+        let w5 = widget([reading], primary: reading.id, focus: true) { ui in ui.expanded = true }
+        await renderShot(name: "store-5-sound", headline: "Soft focus sound,\nmade on your Mac.",
+                         sub: "Rain, ocean, fireplace, lo-fi, binaural beats and more. Off until you want it; quiet on breaks.",
+                         layout: .side) {
+            w5.fixedSize().scaleEffect(1.75).position(x: 1_040, y: 450)
+        }
+        settings.focusSoundEnabled = false
+    }
+
+    private func renderShot<Content: View>(name: String, headline: String, sub: String, layout: ShotLayout,
+                                           @ViewBuilder content: () -> Content) async {
+        let cream = Color(red: 0.96, green: 0.93, blue: 0.90)
+        let canvas = ZStack(alignment: .topLeading) {
+            LinearGradient(colors: [Color(red: 0.10, green: 0.09, blue: 0.085), Color(red: 0.16, green: 0.12, blue: 0.10)],
+                           startPoint: .top, endPoint: .bottom)
+            RadialGradient(colors: [Color(red: 0.95, green: 0.55, blue: 0.30).opacity(0.38), .clear],
+                           center: .bottomTrailing, startRadius: 40, endRadius: 900)
+            switch layout {
+            case .stacked:
+                VStack(spacing: 14) {
+                    Text(headline.replacingOccurrences(of: "\n", with: " "))
+                        .font(.system(size: 58, weight: .semibold))
+                        .foregroundStyle(cream)
+                    Text(sub)
+                        .font(.system(size: 24))
+                        .foregroundStyle(cream.opacity(0.62))
+                }
+                .multilineTextAlignment(.center)
+                .frame(width: 1_200)
+                .position(x: 720, y: 150)
+            case .side:
+                VStack(alignment: .leading, spacing: 20) {
+                    Text(headline)
+                        .font(.system(size: 60, weight: .semibold))
+                        .foregroundStyle(cream)
+                        .fixedSize(horizontal: false, vertical: true)
+                    Text(sub)
+                        .font(.system(size: 24))
+                        .foregroundStyle(cream.opacity(0.62))
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+                .frame(width: 560, alignment: .leading)
+                .position(x: 96 + 280, y: 450)
+            }
+            content()
+        }
+        .frame(width: 1_440, height: 900)
+        .environment(\.colorScheme, .dark)
+
+        let hosting = NSHostingView(rootView: canvas)
+        hosting.appearance = NSAppearance(named: .darkAqua)
+        hosting.frame = NSRect(x: 0, y: 0, width: 1_440, height: 900)
+        let window = NSWindow(contentRect: NSRect(x: -5_000, y: -5_000, width: 1_440, height: 900),
+                              styleMask: [.borderless], backing: .buffered, defer: false)
+        window.appearance = NSAppearance(named: .darkAqua)
+        window.contentView = hosting
+        window.orderFrontRegardless()
+        self.window = window
+        try? await Task.sleep(nanoseconds: 900_000_000)
+        hosting.layoutSubtreeIfNeeded()
+
+        guard let rep = NSBitmapImageRep(bitmapDataPlanes: nil, pixelsWide: 2_880, pixelsHigh: 1_800,
+                                         bitsPerSample: 8, samplesPerPixel: 4, hasAlpha: true, isPlanar: false,
+                                         colorSpaceName: .deviceRGB, bytesPerRow: 0, bitsPerPixel: 0) else { return }
+        rep.size = NSSize(width: 1_440, height: 900)
+        hosting.cacheDisplay(in: hosting.bounds, to: rep)
+        // App Store screenshots must not have an alpha channel.
+        guard let cg = rep.cgImage,
+              let ctx = CGContext(data: nil, width: 2_880, height: 1_800, bitsPerComponent: 8, bytesPerRow: 0,
+                                  space: CGColorSpace(name: CGColorSpace.sRGB)!,
+                                  bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue) else { return }
+        ctx.draw(cg, in: CGRect(x: 0, y: 0, width: 2_880, height: 1_800))
+        guard let flat = ctx.makeImage() else { return }
+        let out = NSBitmapImageRep(cgImage: flat)
+        if let png = out.representation(using: .png, properties: [:]) {
+            try? png.write(to: directory.appendingPathComponent("\(name).png"))
+            print("snapshot \(name) 2880x1800")
+        }
+        window.orderOut(nil)
     }
 
     private func render<V: View>(_ content: V, name: String, dark: Bool) async {

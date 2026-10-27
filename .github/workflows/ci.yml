@@ -78,7 +78,7 @@ jobs:
             CODE_SIGNING_ALLOWED=NO archive
       - name: Check the bundle
         run: |
-          APP=build/Drift.xcarchive/Products/Applications/Drift.app
+          APP="$(ls -d build/Drift.xcarchive/Products/Applications/*.app | head -1)"
           ls -la "$APP/Contents" "$APP/Contents/Resources"
           plutil -p "$APP/Contents/Info.plist"
           test -f "$APP/Contents/Resources/PrivacyInfo.xcprivacy" || { echo "::error::PrivacyInfo.xcprivacy missing"; exit 1; }
@@ -87,7 +87,7 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$APP/Contents/Info.plist"
           /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.nweinberg.drift
           /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Contents/Info.plist"
-          lipo -info "$APP/Contents/MacOS/Drift"
+          lipo -info "$APP"/Contents/MacOS/*
 
   # Older toolchain: Command Line Tools / Xcode 15.x ship Swift 5.10, which is
   # stricter about some concurrency patterns. Users building from source with

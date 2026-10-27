@@ -39,6 +39,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     private var composer: ComposerController!
     private var statusItem: StatusItemController!
     private var settingsWindow: SettingsWindowController!
+    private var welcome: WelcomeWindowController!
     private let voice = VoiceController()
     private let notifications = NotificationService()
     private let chimes = Chimes()
@@ -57,6 +58,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         widget = WidgetController(store: store, settings: settings, schedule: schedule)
         composer = ComposerController(runner: runner, settings: settings, voice: voice)
         settingsWindow = SettingsWindowController(settings: settings)
+        welcome = WelcomeWindowController(settings: settings)
+        welcome.tryIt = { [weak self] in self?.composer.show() }
 
         runner.showWidget = { [weak self] in self?.widget.show() }
         runner.revealTimers = { [weak self] in self?.widget.reveal() }
@@ -102,7 +105,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             openSettings: { [weak self] in self?.settingsWindow.show() },
             rename: { [weak self] id in self?.beginEditing(id, rename: true) },
             edit: { [weak self] id in self?.beginEditing(id, rename: false) },
-            editBlock: { [weak self] id in self?.widget.editBlock(id) }
+            editBlock: { [weak self] id in self?.widget.editBlock(id) },
+            gettingStarted: { [weak self] in self?.welcome.show() }
         ))
 
         registerHotKeys()
@@ -127,6 +131,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         )
 
         if !settings.widgetHidden { widget.show() }
+        // First launch: show where everything is.
+        if !settings.hasSeenWelcome {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.4) { [weak self] in self?.welcome.show() }
+        }
         syncNotifications()
         syncFocusSound()
     }

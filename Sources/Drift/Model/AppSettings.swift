@@ -97,6 +97,8 @@ final class AppSettings: ObservableObject {
     @Published var hasLearnedShortcut: Bool { didSet { set(hasLearnedShortcut, "hasLearnedShortcut") } }
     /// Set once a timer has a task; the launcher's how-to line goes away.
     @Published var hasWrittenTask: Bool { didSet { set(hasWrittenTask, "hasWrittenTask") } }
+    /// The first-launch guide has been shown.
+    @Published var hasSeenWelcome: Bool { didSet { set(hasSeenWelcome, "hasSeenWelcome") } }
     @Published private(set) var recents: [RecentTask] { didSet { saveRecents() } }
 
     init(defaults: UserDefaults = .standard) {
@@ -119,6 +121,7 @@ final class AppSettings: ObservableObject {
         widgetHidden = defaults.object(forKey: "widgetHidden") as? Bool ?? false
         hasLearnedShortcut = defaults.object(forKey: "hasLearnedShortcut") as? Bool ?? false
         hasWrittenTask = defaults.object(forKey: "hasWrittenTask") as? Bool ?? false
+        hasSeenWelcome = defaults.object(forKey: "hasSeenWelcome") as? Bool ?? false
         if let data = defaults.data(forKey: "recentTasks"),
            let stored = try? JSONDecoder().decode([RecentTask].self, from: data) {
             recents = stored

@@ -18,6 +18,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var edit: (UUID) -> Void
         /// Opens the block editor; nil for a new block.
         var editBlock: (UUID?) -> Void
+        var gettingStarted: () -> Void
     }
 
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -225,6 +226,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(scapes)
 
         menu.addItem(.separator())
+        menu.addItem(action("Getting Started", #selector(gettingStarted)))
         let settingsItem = action("Settings…", #selector(openSettings))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
@@ -330,6 +332,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func newTimer() { actions.newTimer() }
     @objc private func newBlock() { actions.editBlock(nil) }
+    @objc private func gettingStarted() { actions.gettingStarted() }
     @objc private func editBlock(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID else { return }
         actions.editBlock(id)
