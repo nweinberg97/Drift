@@ -1,0 +1,174 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Guide · Drift</title>
+<meta name="description" content="How Drift works: the launcher, the widget, the dial, scheduled blocks, Pomodoro, focus sounds and every shortcut.">
+<meta name="theme-color" content="#171513">
+<link rel="icon" type="image/png" href="favicon.png">
+<link rel="apple-touch-icon" href="icon.png">
+<style>
+  :root {
+    --night: #171513; --coal: #201D1B; --ember: #F2A36E; --ember-deep: #C9774A;
+    --cream: #F4EEE6; --muted: #A69D93; --faint: #6F675F; --line: rgba(244, 238, 230, 0.09);
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--night); color: var(--cream); font: 17px/1.6 var(--sans); -webkit-font-smoothing: antialiased; }
+  a { color: var(--ember); text-underline-offset: 3px; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 6px; }
+  nav { max-width: 760px; margin: 0 auto; padding: 22px 24px; display: flex; align-items: center; justify-content: space-between; }
+  .brand { display: flex; align-items: center; gap: 10px; font: 600 17px var(--display); color: var(--cream); text-decoration: none; }
+  .brand img { width: 28px; height: 28px; }
+  nav .links { display: flex; gap: 22px; font-size: 15px; }
+  nav .links a { color: var(--muted); text-decoration: none; }
+  nav .links a:hover, nav .links a[aria-current] { color: var(--cream); }
+  main { max-width: 760px; margin: 0 auto; padding: 40px 24px 100px; }
+  h1 { font: 650 clamp(34px, 6vw, 48px)/1.1 var(--display); letter-spacing: -0.03em; margin: 0 0 12px; }
+  .lede { font-size: 19px; color: var(--muted); margin: 0 0 36px; }
+  h2 { font: 600 22px/1.3 var(--display); letter-spacing: -0.01em; margin: 44px 0 10px; }
+  h3 { font: 600 17px/1.35 var(--display); margin: 26px 0 6px; }
+  p, li { color: rgba(244, 238, 230, 0.86); }
+  ul { padding-left: 20px; }
+  li { margin: 6px 0; }
+  .card { background: var(--coal); border: 1px solid var(--line); border-radius: 16px; padding: 22px 24px; margin: 22px 0; }
+  .card p { margin: 0; }
+  .card b { color: var(--ember); }
+  kbd { font: 500 0.85em var(--sans); background: rgba(255,255,255,0.08); border: 0.5px solid rgba(255,255,255,0.14); border-radius: 5px; padding: 1px 6px; color: var(--cream); white-space: nowrap; }
+  code { overflow-wrap: anywhere; font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: rgba(255,255,255,0.06); padding: 1px 6px; border-radius: 5px; }
+  table { width: 100%; border-collapse: collapse; font-size: 15.5px; margin: 10px 0; }
+  td { padding: 9px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: rgba(244, 238, 230, 0.86); }
+  td:first-child { width: 42%; padding-right: 16px; }
+  details { border-bottom: 1px solid var(--line); padding: 4px 0; }
+  summary { cursor: pointer; padding: 12px 0; font: 600 17px var(--display); list-style: none; display: flex; justify-content: space-between; gap: 12px; }
+  summary::-webkit-details-marker { display: none; }
+  summary::after { content: "+"; color: var(--ember); font-weight: 500; }
+  details[open] summary::after { content: "–"; }
+  details > *:not(summary) { margin-top: 0; }
+  .muted { color: var(--muted); }
+  footer { border-top: 1px solid var(--line); padding: 28px 24px 40px; text-align: center; color: var(--faint); font-size: 14px; }
+  footer a { color: var(--muted); margin: 0 10px; }
+  @media (max-width: 520px) { td:first-child { width: 50%; } nav .links { gap: 14px; } }
+  .toc { display: flex; flex-wrap: wrap; gap: 8px; margin: 0 0 10px; padding: 0; list-style: none; }
+  .toc a { display: inline-block; padding: 5px 12px; border-radius: 16px; background: rgba(244,238,230,0.06); color: var(--muted); text-decoration: none; font-size: 14.5px; }
+  .toc a:hover { color: var(--cream); background: rgba(244,238,230,0.1); }
+  h2 { scroll-margin-top: 20px; }
+  .pill { color: var(--ember); background: rgba(242,163,110,0.14); border-radius: 4px; padding: 0 3px; }
+  .when { color: #9CCBEE; background: rgba(142,195,234,0.14); border-radius: 4px; padding: 0 3px; }
+</style>
+</head>
+<body>
+<nav>
+  <a class="brand" href="./"><img src="icon.png" alt="">Drift</a>
+  <div class="links"><a href="./">Home</a><a href="guide.html" aria-current="page">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></div>
+</nav>
+<main>
+<h1>How Drift works</h1>
+<p class="lede">A timer you start in a second, from any app, and a plan for your day that starts itself. Here's everything it does.</p>
+<ul class="toc">
+  <li><a href="#basics">The basics</a></li><li><a href="#launcher">Writing a timer</a></li><li><a href="#widget">The widget</a></li>
+  <li><a href="#dial">Changing the time</a></li><li><a href="#several">Several timers</a></li><li><a href="#plan">Planning your day</a></li>
+  <li><a href="#pomodoro">Pomodoro</a></li><li><a href="#end">When a timer ends</a></li><li><a href="#sound">Focus sounds</a></li>
+  <li><a href="#voice">Voice</a></li><li><a href="#menubar">Menu bar</a></li><li><a href="#shortcuts">Shortcuts</a></li><li><a href="#settings">Settings</a></li><li><a href="#privacy">Privacy</a></li>
+</ul>
+
+<h2 id="basics">The basics</h2>
+<p>Drift lives in two places: a small <b>widget</b> in the top-left corner of your screen, and an icon in the <b>menu bar</b>. There's no Dock icon and no window to keep track of. The first time you open it, a short welcome guide shows you around; reopen it any time from the menu bar icon → <b>Getting Started</b>.</p>
+<div class="card"><p><b>The one thing to remember:</b> press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, press Return.</p></div>
+
+<h2 id="launcher">Writing a timer</h2>
+<p>Press <kbd>⌥ Space</kbd>. A box opens over whatever you're doing and asks <i>What are you working on?</i> Write the task, then how long. The time lights up in <span class="pill">orange</span> as you type, so you can see Drift understood, and a preview underneath shows the exact timer Return will start.</p>
+<table>
+  <tr><td><code>Write intro <span class="pill">45m</span></code></td><td>"Write intro", 45 minutes</td></tr>
+  <tr><td><code>Reading for <span class="pill">an hour and a half</span></code></td><td>"Reading", 1 hour 30 minutes</td></tr>
+  <tr><td><code>Write intro</code></td><td>No time? Drift offers your default length in grey. Press <kbd>Tab</kbd> or Return to take it.</td></tr>
+  <tr><td><code><span class="pill">25</span></code></td><td>A bare number means minutes. Name it later.</td></tr>
+  <tr><td><code><span class="pill">1:30</span></code>, <code><span class="pill">90s</span></code>, <code><span class="pill">2h 15m</span></code></td><td>Any way you'd write a time</td></tr>
+  <tr><td><code>pomodoro</code>, <code>50/10</code></td><td>Focus and break, alternating (see Pomodoro)</td></tr>
+  <tr><td><code>add 5 minutes</code>, <code>pause</code>, <code>resume laundry</code>, <code>cancel tea</code></td><td>Change a timer that's already running</td></tr>
+</table>
+<p>Under the box you'll find one-click lengths (5, 10, 15, 20, 25, 30, 45 minutes, 1 hour, 2 hours; or <kbd>⌘ 1</kbd>–<kbd>⌘ 9</kbd>) and your recent tasks with their usual length. If you've written a task, a length chip starts that task for that long.</p>
+
+<h2 id="widget">The widget</h2>
+<p>The widget shows one line: a dot (filled while running, hollow when paused), the task, the time left and a pause button. Drag it anywhere; it remembers its spot, even across displays, and it floats above full-screen apps.</p>
+<ul>
+  <li><b>Click the task</b> to rename it right there. A timer without a name shows a faint <b>+ Add task</b>.</li>
+  <li><b>Click the time</b> to open the dial.</li>
+  <li><b>Click the arrow</b> to expand it: every timer, ±5 minutes, today's plan, focus sound, and a button for a new timer.</li>
+</ul>
+
+<h2 id="dial">Changing the time</h2>
+<p>Click any time to open the dial. Drag around the ring and the timer follows: a minute per notch, a full turn is an hour. You can also scroll, or use the arrow keys (hold <kbd>⇧</kbd> for five minutes). Buttons underneath add or remove 1 or 5 minutes, and presets set 5, 10, 15, 20, 25, 30 or 45 minutes, 1 or 2 hours in one tap. <b>Done</b> keeps the change; <b>Cancel</b> puts the old time back.</p>
+
+<h2 id="several">Several timers</h2>
+<p>Start as many as you like. One stays in view; the button beside it shows how many others there are (<b>+2</b>). Expand the widget to see them all with their own pause, cancel, name and time. Click one to bring it to the top.</p>
+
+<h2 id="plan">Planning your day</h2>
+<p>Write <span class="when">when</span> instead of (or as well as) how long, and Drift adds a block to your plan instead of starting it now. The time of day and the days light up in <span class="when">blue</span>.</p>
+<table>
+  <tr><td><code>Deep work <span class="when">9-10:30 weekdays</span></code></td><td>Every weekday, 9:00 to 10:30</td></tr>
+  <tr><td><code>Gym <span class="when">6-7pm mon wed fri</span></code></td><td>Monday, Wednesday and Friday evenings</td></tr>
+  <tr><td><code>Email <span class="when">at 1pm</span> for <span class="pill">30m</span></code></td><td>Once, today (or tomorrow if it's past 1)</td></tr>
+  <tr><td><code>Standup <span class="when">tomorrow at 9:15am</span></code></td><td>Once, with your default length</td></tr>
+</table>
+<p>Today's blocks appear in the expanded widget and the menu bar, marked <b>Next</b>, <b>Now</b>, <b>Done</b> or <b>Skipped</b>. A line under the timer tells you what's next.</p>
+<h3>When a block comes up</h3>
+<p>Drift plays a soft chime, shows a notification and puts a card on the widget: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you're heads down and ignore it, the block starts by itself after a minute. Its timer ends when the block ends, so starting ten minutes late keeps your time box instead of pushing your whole day.</p>
+<h3>Changing a block</h3>
+<p>Click any block to edit it. Drag it along its timeline to move it; drag its right edge to change the length; or nudge the start, pick a length and choose the days it repeats. For a repeating block that's on today, you choose: <b>Just today</b>, or every day it repeats. A block changed for one day is marked <b>today</b>. If the block is running, its timer follows the change.</p>
+
+<h2 id="pomodoro">Pomodoro</h2>
+<p>Type <code>pomodoro</code> (or press <kbd>⌘ P</kbd> in the launcher) for 25 minutes of focus, then a 5 minute break, on repeat; every fourth break is 15 minutes. Expanded, the widget shows which round you're on and what's next. Use your own lengths with <code>50/10</code>. Skip ahead any time.</p>
+
+<h2 id="end">When a timer ends</h2>
+<p>A three-note chime plays and the widget gently pulses until you look; by default it repeats every few seconds for up to two minutes, or once if you prefer. A notification says what finished ("Email is done"). Dismiss it, restart it, or add five more minutes.</p>
+
+<h2 id="sound">Focus sounds</h2>
+<p>Optional, and off until you turn it on in the expanded widget or the menu bar. Every sound is generated live on your Mac, never streamed:</p>
+<ul>
+  <li><b>Nature:</b> Rain, Ocean, Fireplace</li>
+  <li><b>Chill:</b> Lo-fi, Ambient, Soft Pad</li>
+  <li><b>Focus:</b> Hush (deep, even noise), Binaural Focus, Binaural Calm (best with headphones)</li>
+</ul>
+<p>It plays while a timer runs, fades out when nothing's running, and goes quiet during breaks.</p>
+
+<h2 id="voice">Voice</h2>
+<p>Press <kbd>⌥ Space</kbd> twice (or <kbd>⌥ V</kbd>, or the microphone in the launcher) and say it: "twenty five minutes for reading", "add five minutes", "pause". It stops listening when you stop talking. Voice is optional; macOS asks for permission the first time. Speech is recognised on your Mac and never stored.</p>
+
+<h2 id="menubar">Hiding it, and the menu bar</h2>
+<p>Press <kbd>⌥ T</kbd> to hide the widget; the time moves next to the menu bar icon, and timers keep running. Press it again to bring the widget back. The menu bar icon is a small ring that empties as time passes. Its menu lists every timer (with pause, ±5 minutes, change time, rename, duplicate, cancel), today's plan, quick starts, Pomodoro, focus sound, Getting Started and Settings.</p>
+
+<h2 id="shortcuts">Shortcuts</h2>
+<table>
+  <tr><td><kbd>⌥ Space</kbd></td><td>New timer from any app; twice to speak</td></tr>
+  <tr><td><kbd>⌥ V</kbd></td><td>Speak a timer</td></tr>
+  <tr><td><kbd>⌥ T</kbd></td><td>Hide or show the widget</td></tr>
+  <tr><td><kbd>Tab</kbd> (launcher)</td><td>Take the suggested length</td></tr>
+  <tr><td><kbd>⌘ 1</kbd>–<kbd>⌘ 9</kbd> (launcher)</td><td>Quick lengths</td></tr>
+  <tr><td><kbd>⌘ P</kbd> (launcher)</td><td>Pomodoro</td></tr>
+  <tr><td><kbd>Space</kbd>, <kbd>+</kbd>, <kbd>−</kbd> (widget focused)</td><td>Pause or resume, add or remove 5 minutes</td></tr>
+  <tr><td><kbd>Esc</kbd></td><td>Close what's open: the dial, an edit, the launcher</td></tr>
+</table>
+<p class="muted">The three global shortcuts can be changed in Settings.</p>
+
+<h2 id="settings">Settings</h2>
+<p>One short page: default length, quick lengths, how long finished timers stay, theme, widget size and opacity, the chime and notifications, focus sound, shortcuts and opening at login. Shortcuts, Siri and Raycast can also start timers through <code>drift://</code> links.</p>
+
+<h2 id="privacy">Privacy</h2>
+<p>No account, no analytics, and no network access at all. Your timers, plan and settings stay on your Mac. Details on the <a href="privacy.html">privacy page</a>; problems and fixes on the <a href="support.html">support page</a>.</p>
+</main>
+<footer><a href="./">Drift</a><a href="guide.html">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></footer>
+<script>
+  // Support contact. Fill in to show it on this page (and the privacy page).
+  const SUPPORT_EMAIL = '';
+  document.querySelectorAll('[data-contact]').forEach(el => {
+    if (!SUPPORT_EMAIL) return;
+    el.hidden = false;
+    el.querySelectorAll('a[data-email]').forEach(a => { a.href = 'mailto:' + SUPPORT_EMAIL; a.textContent = SUPPORT_EMAIL; });
+  });
+</script>
+</body>
+</html>

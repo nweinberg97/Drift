@@ -444,30 +444,14 @@
 
   /* ---------- Install ---------- */
   .install { padding-bottom: 140px; }
-  .install-card {
-    margin-top: 48px; padding: 44px; border-radius: 24px;
-    background: radial-gradient(90% 120% at 100% 0%, rgba(242,163,110,0.2), transparent 60%), var(--coal);
-    border: 1px solid var(--line);
-  }
-  .terminal { display: flex; align-items: center; gap: 16px; background: #0F0E0D; border-radius: 12px; padding: 16px 18px; border: 1px solid var(--line); }
-  .terminal code { flex: 1; min-width: 0; font: 400 14.5px/1.5 var(--mono); overflow-x: auto; white-space: nowrap; scrollbar-width: none; }
-  .terminal code::-webkit-scrollbar { display: none; }
-  .terminal .pr { color: var(--ember); user-select: none; }
-  .copy { flex: none; height: 34px; padding: 0 16px; border-radius: 17px; border: 0; background: var(--ember); color: #1B1714; font: 600 13.5px var(--sans); cursor: pointer; }
-  .copy:hover { background: var(--ember-hot); }
-  .steps { margin: 32px 0 0; padding: 0; list-style: none; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; counter-reset: s; }
-  .steps li { counter-increment: s; color: var(--muted); font-size: 15.5px; }
-  .steps li::before { content: counter(s); display: grid; place-items: center; width: 30px; height: 30px; border-radius: 50%; border: 1.5px solid var(--ember); color: var(--ember); font: 600 14px var(--display); margin-bottom: 12px; }
-  .steps b { color: var(--cream); font-weight: 600; }
-  .links { margin-top: 36px; display: flex; gap: 28px; flex-wrap: wrap; font-size: 15.5px; color: var(--faint); }
-  .links a { color: var(--cream); text-decoration-color: var(--faint); text-underline-offset: 4px; }
-  .links a:hover { text-decoration-color: var(--ember); }
 
   footer { border-top: 1px solid var(--line); padding: 32px 24px 44px; text-align: center; color: var(--faint); font-size: 14px; }
   .foot-links { display: inline-flex; gap: 18px; margin-left: 22px; }
   .foot-links a { color: var(--muted); }
   .store-card { margin-top: 48px; padding: 44px; border-radius: 24px; background: radial-gradient(90% 120% at 100% 0%, rgba(242,163,110,0.2), transparent 60%), var(--coal); border: 1px solid var(--line); display: flex; flex-wrap: wrap; align-items: center; gap: 20px 32px; }
   .store-card p { margin: 0; color: var(--muted); }
+  .store-card p a { color: var(--cream); text-underline-offset: 4px; }
+  .btn-soon { background: rgba(244,238,230,0.08); color: var(--cream); border: 1px solid var(--line); cursor: default; }
   footer img { width: 22px; height: 22px; vertical-align: -6px; margin-right: 8px; }
 
   @media (max-width: 900px) {
@@ -479,16 +463,13 @@
     .features span { display: none; }
     .features i { left: 14px; right: 14px; bottom: 5px; }
     .try { grid-template-columns: minmax(0, 1fr); gap: 40px; }
-    .facts, .steps { grid-template-columns: 1fr; gap: 28px; }
+    .facts { grid-template-columns: 1fr; gap: 28px; }
   }
   @media (max-width: 600px) {
     body { font-size: 16px; }
     nav ul li:not(:last-child) { display: none; }
     section { padding-top: 88px; }
-    .install-card { padding: 24px; }
-    .lede { font-size: 16.5px; }
-  }
-  @media (prefers-reduced-motion: reduce) {
+    @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
   }
 </style>
@@ -500,7 +481,7 @@
   <ul>
     <li><a href="#features">Features</a></li>
     <li><a href="#try">Try it</a></li>
-    <li><a href="https://github.com/nweinberg97/Drift">GitHub</a></li>
+    <li><a href="guide.html">Guide</a></li>
     <li><a href="#install">Install</a></li>
   </ul>
 </nav>
@@ -520,7 +501,7 @@
     </div>
     <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Or plan your day, and each block starts on time.</p>
     <div class="actions">
-      <a class="btn btn-ember" href="#install">Install for Mac</a>
+      <a class="btn btn-ember" href="#install">Get Drift</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
     </div>
   </div>
@@ -707,7 +688,7 @@
   </section>
 
   <section class="install" id="install">
-    <!-- Shown instead of the Terminal install once APP_STORE_URL is set (bottom of the page). -->
+    <!-- Shown instead of "Coming soon" once APP_STORE_URL is set (bottom of the page). -->
     <div id="store-install" hidden>
       <h2>Get Drift.</h2>
       <p class="sub">One price, no subscription. On the Mac App Store.</p>
@@ -716,30 +697,18 @@
         <p>macOS 13 Ventura or newer · Apple silicon and Intel</p>
       </div>
     </div>
-    <div id="terminal-install">
-    <h2>Install in one line.</h2>
-    <p class="sub">It builds Drift on your Mac, moves it to Applications and opens it. About two minutes.</p>
-    <div class="install-card">
-      <div class="terminal">
-        <code><span class="pr">$ </span>curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash</code>
-        <button class="copy" id="copy" type="button">Copy</button>
+    <div id="coming-soon">
+      <h2>Coming soon to the Mac App Store.</h2>
+      <p class="sub">One price, no subscription, no account. For macOS 13 Ventura or newer, on Apple silicon and Intel Macs.</p>
+      <div class="store-card">
+        <span class="btn btn-soon" aria-disabled="true">Mac App Store · Coming soon</span>
+        <p>Want to see everything it does first? <a href="guide.html">Read the guide</a>.</p>
       </div>
-      <ol class="steps">
-        <li>Open <b>Terminal</b>. Press ⌘ Space and type Terminal.</li>
-        <li>Paste the line and press Return. If macOS offers the free <b>Command Line Tools</b>, install them and run it again.</li>
-        <li>Drift appears in the top-left corner. Press <b>⌥ Space</b> and write what you're working on, like <b>Write intro 25m</b>.</li>
-      </ol>
-      <div class="links">
-        <a href="https://github.com/nweinberg97/Drift">Source on GitHub</a>
-        <a href="https://github.com/nweinberg97/Drift#readme">Full guide</a>
-        <span>macOS 13 Ventura or newer</span>
-      </div>
-    </div>
     </div>
   </section>
 </main>
 
-<footer><img src="icon.png" alt="">Drift. Stay with it.<span class="foot-links"><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
+<footer><img src="icon.png" alt="">Drift. Stay with it.<span class="foot-links"><a href="guide.html">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
 
 <div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
   <span class="sw-dot"></span>
@@ -1395,23 +1364,16 @@
   preview();
 
   /* ---------------- App Store switch ---------------- */
-  // Paste the App Store link here when Drift is live: the Terminal install is
-  // replaced by an App Store button, and "Install" links point to the store.
+  // Paste the App Store link here when Drift is live: "Coming soon" is
+  // replaced by an App Store button, and "Get Drift" links point to the store.
   const APP_STORE_URL = '';
   if (APP_STORE_URL) {
     $('store-install').hidden = false;
-    $('terminal-install').hidden = true;
+    $('coming-soon').hidden = true;
     $('store-link').href = APP_STORE_URL;
-    document.querySelectorAll('a[href="#install"]').forEach(a => { a.href = APP_STORE_URL; if (a.textContent.trim() === 'Install for Mac') a.textContent = 'Get it on the Mac App Store'; });
+    document.querySelectorAll('a[href="#install"]').forEach(a => { a.href = APP_STORE_URL; if (a.textContent.trim() === 'Get Drift') a.textContent = 'Get it on the Mac App Store'; });
   }
 
-  /* ---------------- Copy ---------------- */
-  const copy = $('copy');
-  copy.addEventListener('click', async () => {
-    try { await navigator.clipboard.writeText('curl -fsSL https://raw.githubusercontent.com/nweinberg97/Drift/main/scripts/install.sh | bash'); copy.textContent = 'Copied'; }
-    catch { copy.textContent = 'Select to copy'; }
-    setTimeout(() => (copy.textContent = 'Copy'), 1800);
-  });
 })();
 </script>
 </body>
