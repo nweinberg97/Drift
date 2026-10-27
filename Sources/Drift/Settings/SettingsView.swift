@@ -23,7 +23,7 @@ final class SettingsWindowController {
             )
             let hosting = NSHostingController(rootView: view)
             let window = NSWindow(contentViewController: hosting)
-            window.title = "Drift Settings"
+            window.title = "\(AppInfo.name) Settings"
             window.styleMask = [.titled, .closable, .fullSizeContentView]
             window.titlebarAppearsTransparent = true
             window.isReleasedWhenClosed = false
@@ -137,13 +137,13 @@ struct SettingsView: View {
             } header: {
                 Text("Shortcuts")
             } footer: {
-                Text("Work from any app, including full-screen ones. Tip: press New timer twice to talk instead of type. Drift also responds to drift:// links for Shortcuts, Siri and Raycast.")
+                Text("Work from any app, including full-screen ones. Tip: press New timer twice to talk instead of type. \(AppInfo.name) also responds to drift:// links for Shortcuts, Siri and Raycast.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
             Section {
-                Toggle("Open Drift at login", isOn: Binding(
+                Toggle("Open \(AppInfo.name) at login", isOn: Binding(
                     get: { launchAtLogin },
                     set: { setLaunchAtLogin($0) }
                 ))
@@ -153,7 +153,7 @@ struct SettingsView: View {
             } header: {
                 Text("General")
             } footer: {
-                Text("Drift works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.")
+                Text("\(AppInfo.name) works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
@@ -184,7 +184,7 @@ struct SettingsView: View {
             }
             launchError = nil
         } catch {
-            launchError = "Couldn't change this — move Drift to your Applications folder and try again."
+            launchError = "Couldn't change this — move \(AppInfo.name) to your Applications folder and try again."
         }
         launchAtLogin = SMAppService.mainApp.status == .enabled
     }

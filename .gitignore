@@ -4,3 +4,8 @@ build/
 *.xcodeproj/
 DerivedData/
 .DS_Store
+
+# Xcode
+xcuserdata/
+*.xcarchive
+DerivedData/

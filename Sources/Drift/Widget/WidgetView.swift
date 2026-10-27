@@ -159,7 +159,7 @@ struct WidgetView: View {
         .fixedSize()
         .reportSize(actions.resize)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("Drift timer")
+        .accessibilityLabel("\(AppInfo.name) timer")
     }
 
     @ViewBuilder

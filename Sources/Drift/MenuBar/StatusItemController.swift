@@ -42,7 +42,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.autoenablesItems = false
         item.menu = menu
         item.button?.imagePosition = .imageLeading
-        item.button?.setAccessibilityLabel("Drift")
+        item.button?.setAccessibilityLabel(AppInfo.name)
 
         store.$now
             .combineLatest(store.$timers, settings.$widgetHidden)
@@ -228,7 +228,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         let settingsItem = action("Settings…", #selector(openSettings))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
-        let quit = action("Quit Drift", #selector(quit))
+        let quit = action("Quit \(AppInfo.name)", #selector(quit))
         quit.keyEquivalent = "q"
         menu.addItem(quit)
     }

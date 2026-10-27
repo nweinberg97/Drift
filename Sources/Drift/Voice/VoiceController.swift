@@ -50,13 +50,13 @@ final class VoiceController: ObservableObject {
         SFSpeechRecognizer.requestAuthorization { status in
             Task { @MainActor in
                 guard status == .authorized else {
-                    self.phase = .failed("Allow Speech Recognition for Drift in System Settings → Privacy & Security.")
+                    self.phase = .failed("Allow Speech Recognition for \(AppInfo.name) in System Settings → Privacy & Security.")
                     return
                 }
                 AVCaptureDevice.requestAccess(for: .audio) { granted in
                     Task { @MainActor in
                         guard granted else {
-                            self.phase = .failed("Allow Microphone access for Drift in System Settings → Privacy & Security.")
+                            self.phase = .failed("Allow Microphone access for \(AppInfo.name) in System Settings → Privacy & Security.")
                             return
                         }
                         self.beginListening()

@@ -56,6 +56,39 @@ jobs:
             build/Drift.zip.sha256
           retention-days: 30
 
+  # The App Store build: archives Drift.xcodeproj (unsigned here; you sign
+  # with your team in Xcode) and checks the bundle has what App Review needs.
+  xcode-archive:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Xcode version
+        run: xcodebuild -version
+      - name: Project is up to date with scripts/gen-xcodeproj.py
+        run: |
+          python3 scripts/gen-xcodeproj.py
+          git diff --exit-code -- Drift.xcodeproj || { echo "::error::Run python3 scripts/gen-xcodeproj.py and commit the result"; exit 1; }
+      - name: Archive (unsigned)
+        run: |
+          scripts/ci-run.sh xcodebuild -project Drift.xcodeproj -scheme Drift -configuration Release \
+            -destination 'generic/platform=macOS' -archivePath build/Drift.xcarchive \
+            CODE_SIGNING_ALLOWED=NO archive
+      - name: Check the bundle
+        run: |
+          APP=build/Drift.xcarchive/Products/Applications/Drift.app
+          ls -la "$APP/Contents" "$APP/Contents/Resources"
+          plutil -p "$APP/Contents/Info.plist"
+          test -f "$APP/Contents/Resources/PrivacyInfo.xcprivacy" || { echo "::error::PrivacyInfo.xcprivacy missing"; exit 1; }
+          test -f "$APP/Contents/Resources/Assets.car" || { echo "::error::Asset catalog (app icon) missing"; exit 1; }
+          test -f "$APP/Contents/Resources/AppIcon.icns" || echo "::warning::No AppIcon.icns (asset catalog only)"
+          /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$APP/Contents/Info.plist"
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.nweinberg.drift
+          /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Contents/Info.plist"
+          lipo -info "$APP/Contents/MacOS/Drift"
+
   # Older toolchain: Command Line Tools / Xcode 15.x ship Swift 5.10, which is
   # stricter about some concurrency patterns. Users building from source with
   # older tools must not hit compile errors.

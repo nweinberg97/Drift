@@ -31,7 +31,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
         super.init()
 
         panel.delegate = self
-        panel.setAccessibilityTitle("Drift")
+        panel.setAccessibilityTitle(AppInfo.name)
         panel.onEscape = { [weak self] in self?.handleEscape() }
         panel.keyHandler = { [weak self] event in self?.handleKey(event) ?? false }
         panel.onDragEnded = { [weak self] in self?.savePlacement() }

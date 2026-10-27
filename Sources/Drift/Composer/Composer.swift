@@ -33,7 +33,7 @@ final class ComposerController: NSObject, NSWindowDelegate {
         panel.draggable = false
         panel.becomesKeyOnlyIfNeeded = false
         panel.delegate = self
-        panel.setAccessibilityTitle("New Drift timer")
+        panel.setAccessibilityTitle("New \(AppInfo.name) timer")
         panel.onEscape = { [weak self] in self?.close() }
 
         let view = ComposerView(
