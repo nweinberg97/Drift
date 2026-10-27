@@ -8,6 +8,14 @@ enum DriftMain {
     @MainActor
     static func main() {
         let app = NSApplication.shared
+        // CI renders every widget state to PNGs instead of running normally.
+        if let dir = ProcessInfo.processInfo.environment["DRIFT_SNAPSHOT_DIR"] {
+            let runner = SnapshotRunner(directory: URL(fileURLWithPath: dir))
+            app.delegate = runner
+            app.setActivationPolicy(.accessory)
+            withExtendedLifetime(runner) { app.run() }
+            return
+        }
         let delegate = AppDelegate()
         app.delegate = delegate
         // A menu-bar utility: no Dock icon, no app switcher entry.
@@ -52,6 +60,17 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         runner.revealTimers = { [weak self] in self?.widget.reveal() }
         runner.hideWidget = { [weak self] in self?.widget.hide() }
         widget.openComposer = { [weak self] in self?.composer.show() }
+        widget.openVoice = { [weak self] in self?.composer.show(listening: true) }
+        widget.acknowledge = { [weak self] in self?.stopAlert() }
+        chimes.onRingingEnded = { [weak self] in self?.widget.ui.alerting = false }
+        // Stop chiming once nothing finished is left (dismissed, snoozed, restarted).
+        store.$timers
+            .map { $0.contains(where: \.isFinished) }
+            .removeDuplicates()
+            .sink { [weak self] anyFinished in
+                if !anyFinished { DispatchQueue.main.async { self?.stopAlert() } }
+            }
+            .store(in: &cancellables)
         notifications.onActivate = { [weak self] in self?.widget.reveal() }
         settingsWindow.onRecordingChanged = { [weak self] recording in
             // Release global hotkeys while recording so the recorder can see them.
@@ -125,7 +144,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         switch action {
         case .newTimer:
             settings.hasLearnedShortcut = true
-            composer.toggle()
+            // Once to type, twice to talk.
+            if composer.isOpen {
+                composer.shortcutPressedAgain()
+            } else {
+                composer.show()
+            }
         case .toggleWidget:
             widget.toggle()
         case .voice:
@@ -152,7 +176,26 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
 
     func timerStore(_ store: TimerStore, didFinish timer: DriftTimer, late: Bool) {
         guard !late else { return }
-        if settings.completionSound { chimes.playComplete(volume: settings.soundVolume) }
+        if timer.pomodoro != nil {
+            // Focus ↔ break: a softer cue, and the widget comes back into view.
+            if settings.completionSound { chimes.playPhase(volume: settings.soundVolume) }
+            if settings.widgetHidden { widget.show() }
+            return
+        }
+        let persistent = settings.completionSound && settings.completionAlert == .untilDismissed
+        widget.presentFinished(timer.id, alerting: persistent)
+        guard settings.completionSound else { return }
+        if persistent {
+            chimes.startRinging(volume: settings.soundVolume)
+        } else {
+            chimes.playComplete(volume: settings.soundVolume)
+        }
+    }
+
+    /// The user has seen the finished timer: stop chiming and pulsing.
+    private func stopAlert() {
+        chimes.stopRinging()
+        widget.ui.alerting = false
     }
 
     func timerStoreScheduleDidChange(_ store: TimerStore) {
@@ -166,7 +209,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
 
     /// Focus sound plays while any timer runs — except during Pomodoro breaks.
     private func syncFocusSound() {
-        let focusing = store.timers.contains { $0.isRunning && $0.pomodoro?.phase != .rest }
+        let focusing = store.timers.contains { $0.isRunning && $0.pomodoro?.isBreak != true }
         focusSound.update(
             shouldPlay: settings.focusSoundEnabled && focusing,
             soundscape: settings.soundscape,

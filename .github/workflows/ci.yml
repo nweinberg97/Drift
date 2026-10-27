@@ -72,3 +72,35 @@ jobs:
           swift --version
       - name: Compile
         run: scripts/ci-run.sh swift build -c release
+
+  # Renders the widget and launcher in representative states and publishes
+  # the PNGs to the `ci-snapshots` branch, so UI changes can be reviewed as
+  # images. Only on main; the branch is overwritten each run.
+  snapshots:
+    if: github.event_name == 'push' || github.event_name == 'workflow_dispatch'
+    runs-on: macos-15
+    timeout-minutes: 20
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - name: Build
+        run: scripts/ci-run.sh swift build
+      - name: Render snapshots
+        run: |
+          mkdir -p snapshots
+          DRIFT_SNAPSHOT_DIR="$PWD/snapshots" timeout 180 .build/debug/Drift
+          ls -la snapshots
+      - name: Publish to ci-snapshots branch
+        env:
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          cd snapshots
+          printf "Widget snapshots for %s\n" "$GITHUB_SHA" > README.md
+          git init -q
+          git checkout -q -b ci-snapshots
+          git add .
+          git -c user.name="drift-ci" -c user.email="drift-ci@users.noreply.github.com" commit -qm "Snapshots for $GITHUB_SHA"
+          git push -fq "https://x-access-token:${TOKEN}@github.com/${GITHUB_REPOSITORY}.git" ci-snapshots

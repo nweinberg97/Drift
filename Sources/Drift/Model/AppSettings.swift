@@ -38,6 +38,21 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// How hard a finished timer tries to get your attention.
+    enum CompletionAlert: String, CaseIterable, Identifiable {
+        /// Chime repeats every few seconds until you dismiss it (up to 2 min).
+        case untilDismissed
+        /// One chime.
+        case once
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .untilDismissed: return "Keep chiming until I dismiss it"
+            case .once: return "Chime once"
+            }
+        }
+    }
+
     private let defaults: UserDefaults
 
     // Timer
@@ -52,8 +67,9 @@ final class AppSettings: ObservableObject {
 
     // Sound
     @Published var completionSound: Bool { didSet { set(completionSound, "completionSound") } }
+    @Published var completionAlert: CompletionAlert { didSet { set(completionAlert.rawValue, "completionAlert") } }
     @Published var startSound: Bool { didSet { set(startSound, "startSound") } }
-    @Published var soundVolume: Double { didSet { set(soundVolume, "soundVolume") } }
+    @Published var soundVolume: Double { didSet { set(soundVolume, "soundVolume2") } }
     @Published var notifications: Bool { didSet { set(notifications, "notifications") } }
 
     // Focus sound
@@ -79,11 +95,12 @@ final class AppSettings: ObservableObject {
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .compact
         widgetOpacity = defaults.object(forKey: "widgetOpacity") as? Double ?? 1
         completionSound = defaults.object(forKey: "completionSound") as? Bool ?? true
+        completionAlert = CompletionAlert(rawValue: defaults.string(forKey: "completionAlert") ?? "") ?? .untilDismissed
         startSound = defaults.object(forKey: "startSound") as? Bool ?? true
-        soundVolume = defaults.object(forKey: "soundVolume") as? Double ?? 0.6
+        soundVolume = defaults.object(forKey: "soundVolume2") as? Double ?? 0.85
         notifications = defaults.object(forKey: "notifications") as? Bool ?? true
         focusSoundEnabled = defaults.object(forKey: "focusSoundEnabled") as? Bool ?? false
-        soundscape = Soundscape(rawValue: defaults.string(forKey: "soundscape") ?? "") ?? .brownNoise
+        soundscape = Soundscape(rawValue: defaults.string(forKey: "soundscape") ?? "") ?? .rain
         focusVolume = defaults.object(forKey: "focusVolume") as? Double ?? 0.35
         widgetHidden = defaults.object(forKey: "widgetHidden") as? Bool ?? false
         hasLearnedShortcut = defaults.object(forKey: "hasLearnedShortcut") as? Bool ?? false

@@ -87,6 +87,14 @@ final class ComposerController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// The New Timer shortcut pressed while the launcher is already open:
+    /// once to type, twice to talk.
+    func shortcutPressedAgain() {
+        panel.makeKey()
+        model.error = nil
+        if voice.isListening { voice.finish() } else { voice.start() }
+    }
+
     func close() {
         voice.cancel()
         guard panel.isVisible else { return }
@@ -225,7 +233,7 @@ struct ComposerView: View {
                         .lineLimit(1)
                         .accessibilityLabel(voice.transcript.isEmpty ? "Listening" : voice.transcript)
                 } else {
-                    TextField("25m, 1:30, 45m writing…", text: $model.text)
+                    TextField("25m, 1:30, 45m email…", text: $model.text)
                         .textFieldStyle(.plain)
                         .font(.system(size: 22, weight: .regular))
                         .foregroundStyle(Theme.primaryText)
@@ -269,14 +277,25 @@ struct ComposerView: View {
                 Text(message)
                     .foregroundStyle(Theme.secondaryText)
             } else if voice.isListening && voice.transcript.isEmpty {
-                Text("Say “25 minutes”, “45 minutes called writing”, “pause”, “add 5 minutes”…")
+                Text("Say “25 minutes”, “45 minutes for email”, “pause”, “add 5 minutes”…")
                     .foregroundStyle(Theme.tertiaryText)
+            } else if model.text.isEmpty && !voice.isListening {
+                Text(p.title).foregroundStyle(Theme.primaryText)
+                KeyCaps(text: "↩")
+                Spacer()
+                Text("or press").foregroundStyle(Theme.tertiaryText)
+                if let s = settings.shortcuts[.newTimer] { KeyCaps(text: s.display) }
+                Text("again to talk").foregroundStyle(Theme.tertiaryText)
             } else {
                 Text(p.title)
                     .foregroundStyle(p.isValid ? Theme.primaryText : Theme.tertiaryText)
                 if let detail = p.detail {
                     Text("·").foregroundStyle(Theme.tertiaryText)
                     Text(detail).foregroundStyle(Theme.secondaryText).lineLimit(1)
+                } else if p.isValid && p.title.hasPrefix("Start") {
+                    Text("· add a name after the time, like “25m email”")
+                        .foregroundStyle(Theme.tertiaryText)
+                        .lineLimit(1)
                 }
                 Spacer()
                 if p.isValid { KeyCaps(text: "↩") }
@@ -303,11 +322,14 @@ struct ComposerView: View {
                 .accessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
             }
             Button(action: startPomodoro) {
-                Text("25 / 5")
+                HStack(spacing: 5) {
+                    Image(systemName: "arrow.triangle.2.circlepath").font(.system(size: 10, weight: .semibold))
+                    Text("Pomodoro")
+                }
             }
             .buttonStyle(ChipStyle())
             .keyboardShortcut("p", modifiers: .command)
-            .help("Pomodoro: 25 min focus, 5 min break, repeating (⌘P)")
+            .help("25 min focus, then a 5 min break, on repeat. Every 4th break is 15 min. (⌘P)")
             .accessibilityLabel("Start a Pomodoro cycle")
             Spacer()
         }

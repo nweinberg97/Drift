@@ -32,12 +32,16 @@ final class TimerStore: ObservableObject {
     private let fileURL: URL
     private var observers: [NSObjectProtocol] = []
 
-    init(settings: AppSettings) {
+    init(settings: AppSettings, fileURL: URL? = nil) {
         self.settings = settings
-        let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
-        let dir = support.appendingPathComponent("Drift", isDirectory: true)
-        try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
-        fileURL = dir.appendingPathComponent("timers.json")
+        if let fileURL {
+            self.fileURL = fileURL
+        } else {
+            let support = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+            let dir = support.appendingPathComponent("Drift", isDirectory: true)
+            try? FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+            self.fileURL = dir.appendingPathComponent("timers.json")
+        }
         load()
 
         let center = NSWorkspace.shared.notificationCenter
@@ -102,6 +106,11 @@ final class TimerStore: ObservableObject {
         create(seconds: focus, pomodoro: PomodoroCycle(focus: focus, rest: rest))
     }
 
+    /// Pomodoro: end the current phase now and start the next one.
+    func skipPhase(_ id: UUID) { mutate(id) { $0.advancePomodoro(from: Date()) } }
+
+    var hasFinished: Bool { timers.contains(where: \.isFinished) }
+
     func toggle(_ id: UUID) { mutate(id) { $0.toggle(at: Date()) } }
     func pause(_ id: UUID) { mutate(id) { $0.pause(at: Date()) } }
     func resume(_ id: UUID) { mutate(id) { $0.start(at: Date()) } }
@@ -144,6 +153,13 @@ final class TimerStore: ObservableObject {
 
     func makePrimary(_ id: UUID) {
         primaryID = id
+    }
+
+    /// Snapshot rendering only: replace every timer at once.
+    func replaceAll(_ newTimers: [DriftTimer], primary: UUID?) {
+        timers = newTimers
+        primaryID = primary
+        now = Date()
     }
 
     // MARK: - Ticking

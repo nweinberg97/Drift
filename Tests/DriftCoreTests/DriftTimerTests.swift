@@ -70,6 +70,28 @@ final class DriftTimerTests: XCTestCase {
         XCTAssertEqual(timer.pomodoro?.round, 2)
     }
 
+    func testPomodoroLongBreakEveryFourth() {
+        var cycle = PomodoroCycle()
+        var phases: [PomodoroCycle.Phase] = []
+        for _ in 0..<8 {
+            phases.append(cycle.phase)
+            cycle = cycle.advanced()
+        }
+        XCTAssertEqual(phases, [.focus, .rest, .focus, .rest, .focus, .rest, .focus, .longRest])
+        XCTAssertEqual(cycle.phase, .focus)
+        XCTAssertEqual(cycle.round, 5)
+        XCTAssertEqual(cycle.roundInSet, 1)
+    }
+
+    func testPomodoroDecodesLegacyJSON() throws {
+        let legacy = #"{"focus":1500,"rest":300,"phase":"rest","round":2}"#.data(using: .utf8)!
+        let cycle = try JSONDecoder().decode(PomodoroCycle.self, from: legacy)
+        XCTAssertEqual(cycle.longRest, 900)
+        XCTAssertEqual(cycle.roundsPerSet, 4)
+        XCTAssertEqual(cycle.phase, .rest)
+        XCTAssertEqual(cycle.upNext.name, "Focus")
+    }
+
     func testCodableRoundTrip() throws {
         var timer = DriftTimer(name: "Laundry", duration: 2_400)
         timer.start(at: t0)

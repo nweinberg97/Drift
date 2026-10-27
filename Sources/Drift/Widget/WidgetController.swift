@@ -16,6 +16,9 @@ final class WidgetController: NSObject, NSWindowDelegate {
     private var isAnimatingVisibility = false
 
     var openComposer: () -> Void = {}
+    var openVoice: () -> Void = {}
+    var acknowledge: () -> Void = {}
+    private var hideWork: DispatchWorkItem?
 
     private static let placementKey = "widgetPlacement"
     private static let inset: CGFloat = 14
@@ -33,6 +36,8 @@ final class WidgetController: NSObject, NSWindowDelegate {
 
         let actions = WidgetActions(
             openComposer: { [weak self] in self?.openComposer() },
+            openVoice: { [weak self] in self?.openVoice() },
+            acknowledge: { [weak self] in self?.acknowledge() },
             hide: { [weak self] in self?.hide() },
             resize: { [weak self] size in self?.resize(to: size) },
             focusPanel: { [weak self] in self?.focus() },
@@ -64,6 +69,9 @@ final class WidgetController: NSObject, NSWindowDelegate {
 
     func show() {
         settings.widgetHidden = false
+        hideWork?.cancel()
+        hideWork = nil
+        ui.hideHint = false
         guard !panel.isVisible || panel.alphaValue < 1 else { return }
         ensureOnScreen()
         panel.alphaValue = 0
@@ -71,20 +79,46 @@ final class WidgetController: NSObject, NSWindowDelegate {
         animateAlpha(to: 1)
     }
 
-    func hide() {
+    /// Hides the widget. With `hint`, it first says where it went and how to
+    /// get it back, so it never just disappears.
+    func hide(hint: Bool = true) {
         settings.widgetHidden = true
-        ui.expanded = false
         ui.editingID = nil
         ui.renamingID = nil
         guard panel.isVisible else { return }
-        animateAlpha(to: 0) { [weak self] in
+        hideWork?.cancel()
+        let finish = DispatchWorkItem { [weak self] in
             guard let self, self.settings.widgetHidden else { return }
-            self.panel.orderOut(nil)
+            self.animateAlpha(to: 0) { [weak self] in
+                guard let self, self.settings.widgetHidden else { return }
+                self.panel.orderOut(nil)
+                self.ui.hideHint = false
+                self.ui.expanded = false
+            }
+        }
+        hideWork = finish
+        if hint {
+            ui.expanded = false
+            ui.hideHint = true
+            DispatchQueue.main.asyncAfter(deadline: .now() + 2.2, execute: finish)
+        } else {
+            ui.expanded = false
+            finish.perform()
         }
     }
 
     func toggle() {
-        isVisible ? hide() : show()
+        isVisible ? hide(hint: false) : show()
+    }
+
+    /// A timer finished: make sure it's seen, with the finish controls open.
+    func presentFinished(_ id: UUID, alerting: Bool) {
+        store.makePrimary(id)
+        show()
+        ui.editingID = nil
+        ui.renamingID = nil
+        ui.expanded = true
+        ui.alerting = alerting
     }
 
     /// Shows the widget expanded — "show my timers".

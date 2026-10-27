@@ -98,6 +98,15 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         timerItems = [:]
         let now = Date()
 
+        // The widget is hidden: the first thing you see is how to get it back.
+        if settings.widgetHidden {
+            let show = action("Show Timer Widget", #selector(toggleWidget))
+            show.image = NSImage(systemSymbolName: "rectangle.on.rectangle", accessibilityDescription: nil)
+            applyShortcut(.toggleWidget, to: show)
+            menu.addItem(show)
+            menu.addItem(.separator())
+        }
+
         let ordered = [store.primary].compactMap { $0 } + store.others
         if ordered.isEmpty {
             let empty = NSMenuItem(title: "No timers running", action: nil, keyEquivalent: "")
@@ -129,7 +138,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             start.indentationLevel = 1
             menu.addItem(start)
         }
-        let pomodoro = action("Start Pomodoro  25 / 5", #selector(startPomodoro))
+        let pomodoro = action("Start Pomodoro (25 min focus, 5 min break)", #selector(startPomodoro))
         pomodoro.indentationLevel = 1
         menu.addItem(pomodoro)
 
@@ -139,17 +148,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         menu.addItem(.separator())
 
-        let toggle = action(settings.widgetHidden ? "Show Widget" : "Hide Widget", #selector(toggleWidget))
-        applyShortcut(.toggleWidget, to: toggle)
-        menu.addItem(toggle)
+        if !settings.widgetHidden {
+            let toggle = action("Hide Widget", #selector(toggleWidget))
+            applyShortcut(.toggleWidget, to: toggle)
+            menu.addItem(toggle)
+            menu.addItem(.separator())
+        }
 
-        menu.addItem(.separator())
-
-        let focus = action("Focus Sound", #selector(toggleFocusSound))
+        let focus = action(settings.focusSoundEnabled ? "Focus Sound: On" : "Focus Sound: Off", #selector(toggleFocusSound))
         focus.state = settings.focusSoundEnabled ? .on : .off
+        focus.toolTip = "Plays softly while a timer runs. Pauses during breaks."
         menu.addItem(focus)
 
-        let scapes = NSMenuItem(title: "Soundscape", action: nil, keyEquivalent: "")
+        let scapes = NSMenuItem(title: "Sound: \(settings.soundscape.title)", action: nil, keyEquivalent: "")
         let scapeMenu = NSMenu()
         for scape in Soundscape.allCases {
             let s = action(scape.title, #selector(selectSoundscape(_:)))

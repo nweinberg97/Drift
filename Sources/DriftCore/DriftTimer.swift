@@ -1,38 +1,98 @@
 import Foundation
 
 /// An optional focus/break cycle attached to a timer. When a phase finishes,
-/// the timer rolls into the next phase instead of stopping.
+/// the timer rolls into the next phase instead of stopping:
+///
+///   Focus → Break → Focus → Break → Focus → Break → Focus → Long break → …
 public struct PomodoroCycle: Codable, Equatable, Sendable {
     public enum Phase: String, Codable, Sendable {
         case focus
         case rest
+        case longRest
     }
 
     public var focus: TimeInterval
     public var rest: TimeInterval
+    /// Longer break taken after every `roundsPerSet` focus sessions.
+    public var longRest: TimeInterval
+    /// Focus sessions per set. 0 turns long breaks off.
+    public var roundsPerSet: Int
     public var phase: Phase
+    /// 1-based focus session number, counting up forever.
     public var round: Int
 
-    public init(focus: TimeInterval = 25 * 60, rest: TimeInterval = 5 * 60, phase: Phase = .focus, round: Int = 1) {
+    public init(
+        focus: TimeInterval = 25 * 60,
+        rest: TimeInterval = 5 * 60,
+        longRest: TimeInterval = 15 * 60,
+        roundsPerSet: Int = 4,
+        phase: Phase = .focus,
+        round: Int = 1
+    ) {
         self.focus = focus
         self.rest = rest
+        self.longRest = longRest
+        self.roundsPerSet = roundsPerSet
         self.phase = phase
         self.round = round
     }
 
-    public var currentDuration: TimeInterval { phase == .focus ? focus : rest }
-    public var phaseName: String { phase == .focus ? "Focus" : "Break" }
+    /// Timers saved by earlier versions have no long-break fields.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        focus = try c.decode(TimeInterval.self, forKey: .focus)
+        rest = try c.decode(TimeInterval.self, forKey: .rest)
+        longRest = try c.decodeIfPresent(TimeInterval.self, forKey: .longRest) ?? 15 * 60
+        roundsPerSet = try c.decodeIfPresent(Int.self, forKey: .roundsPerSet) ?? 4
+        phase = try c.decodeIfPresent(Phase.self, forKey: .phase) ?? .focus
+        round = try c.decodeIfPresent(Int.self, forKey: .round) ?? 1
+    }
+
+    public var isBreak: Bool { phase != .focus }
+
+    public var currentDuration: TimeInterval { duration(of: phase) }
+
+    public func duration(of phase: Phase) -> TimeInterval {
+        switch phase {
+        case .focus: return focus
+        case .rest: return rest
+        case .longRest: return longRest
+        }
+    }
+
+    public static func name(of phase: Phase) -> String {
+        switch phase {
+        case .focus: return "Focus"
+        case .rest: return "Break"
+        case .longRest: return "Long break"
+        }
+    }
+
+    public var phaseName: String { Self.name(of: phase) }
+
+    /// Position within the current set, 1…roundsPerSet.
+    public var roundInSet: Int {
+        guard roundsPerSet > 0 else { return round }
+        return (round - 1) % roundsPerSet + 1
+    }
 
     public func advanced() -> PomodoroCycle {
         var next = self
         switch phase {
         case .focus:
-            next.phase = .rest
-        case .rest:
+            let setDone = roundsPerSet > 0 && round % roundsPerSet == 0
+            next.phase = setDone ? .longRest : .rest
+        case .rest, .longRest:
             next.phase = .focus
             next.round += 1
         }
         return next
+    }
+
+    /// What comes after the current phase, for "Break next · 5 min".
+    public var upNext: (name: String, duration: TimeInterval) {
+        let next = advanced()
+        return (next.phaseName, next.currentDuration)
     }
 }
 
@@ -236,7 +296,7 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
     /// A fresh, running copy with the same name and length.
     public func duplicated(at now: Date) -> DriftTimer {
         var copy = DriftTimer(name: name, duration: duration, createdAt: now, pomodoro: pomodoro.map {
-            PomodoroCycle(focus: $0.focus, rest: $0.rest)
+            PomodoroCycle(focus: $0.focus, rest: $0.rest, longRest: $0.longRest, roundsPerSet: $0.roundsPerSet)
         })
         if let cycle = copy.pomodoro { copy.duration = cycle.currentDuration }
         copy.start(at: now)

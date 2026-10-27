@@ -44,7 +44,7 @@ final class CommandRunner {
         case let .start(seconds, name):
             return Preview(title: "Start \(TimeFormatter.clock(seconds))", detail: name, isValid: true)
         case let .pomodoro(focus, rest):
-            return Preview(title: "Pomodoro", detail: "\(TimeFormatter.compact(focus)) focus · \(TimeFormatter.compact(rest)) break", isValid: true)
+            return Preview(title: "Pomodoro", detail: "\(TimeFormatter.compact(focus)) focus, then \(TimeFormatter.compact(rest)) break, on repeat", isValid: true)
         case let .pause(target):
             return targetPreview("Pause", target) { $0.isRunning }
         case let .resume(target):

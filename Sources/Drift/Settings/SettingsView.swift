@@ -85,6 +85,10 @@ struct SettingsView: View {
 
             Section("Sound") {
                 Toggle("Completion chime", isOn: $settings.completionSound)
+                Picker("When a timer finishes", selection: $settings.completionAlert) {
+                    ForEach(AppSettings.CompletionAlert.allCases) { Text($0.title).tag($0) }
+                }
+                .disabled(!settings.completionSound)
                 Toggle("Soft tick when a timer starts", isOn: $settings.startSound)
                 LabeledContent("Chime volume") {
                     Slider(value: $settings.soundVolume, in: 0...1)
@@ -95,8 +99,8 @@ struct SettingsView: View {
 
             Section {
                 Toggle("Play while a timer runs", isOn: $settings.focusSoundEnabled)
-                Picker("Soundscape", selection: $settings.soundscape) {
-                    ForEach(Soundscape.allCases) { Text($0.title).tag($0) }
+                Picker("Sound", selection: $settings.soundscape) {
+                    ForEach(Soundscape.allCases) { Label($0.title, systemImage: $0.symbol).tag($0) }
                 }
                 LabeledContent("Volume") {
                     Slider(value: $settings.focusVolume, in: 0...1)
@@ -126,7 +130,7 @@ struct SettingsView: View {
             } header: {
                 Text("Shortcuts")
             } footer: {
-                Text("Work from any app, including full-screen ones. Drift also responds to drift:// links — handy for Shortcuts, Siri and Raycast.")
+                Text("Work from any app, including full-screen ones. Tip: press New timer twice to talk instead of type. Drift also responds to drift:// links for Shortcuts, Siri and Raycast.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
