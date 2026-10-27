@@ -5,14 +5,55 @@ import SwiftUI
 @MainActor
 final class WidgetUIState: ObservableObject {
     @Published var expanded = false
-    @Published var editingID: UUID?
+    /// The timer whose label is being edited in place.
     @Published var renamingID: UUID?
     @Published var draft = ""
-    @Published var editError = false
+    /// The timer whose time is on the dial, and the dial's value.
+    @Published var dialID: UUID?
+    @Published var dialValue: TimeInterval = 0
+    var dialOriginal: TimeInterval = 0
     /// Shown for a moment after hiding, so the widget never just vanishes.
     @Published var hideHint = false
     /// A finished timer is chiming; the widget pulses until it's handled.
     @Published var alerting = false
+}
+
+extension WidgetUIState {
+    static let dialMaximum: TimeInterval = 12 * 3_600
+
+    func beginRename(_ t: DriftTimer) {
+        guard t.pomodoro == nil else { return }
+        closeDial(commit: true, store: nil)
+        draft = t.name ?? ""
+        renamingID = t.id
+    }
+
+    func openDial(_ t: DriftTimer, now: Date) {
+        guard !t.isFinished else { return }
+        renamingID = nil
+        dialOriginal = t.remaining(at: now)
+        dialValue = max(60, (dialOriginal / 60).rounded() * 60)
+        dialID = t.id
+    }
+
+    /// Moves the dial; the timer follows live, a minute at a time.
+    func setDial(_ value: TimeInterval, store: TimerStore) {
+        guard let id = dialID else { return }
+        let next = min(Self.dialMaximum, max(60, (value / 60).rounded() * 60))
+        guard next != dialValue else { return }
+        dialValue = next
+        store.setRemaining(id, seconds: next)
+        NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+    }
+
+    /// Done keeps the new time; Cancel puts the old one back.
+    func closeDial(commit: Bool, store: TimerStore?) {
+        guard let id = dialID else { return }
+        if !commit, let store, store.timer(id) != nil {
+            store.setRemaining(id, seconds: dialOriginal)
+        }
+        dialID = nil
+    }
 }
 
 struct WidgetActions {
@@ -49,17 +90,21 @@ struct WidgetView: View {
                 IdleRow(store: store, settings: settings, ui: ui, scale: scale, actions: actions)
             }
 
-            if ui.expanded && !ui.hideHint {
+            if let id = ui.dialID, let t = store.timer(id), !ui.hideHint {
+                DialSection(timer: t, store: store, settings: settings, ui: ui, actions: actions)
+                    .transition(.opacity)
+            } else if ui.expanded && !ui.hideHint {
                 ExpandedSection(store: store, settings: settings, ui: ui, scale: scale, actions: actions)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
-        .frame(width: ui.expanded && !ui.hideHint ? expandedWidth : nil, alignment: .leading)
+        .frame(width: (ui.expanded || ui.dialID != nil) && !ui.hideHint ? expandedWidth : nil, alignment: .leading)
         .driftSurface(cornerRadius: Theme.cornerRadius * min(scale, 1.15), opacity: settings.widgetOpacity)
         .overlay(AlertPulse(active: ui.alerting, cornerRadius: Theme.cornerRadius * min(scale, 1.15)))
         .contextMenu { contextMenu }
         .animation(reduceMotion ? nil : Theme.quick, value: ui.expanded)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.hideHint)
+        .animation(reduceMotion ? nil : Theme.quick, value: ui.dialID)
         .animation(reduceMotion ? nil : Theme.quick, value: store.timers.map(\.id))
         .fixedSize()
         .reportSize(actions.resize)
@@ -78,8 +123,8 @@ struct WidgetView: View {
                 Button("Add 5 Minutes") { store.adjust(t.id, by: 300) }
                 Button("Remove 5 Minutes") { store.adjust(t.id, by: -300) }
                     .disabled(t.remaining(at: store.now) <= 300)
-                Button("Edit Time…") { beginEdit(t) }
-                Button("Name…") { beginRename(t) }
+                Button("Change Time…") { ui.openDial(t, now: Date()); actions.focusPanel() }
+                if t.pomodoro == nil { Button(t.name == nil ? "Add Task…" : "Rename…") { ui.beginRename(t); actions.focusPanel() } }
                 if let cycle = t.pomodoro {
                     Button("Skip to \(cycle.upNext.name)") { store.skipPhase(t.id) }
                 }
@@ -94,21 +139,6 @@ struct WidgetView: View {
         Button("Hide Widget") { actions.hide() }
     }
 
-    private func beginEdit(_ t: DriftTimer) {
-        ui.expanded = true
-        ui.renamingID = nil
-        ui.draft = TimeFormatter.compact(t.remaining(at: Date()))
-        ui.editingID = t.id
-        actions.focusPanel()
-    }
-
-    private func beginRename(_ t: DriftTimer) {
-        ui.expanded = true
-        ui.editingID = nil
-        ui.draft = t.name ?? ""
-        ui.renamingID = t.id
-        actions.focusPanel()
-    }
 }
 
 // MARK: - Primary row
@@ -137,28 +167,26 @@ private struct PrimaryRow: View {
             StatusDot(timer: timer, size: 7 * scale)
 
             HStack(alignment: .firstTextBaseline, spacing: 7 * scale) {
-                if let name = timer.displayName {
-                    Text(name)
-                        .font(.system(size: 12 * scale, weight: .medium))
-                        .foregroundStyle(timer.pomodoro?.isBreak == true ? Theme.accent : Theme.secondaryText)
-                        .lineLimit(1)
-                        .frame(maxWidth: 96 * scale, alignment: .leading)
-                }
+                TaskLabel(timer: timer, store: store, ui: ui, actions: actions,
+                          size: 12 * scale, maxWidth: 104 * scale, fieldWidth: 120 * scale)
                 if timer.isFinished {
                     Text("Done")
                         .font(Theme.digits(22 * scale))
                         .foregroundStyle(Theme.accent)
+                        .contentShape(Rectangle())
+                        .onTapGesture { actions.acknowledge(); ui.expanded.toggle() }
+                        .accessibilityLabel(accessibilityText)
+                        .accessibilityAddTraits(.isButton)
                 } else {
-                    TimeText(remaining: remaining, size: 22 * scale, color: timeColor)
+                    Button { toggleDial() } label: {
+                        TimeText(remaining: remaining, size: 22 * scale, color: timeColor)
+                    }
+                    .buttonStyle(EditableTextStyle(active: ui.dialID == timer.id))
+                    .help("Click to change the time")
+                    .accessibilityLabel(accessibilityText)
+                    .accessibilityHint("Opens a dial to change the time")
                 }
             }
-            .contentShape(Rectangle())
-            .onTapGesture { actions.acknowledge(); ui.expanded.toggle() }
-            .accessibilityElement(children: .ignore)
-            .accessibilityLabel(accessibilityText)
-            .accessibilityAddTraits(.isButton)
-            .accessibilityHint(ui.expanded ? "Collapses timer controls" : "Shows timer controls")
-            .accessibilityAction { ui.expanded.toggle() }
 
             Spacer(minLength: 2)
 
@@ -212,6 +240,17 @@ private struct PrimaryRow: View {
         .padding(.vertical, 7 * scale)
         .animation(reduceMotion ? nil : Theme.gentle, value: isWarning)
         .animation(reduceMotion ? nil : Theme.quick, value: timer.state)
+    }
+
+    private func toggleDial() {
+        actions.acknowledge()
+        if ui.dialID == timer.id {
+            ui.closeDial(commit: true, store: store)
+            actions.releaseFocus()
+        } else {
+            ui.openDial(timer, now: Date())
+            actions.focusPanel()
+        }
     }
 
     private var accessibilityText: String {
@@ -377,7 +416,7 @@ private struct IdleRow: View {
             if let shortcut = settings.shortcuts[.newTimer] {
                 HStack(spacing: 6) {
                     KeyCaps(text: shortcut.display)
-                    Text("type or say a timer, from any app")
+                    Text("write a task and a time, from any app")
                         .font(Theme.caption)
                         .foregroundStyle(Theme.tertiaryText)
                 }
@@ -400,24 +439,16 @@ private struct ExpandedSection: View {
     let scale: CGFloat
     let actions: WidgetActions
 
-    @FocusState private var fieldFocused: Bool
-
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             if let t = store.primary {
                 ProgressLine(progress: t.progress(at: store.now), active: t.isRunning)
                     .padding(.horizontal, 13 * scale)
 
-                if ui.editingID == t.id || ui.renamingID == t.id {
-                    editField(for: t)
-                } else {
-                    if let cycle = t.pomodoro {
-                        PomodoroStrip(cycle: cycle, scale: scale)
-                    } else if !t.isFinished {
-                        nameLine(for: t)
-                    }
-                    controls(for: t)
+                if let cycle = t.pomodoro {
+                    PomodoroStrip(cycle: cycle, scale: scale)
                 }
+                controls(for: t)
             }
 
             let others = store.others
@@ -425,7 +456,7 @@ private struct ExpandedSection: View {
                 Hairline()
                 VStack(spacing: 0) {
                     ForEach(others) { other in
-                        OtherTimerRow(timer: other, store: store, scale: scale)
+                        OtherTimerRow(timer: other, store: store, ui: ui, actions: actions, scale: scale)
                     }
                 }
                 .padding(.vertical, 4)
@@ -467,24 +498,6 @@ private struct ExpandedSection: View {
         }
     }
 
-    /// "Add a name" is right there, so naming is discoverable.
-    private func nameLine(for t: DriftTimer) -> some View {
-        Button { beginRename(t) } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "pencil").font(.system(size: 10, weight: .semibold))
-                Text(t.name ?? "Name this timer")
-                    .lineLimit(1)
-            }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(t.name == nil ? Theme.tertiaryText : Theme.secondaryText)
-        }
-        .buttonStyle(.plain)
-        .padding(.horizontal, 13 * scale)
-        .padding(.top, 2)
-        .help("Give this timer a name, like Email or Laundry")
-        .accessibilityLabel(t.name.map { "Name: \($0). Rename" } ?? "Name this timer")
-    }
-
     @ViewBuilder
     private func controls(for t: DriftTimer) -> some View {
         HStack(spacing: 2) {
@@ -512,78 +525,14 @@ private struct ExpandedSection: View {
                 Button("+5 min") { store.adjust(t.id, by: 300) }
                     .buttonStyle(QuietButtonStyle())
                     .accessibilityLabel("Add 5 minutes")
-                Button("Edit time") { beginEdit(t) }
-                    .buttonStyle(QuietButtonStyle())
-                    .help("Set the time left, e.g. 10m or 1:30")
+                Button("Set time…") { ui.openDial(t, now: Date()); actions.focusPanel() }
+                    .buttonStyle(QuietButtonStyle(prominent: true))
+                    .help("Turn a dial or pick 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h")
                 Spacer()
             }
         }
         .padding(.horizontal, 7 * scale)
         .padding(.vertical, 5)
-    }
-
-    private func editField(for t: DriftTimer) -> some View {
-        let renaming = ui.renamingID == t.id
-        return HStack(spacing: 6) {
-            TextField(renaming ? "Name, e.g. Email" : "Time left, e.g. 10m or 1:30", text: $ui.draft)
-                .textFieldStyle(.plain)
-                .font(.system(size: 13, weight: .medium))
-                .focused($fieldFocused)
-                .onSubmit { commit(t, renaming: renaming) }
-                .onExitCommand { endEditing() }
-                .padding(.horizontal, 8)
-                .frame(height: 26)
-                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.control))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 7, style: .continuous)
-                        .strokeBorder(ui.editError ? Theme.accent : Color.clear, lineWidth: 1)
-                )
-            Button("Save") { commit(t, renaming: renaming) }
-                .buttonStyle(QuietButtonStyle(prominent: true))
-        }
-        .padding(.horizontal, 8 * scale)
-        .padding(.vertical, 6)
-        .onAppear {
-            DispatchQueue.main.async { fieldFocused = true }
-        }
-    }
-
-    private func beginEdit(_ t: DriftTimer) {
-        ui.renamingID = nil
-        ui.draft = TimeFormatter.compact(t.remaining(at: Date()))
-        ui.editingID = t.id
-        actions.focusPanel()
-    }
-
-    private func beginRename(_ t: DriftTimer) {
-        ui.editingID = nil
-        ui.draft = t.name ?? ""
-        ui.renamingID = t.id
-        actions.focusPanel()
-    }
-
-    private func commit(_ t: DriftTimer, renaming: Bool) {
-        if renaming {
-            store.rename(t.id, to: ui.draft)
-            endEditing()
-            return
-        }
-        guard let parsed = DurationParser.parse(ui.draft) else {
-            ui.editError = true
-            NSSound.beep()
-            return
-        }
-        store.setRemaining(t.id, seconds: parsed.seconds)
-        if let label = parsed.label { store.rename(t.id, to: label) }
-        endEditing()
-    }
-
-    private func endEditing() {
-        ui.editingID = nil
-        ui.renamingID = nil
-        ui.editError = false
-        ui.draft = ""
-        actions.releaseFocus()
     }
 }
 
@@ -678,20 +627,33 @@ private struct FocusSoundRow: View {
 private struct OtherTimerRow: View {
     let timer: DriftTimer
     @ObservedObject var store: TimerStore
+    @ObservedObject var ui: WidgetUIState
+    let actions: WidgetActions
     let scale: CGFloat
     @State private var hovering = false
 
     var body: some View {
         HStack(spacing: 8) {
             StatusDot(timer: timer, size: 6 * scale)
-            Text(timer.displayName ?? TimeFormatter.compact(timer.duration) + " timer")
-                .font(.system(size: 12 * scale, weight: .medium))
-                .foregroundStyle(Theme.secondaryText)
-                .lineLimit(1)
+            TaskLabel(timer: timer, store: store, ui: ui, actions: actions,
+                      size: 12 * scale, maxWidth: 150 * scale, fieldWidth: 130 * scale)
             Spacer(minLength: 6)
-            Text(timer.isFinished ? "Done" : TimeFormatter.clock(timer.remaining(at: store.now)))
-                .font(Theme.digits(13 * scale))
-                .foregroundStyle(timer.isFinished ? Theme.accent : (timer.isPaused ? Theme.tertiaryText : Theme.primaryText))
+            if timer.isFinished {
+                Text("Done")
+                    .font(Theme.digits(13 * scale))
+                    .foregroundStyle(Theme.accent)
+            } else {
+                Button {
+                    ui.openDial(timer, now: Date())
+                    actions.focusPanel()
+                } label: {
+                    Text(TimeFormatter.clock(timer.remaining(at: store.now)))
+                        .font(Theme.digits(13 * scale))
+                        .foregroundStyle(timer.isPaused ? Theme.tertiaryText : Theme.primaryText)
+                }
+                .buttonStyle(EditableTextStyle(active: ui.dialID == timer.id))
+                .help("Click to change the time")
+            }
             if !timer.isFinished {
                 Button { store.toggle(timer.id) } label: {
                     Image(systemName: timer.isRunning ? "pause.fill" : "play.fill")
@@ -713,7 +675,7 @@ private struct OtherTimerRow: View {
         .onHover { hovering = $0 }
         .onTapGesture { store.makePrimary(timer.id) }
         .help("Click to show this timer at the top")
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: .contain)
         .accessibilityAction(named: "Show at top") { store.makePrimary(timer.id) }
         .accessibilityAction(named: timer.isRunning ? "Pause" : "Resume") { store.toggle(timer.id) }
         .accessibilityAction(named: "Cancel") { store.remove(timer.id) }
@@ -742,5 +704,311 @@ private struct ProgressLine: View {
 private struct Hairline: View {
     var body: some View {
         Rectangle().fill(Theme.hairline).frame(height: 0.5)
+    }
+}
+
+// MARK: - Editing in place
+
+/// A timer's task. Click to rename it right where it is; a timer without one
+/// invites one with a faint "+ Add task".
+private struct TaskLabel: View {
+    let timer: DriftTimer
+    @ObservedObject var store: TimerStore
+    @ObservedObject var ui: WidgetUIState
+    let actions: WidgetActions
+    let size: CGFloat
+    let maxWidth: CGFloat
+    let fieldWidth: CGFloat
+
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        if ui.renamingID == timer.id {
+            TextField("What is it for?", text: $ui.draft)
+                .textFieldStyle(.plain)
+                .font(.system(size: size + 0.5, weight: .medium))
+                .foregroundStyle(Theme.primaryText)
+                .focused($focused)
+                .onSubmit(commit)
+                .onExitCommand(perform: cancel)
+                .padding(.horizontal, 6)
+                .frame(width: fieldWidth, height: size + 10)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.surface))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent, lineWidth: 1))
+                .onAppear { DispatchQueue.main.async { focused = true } }
+                .onChange(of: focused) { isFocused in
+                    if !isFocused && ui.renamingID == timer.id { commit() }
+                }
+                .accessibilityLabel("Task name")
+        } else if timer.pomodoro != nil {
+            Text(timer.displayName ?? "")
+                .font(.system(size: size, weight: .medium))
+                .foregroundStyle(timer.pomodoro?.isBreak == true ? Theme.accent : Theme.secondaryText)
+                .lineLimit(1)
+        } else if timer.isFinished && timer.name == nil {
+            EmptyView()
+        } else {
+            Button {
+                actions.acknowledge()
+                ui.beginRename(timer)
+                actions.focusPanel()
+            } label: {
+                if let name = timer.name {
+                    Text(name)
+                        .font(.system(size: size, weight: .medium))
+                        .foregroundStyle(Theme.secondaryText)
+                        .lineLimit(1)
+                } else {
+                    HStack(spacing: 3) {
+                        Image(systemName: "plus").font(.system(size: size - 2, weight: .bold))
+                        Text("Add task")
+                    }
+                    .font(.system(size: size, weight: .medium))
+                    .foregroundStyle(Theme.tertiaryText)
+                }
+            }
+            .buttonStyle(EditableTextStyle(active: false))
+            .frame(maxWidth: maxWidth, alignment: .leading)
+            .fixedSize(horizontal: timer.name == nil, vertical: false)
+            .help(timer.name == nil ? "Add what this timer is for" : "Click to rename")
+            .accessibilityLabel(timer.name.map { "Task: \($0). Rename" } ?? "Add task")
+        }
+    }
+
+    private func commit() {
+        guard ui.renamingID == timer.id else { return }
+        store.rename(timer.id, to: ui.draft)
+        ui.renamingID = nil
+        ui.draft = ""
+        actions.releaseFocus()
+    }
+
+    private func cancel() {
+        ui.renamingID = nil
+        ui.draft = ""
+        actions.releaseFocus()
+    }
+}
+
+/// Text you can click to edit: a dotted underline on hover says so.
+private struct EditableTextStyle: ButtonStyle {
+    let active: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .padding(.horizontal, 3)
+            .padding(.vertical, 1)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(active ? Theme.accent.opacity(0.14) : (hovering || configuration.isPressed ? Theme.control : Color.clear))
+            )
+            .padding(.horizontal, -3)
+            .padding(.vertical, -1)
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+    }
+}
+
+// MARK: - Dial
+
+/// Change a timer's time by turning a dial: a minute per notch, a full turn
+/// is an hour. Presets and ±5 sit underneath. The timer follows live; Cancel
+/// puts it back.
+private struct DialSection: View {
+    let timer: DriftTimer
+    @ObservedObject var store: TimerStore
+    @ObservedObject var settings: AppSettings
+    @ObservedObject var ui: WidgetUIState
+    let actions: WidgetActions
+
+    @State private var lastAngle: Double?
+    @State private var accumulated: Double = 0
+
+    private static let diameter: CGFloat = 184
+
+    var body: some View {
+        VStack(spacing: 0) {
+            HStack(alignment: .firstTextBaseline) {
+                Text(timer.displayName ?? "Timer")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineLimit(1)
+                Spacer(minLength: 8)
+                Text("drag, scroll or use arrows")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.tertiaryText)
+            }
+            .padding(.horizontal, 4)
+            .padding(.bottom, 8)
+
+            DialFace(value: ui.dialValue)
+                .frame(width: Self.diameter, height: Self.diameter)
+                .contentShape(Circle())
+                .gesture(turn)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel("Time left")
+                .accessibilityValue(TimeFormatter.spoken(ui.dialValue))
+                .accessibilityAdjustableAction { direction in
+                    switch direction {
+                    case .increment: ui.setDial(ui.dialValue + 60, store: store)
+                    case .decrement: ui.setDial(ui.dialValue - 60, store: store)
+                    @unknown default: break
+                    }
+                }
+
+            HStack(spacing: 8) {
+                step("−5 min", -300)
+                step("−1", -60)
+                step("+1", 60)
+                step("+5 min", 300)
+            }
+            .padding(.top, 10)
+            .padding(.bottom, 10)
+
+            LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: 5), count: 5), spacing: 5) {
+                ForEach(Array(settings.presets.prefix(10).enumerated()), id: \.offset) { item in
+                    let seconds = item.element
+                    Button(TimeFormatter.compact(seconds)) {
+                        ui.setDial(seconds, store: store)
+                        finish(commit: true)
+                    }
+                    .buttonStyle(PresetChipStyle(selected: ui.dialValue == seconds))
+                    .accessibilityLabel("Set to \(TimeFormatter.spoken(seconds))")
+                }
+            }
+
+            HStack(spacing: 6) {
+                Spacer()
+                Button("Cancel") { finish(commit: false) }
+                    .buttonStyle(QuietButtonStyle())
+                    .keyboardShortcut(.cancelAction)
+                Button("Done") { finish(commit: true) }
+                    .buttonStyle(QuietButtonStyle(prominent: true))
+                    .keyboardShortcut(.defaultAction)
+            }
+            .padding(.top, 10)
+        }
+        .padding(12)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 0.5) }
+    }
+
+    private func step(_ title: String, _ delta: TimeInterval) -> some View {
+        Button(title) { ui.setDial(ui.dialValue + delta, store: store) }
+            .buttonStyle(StepChipStyle())
+            .accessibilityLabel(delta > 0 ? "Add \(TimeFormatter.spoken(delta))" : "Remove \(TimeFormatter.spoken(-delta))")
+    }
+
+    private func finish(commit: Bool) {
+        ui.closeDial(commit: commit, store: store)
+        actions.releaseFocus()
+    }
+
+    /// Dragging around the ring: one minute per 6°.
+    private var turn: some Gesture {
+        DragGesture(minimumDistance: 0)
+            .onChanged { g in
+                let c = Self.diameter / 2
+                let angle = atan2(Double(g.location.y - c), Double(g.location.x - c)) * 180 / .pi
+                if let last = lastAngle {
+                    var d = angle - last
+                    if d > 180 { d -= 360 }
+                    if d < -180 { d += 360 }
+                    accumulated += d / 6
+                    let whole = accumulated.rounded(.towardZero)
+                    if whole != 0 {
+                        accumulated -= whole
+                        ui.setDial(ui.dialValue + whole * 60, store: store)
+                    }
+                }
+                lastAngle = angle
+            }
+            .onEnded { _ in
+                lastAngle = nil
+                accumulated = 0
+            }
+    }
+}
+
+private struct DialFace: View {
+    let value: TimeInterval
+
+    var body: some View {
+        let minutes = value.truncatingRemainder(dividingBy: 3_600) / 3_600
+        let fullHour = value >= 3_600 && minutes == 0
+        let fraction = fullHour ? 1 : minutes
+        let hours = Int(value / 3_600)
+        GeometryReader { proxy in
+            let size = min(proxy.size.width, proxy.size.height)
+            let ring = size / 2 - 16
+            ZStack {
+                ForEach(0..<60, id: \.self) { i in
+                    Capsule()
+                        .fill(Theme.tertiaryText.opacity(i % 5 == 0 ? 1 : 0.55))
+                        .frame(width: i % 5 == 0 ? 1.6 : 0.9, height: i % 5 == 0 ? 6 : 3.5)
+                        .offset(y: -(size / 2 - 4))
+                        .rotationEffect(.degrees(Double(i) * 6))
+                }
+                Circle()
+                    .stroke(Theme.control, lineWidth: 10)
+                    .frame(width: ring * 2, height: ring * 2)
+                Circle()
+                    .trim(from: 0, to: fraction)
+                    .stroke(Theme.accent, style: StrokeStyle(lineWidth: 10, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: ring * 2, height: ring * 2)
+                Circle()
+                    .fill(Theme.surface)
+                    .overlay(Circle().strokeBorder(Theme.accent, lineWidth: 3))
+                    .frame(width: 22, height: 22)
+                    .shadow(color: .black.opacity(0.15), radius: 2, y: 1)
+                    .offset(y: -ring)
+                    .rotationEffect(.degrees(fullHour ? 0 : minutes * 360))
+                VStack(spacing: 6) {
+                    Text(TimeFormatter.clock(value))
+                        .font(Theme.digits(34))
+                        .kerning(-0.5)
+                        .foregroundStyle(Theme.primaryText)
+                    Text(hours > 0 ? "\(hours) h + minutes on the ring" : "Turn to adjust")
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.secondaryText)
+                }
+            }
+            .frame(width: size, height: size)
+        }
+    }
+}
+
+private struct StepChipStyle: ButtonStyle {
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .semibold))
+            .foregroundStyle(Theme.primaryText)
+            .padding(.horizontal, 11)
+            .frame(height: 26)
+            .background(Capsule().fill(configuration.isPressed || hovering ? Theme.controlHover : Theme.control))
+            .contentShape(Capsule())
+            .onHover { hovering = $0 }
+    }
+}
+
+private struct PresetChipStyle: ButtonStyle {
+    let selected: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: .medium).monospacedDigit())
+            .foregroundStyle(selected ? Color.white : (hovering ? Theme.primaryText : Theme.secondaryText))
+            .frame(maxWidth: .infinity)
+            .frame(height: 26)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(selected ? Theme.accent : (configuration.isPressed || hovering ? Theme.controlHover : Theme.control))
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
     }
 }

@@ -46,6 +46,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         var hideHint = false
         var alerting = false
         var renaming = false
+        var dial: TimeInterval?
         var focusSound = false
         var dark = false
     }
@@ -98,6 +99,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "10-hide-hint", timers: [writing], primary: writing.id, hideHint: true),
             Scenario(name: "11-dark-expanded", timers: [writing, laundry, tea], primary: writing.id, expanded: true, focusSound: true, dark: true),
             Scenario(name: "12-dark-collapsed", timers: [writing, laundry], primary: writing.id, dark: true),
+            Scenario(name: "13-unnamed-collapsed", timers: [unnamed], primary: unnamed.id),
+            Scenario(name: "14-dial", timers: [writing], primary: writing.id, dial: 1_920),
+            Scenario(name: "15-dial-dark-hours", timers: [laundry], primary: laundry.id, dial: 5_400, dark: true),
         ]
     }
 
@@ -115,6 +119,10 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                 ui.renamingID = id
                 ui.draft = "Email"
             }
+            if let value = s.dial, let id = s.primary {
+                ui.dialID = id
+                ui.dialValue = value
+            }
             let actions = WidgetActions(
                 openComposer: {}, openVoice: {}, acknowledge: {}, hide: {},
                 resize: { _ in }, focusPanel: {}, releaseFocus: {}
@@ -125,14 +133,29 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
 
         // Launcher states.
         let runner = CommandRunner(store: store, settings: settings)
-        for (name, text, dark) in [("20-launcher-empty", "", false), ("21-launcher-typed", "25", false),
-                                   ("22-launcher-named", "45m email", false), ("23-launcher-pomodoro", "pomodoro", true)] {
+        let launcher: [(String, String, Bool, Bool)] = [
+            ("20-launcher-first-run", "", false, false),
+            ("21-launcher-task-only", "Write intro", false, false),
+            ("22-launcher-task-and-time", "Write intro 45m", false, false),
+            ("23-launcher-number", "25", false, false),
+            ("24-launcher-recents", "", true, false),
+            ("25-launcher-dark-words", "Reading for an hour and a half", true, true),
+        ]
+        for (name, text, returning, dark) in launcher {
+            settings.forgetRecents()
+            settings.hasWrittenTask = false
+            if returning {
+                settings.remember(task: "Email", seconds: 1_500)
+                settings.remember(task: "Write intro", seconds: 2_700)
+            }
             let model = ComposerModel()
             model.text = text
             let view = ComposerView(
                 model: model, settings: settings, voice: voice,
                 preview: { runner.preview($0) },
-                submit: {}, startPreset: { _ in }, startPomodoro: {}, toggleVoice: {}, close: {}, resize: { _ in }
+                plan: { runner.plan($0) },
+                submit: {}, startPreset: { _ in }, startRecent: { _ in }, startPomodoro: {},
+                toggleVoice: {}, close: {}, resize: { _ in }
             )
             await render(view, name: name, dark: dark)
         }

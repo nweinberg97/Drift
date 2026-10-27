@@ -55,7 +55,7 @@ struct SettingsView: View {
                     }
                 }
                 LabeledContent("Quick starts") {
-                    TextField("5m 15m 25m 45m 1h", text: $presetsText)
+                    TextField("5m 10m 15m 20m 25m 30m 45m 1h 2h", text: $presetsText)
                         .multilineTextAlignment(.trailing)
                         .onSubmit(savePresets)
                         .frame(maxWidth: 200)
@@ -171,7 +171,7 @@ struct SettingsView: View {
         let parsed = presetsText
             .split(separator: " ")
             .compactMap { DurationParser.parse(String($0))?.seconds }
-        if !parsed.isEmpty { settings.presets = Array(parsed.prefix(5)) }
+        if !parsed.isEmpty { settings.presets = Array(parsed.prefix(9)) }
         presetsText = settings.presets.map(TimeFormatter.compact).joined(separator: " ")
     }
 

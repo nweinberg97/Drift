@@ -158,13 +158,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     }
 
     private func beginEditing(_ id: UUID, rename: Bool) {
-        guard let timer = store.timer(id) else { return }
-        store.makePrimary(id)
-        widget.show()
-        widget.ui.expanded = true
-        widget.ui.draft = rename ? (timer.name ?? "") : TimeFormatter.compact(timer.remaining(at: Date()))
-        if rename { widget.ui.renamingID = id } else { widget.ui.editingID = id }
-        widget.focus()
+        if rename { widget.beginRename(id) } else { widget.openDial(id) }
     }
 
     // MARK: - TimerStoreDelegate

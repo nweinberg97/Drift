@@ -43,8 +43,10 @@ final class ComposerController: NSObject, NSWindowDelegate {
             preview: { [weak runner] text in
                 runner?.preview(text) ?? CommandRunner.Preview(title: "", detail: nil, isValid: false)
             },
+            plan: { [weak runner] text in runner?.plan(text) ?? .invalid },
             submit: { [weak self] in self?.submit() },
             startPreset: { [weak self] seconds in self?.startPreset(seconds) },
+            startRecent: { [weak self] recent in self?.startRecent(recent) },
             startPomodoro: { [weak self] in self?.startPomodoro() },
             toggleVoice: { [weak self] in self?.toggleVoice() },
             close: { [weak self] in self?.close() },
@@ -57,6 +59,32 @@ final class ComposerController: NSObject, NSWindowDelegate {
         voice.onFinish = { [weak self] transcript in
             self?.handleTranscript(transcript)
         }
+
+        // Tab takes the suggested length (or, the first time, the example).
+        keyMonitor = NSEvent.addLocalMonitorForEvents(matching: .keyDown) { [weak self] event in
+            guard let self, event.window === self.panel, event.keyCode == 48,
+                  event.modifierFlags.intersection([.command, .option, .control, .shift]).isEmpty
+            else { return event }
+            return self.acceptSuggestion() ? nil : event
+        }
+    }
+
+    private var keyMonitor: Any?
+
+    /// Fills in what the launcher is suggesting. Returns false if there was nothing to take.
+    func acceptSuggestion() -> Bool {
+        let text = model.text
+        if text.trimmingCharacters(in: .whitespaces).isEmpty {
+            guard !settings.hasWrittenTask else { return false }
+            model.text = "Write intro 25m"
+            return true
+        }
+        if case .start(_, _, true) = runner.plan(text) {
+            let base = text.replacingOccurrences(of: "\\s+$", with: "", options: .regularExpression)
+            model.text = base + " " + TimeFormatter.compact(settings.defaultDuration)
+            return true
+        }
+        return false
     }
 
     var isOpen: Bool { panel.isVisible }
@@ -117,8 +145,16 @@ final class ComposerController: NSObject, NSWindowDelegate {
         }
     }
 
+    /// A preset chip starts the task you've written (if any) for that long.
     private func startPreset(_ seconds: TimeInterval) {
-        runner.run(.start(seconds: seconds, name: nil))
+        var name: String?
+        if case let .start(_, task, true) = runner.plan(model.text) { name = task }
+        runner.run(.start(seconds: seconds, name: name))
+        close()
+    }
+
+    private func startRecent(_ recent: AppSettings.RecentTask) {
+        runner.run(.start(seconds: recent.seconds, name: recent.name))
         close()
     }
 
@@ -136,7 +172,7 @@ final class ComposerController: NSObject, NSWindowDelegate {
         model.text = transcript
         let preview = runner.preview(transcript)
         guard preview.isValid else {
-            model.error = "Heard “\(transcript)” — try “start a 25 minute timer”."
+            model.error = "Heard “\(transcript)”. Try “twenty five minutes for email”."
             model.focusToken += 1
             return
         }
@@ -153,7 +189,7 @@ final class ComposerController: NSObject, NSWindowDelegate {
         let mouse = NSEvent.mouseLocation
         let screen = NSScreen.screens.first { NSMouseInRect(mouse, $0.frame, false) } ?? NSScreen.main ?? NSScreen.screens[0]
         let visible = screen.visibleFrame
-        let width: CGFloat = 480
+        let width: CGFloat = ComposerView.width
         let height = max(contentSize.height, 120)
         anchorTop = visible.maxY - visible.height * 0.2
         panel.setFrame(NSRect(x: visible.midX - width / 2, y: anchorTop - height, width: width, height: height), display: false)
@@ -180,12 +216,16 @@ final class ComposerController: NSObject, NSWindowDelegate {
 // MARK: - View
 
 struct ComposerView: View {
+    static let width: CGFloat = 580
+
     @ObservedObject var model: ComposerModel
     @ObservedObject var settings: AppSettings
     @ObservedObject var voice: VoiceController
     let preview: (String) -> CommandRunner.Preview
+    let plan: (String) -> CommandRunner.Plan
     let submit: () -> Void
     let startPreset: (TimeInterval) -> Void
+    let startRecent: (AppSettings.RecentTask) -> Void
     let startPomodoro: () -> Void
     let toggleVoice: () -> Void
     let close: () -> Void
@@ -194,14 +234,22 @@ struct ComposerView: View {
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
+    private var currentPlan: CommandRunner.Plan {
+        plan(voice.isListening && model.text.isEmpty ? voice.transcript : model.text)
+    }
+    private var showRecents: Bool { model.text.isEmpty && !voice.isListening && !settings.recents.isEmpty }
+    private var showCoach: Bool { model.text.isEmpty && !voice.isListening && !settings.hasWrittenTask }
+
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             inputRow
             Rectangle().fill(Theme.hairline).frame(height: 0.5)
             statusRow
+            if showRecents { recentsList }
+            if showCoach { coach }
             presetsRow
         }
-        .frame(width: 480)
+        .frame(width: Self.width)
         .driftSurface(cornerRadius: 16)
         .fixedSize(horizontal: false, vertical: true)
         .reportSize(resize)
@@ -228,21 +276,22 @@ struct ComposerView: View {
             ZStack(alignment: .leading) {
                 if voice.isListening && model.text.isEmpty {
                     Text(voice.transcript.isEmpty ? "Listening…" : voice.transcript)
-                        .font(.system(size: 22, weight: .regular))
+                        .font(Self.fieldFont)
                         .foregroundStyle(voice.transcript.isEmpty ? Theme.tertiaryText : Theme.primaryText)
                         .lineLimit(1)
                         .accessibilityLabel(voice.transcript.isEmpty ? "Listening" : voice.transcript)
                 } else {
-                    TextField("25m, 1:30, 45m email…", text: $model.text)
+                    FieldHighlight(text: model.text, plan: currentPlan, suggestion: TimeFormatter.compact(settings.defaultDuration))
+                    TextField("What are you working on?", text: $model.text)
                         .textFieldStyle(.plain)
-                        .font(.system(size: 22, weight: .regular))
+                        .font(Self.fieldFont)
                         .foregroundStyle(Theme.primaryText)
                         .focused($focused)
                         .onSubmit(submit)
                         .onExitCommand(perform: close)
                         .onChange(of: model.text) { _ in model.error = nil }
-                        .accessibilityLabel("Timer duration or command")
-                        .accessibilityHint("For example 25, 1:30, or 45 minutes writing. Press Return to start.")
+                        .accessibilityLabel("What are you working on, and for how long?")
+                        .accessibilityHint("For example: Write intro 25 minutes. Press Return to start.")
                 }
             }
 
@@ -252,20 +301,21 @@ struct ComposerView: View {
             }
             .buttonStyle(IconButtonStyle(size: 30))
             .help(voiceHelp)
-            .accessibilityLabel(voice.isListening ? "Stop listening" : "Speak a command")
+            .accessibilityLabel(voice.isListening ? "Stop listening" : "Say a timer")
         }
         .padding(.horizontal, 16)
         .frame(height: 64)
     }
 
+    static let fieldFont = Font.system(size: 22, weight: .regular)
+
     private var voiceHelp: String {
-        if let s = settings.shortcuts[.voice] { return "Speak a command (\(s.display))" }
-        return "Speak a command"
+        if let s = settings.shortcuts[.voice] { return "Say it (\(s.display))" }
+        return "Say it"
     }
 
     private var statusRow: some View {
-        let p = preview(voice.isListening && model.text.isEmpty ? voice.transcript : model.text)
-        return HStack(spacing: 8) {
+        HStack(spacing: 8) {
             if let error = model.error {
                 Image(systemName: "exclamationmark.circle")
                     .foregroundStyle(Theme.accent)
@@ -277,40 +327,106 @@ struct ComposerView: View {
                 Text(message)
                     .foregroundStyle(Theme.secondaryText)
             } else if voice.isListening && voice.transcript.isEmpty {
-                Text("Say “25 minutes”, “45 minutes for email”, “pause”, “add 5 minutes”…")
+                Text("Say what and how long: “twenty five minutes for email”")
                     .foregroundStyle(Theme.tertiaryText)
-            } else if model.text.isEmpty && !voice.isListening {
-                Text(p.title).foregroundStyle(Theme.primaryText)
-                KeyCaps(text: "↩")
-                Spacer()
-                Text("or press").foregroundStyle(Theme.tertiaryText)
-                if let s = settings.shortcuts[.newTimer] { KeyCaps(text: s.display) }
-                Text("again to talk").foregroundStyle(Theme.tertiaryText)
             } else {
-                Text(p.title)
-                    .foregroundStyle(p.isValid ? Theme.primaryText : Theme.tertiaryText)
-                if let detail = p.detail {
-                    Text("·").foregroundStyle(Theme.tertiaryText)
-                    Text(detail).foregroundStyle(Theme.secondaryText).lineLimit(1)
-                } else if p.isValid && p.title.hasPrefix("Start") {
-                    Text("· add a name after the time, like “25m email”")
+                switch currentPlan {
+                case .empty:
+                    Text("Write the task, then how long. Return starts \(TimeFormatter.compact(settings.defaultDuration)).")
                         .foregroundStyle(Theme.tertiaryText)
                         .lineLimit(1)
+                    Spacer(minLength: 8)
+                    Text("or press").foregroundStyle(Theme.tertiaryText)
+                    if let s = settings.shortcuts[.newTimer] { KeyCaps(text: s.display) }
+                    Text("again to talk").foregroundStyle(Theme.tertiaryText)
+                case let .start(seconds, name, suggested):
+                    MiniTimer(name: name, seconds: seconds)
+                    Spacer(minLength: 8)
+                    Text(suggested ? "Tab for \(TimeFormatter.compact(seconds)), or type a time"
+                         : (name == nil ? "Add what it’s for, or Return to start" : "Return to start"))
+                        .foregroundStyle(Theme.tertiaryText)
+                        .lineLimit(1)
+                    KeyCaps(text: "↩")
+                case let .command(p):
+                    Text(p.title)
+                        .foregroundStyle(p.isValid ? Theme.primaryText : Theme.tertiaryText)
+                    if let detail = p.detail {
+                        Text("·").foregroundStyle(Theme.tertiaryText)
+                        Text(detail).foregroundStyle(Theme.secondaryText).lineLimit(1)
+                    }
+                    Spacer()
+                    if p.isValid { KeyCaps(text: "↩") }
+                case .invalid:
+                    Text("Write a task and a time, like “Write intro 25m”")
+                        .foregroundStyle(Theme.tertiaryText)
+                    Spacer()
                 }
-                Spacer()
-                if p.isValid { KeyCaps(text: "↩") }
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .font(.system(size: 12.5, weight: .medium))
         .padding(.horizontal, 16)
+        .frame(height: 38)
+        .accessibilityElement(children: .combine)
+    }
+
+    private var recentsList: some View {
+        VStack(alignment: .leading, spacing: 1) {
+            Text("Recent")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.tertiaryText)
+                .padding(.horizontal, 10)
+                .padding(.bottom, 3)
+            ForEach(settings.recents) { recent in
+                Button { startRecent(recent) } label: {
+                    HStack(spacing: 9) {
+                        Image(systemName: "arrow.counterclockwise")
+                            .font(.system(size: 10, weight: .semibold))
+                            .foregroundStyle(Theme.tertiaryText)
+                        Text(recent.name).foregroundStyle(Theme.primaryText).lineLimit(1)
+                        Spacer()
+                        Text(TimeFormatter.compact(recent.seconds))
+                            .font(.system(size: 12, weight: .medium).monospacedDigit())
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .buttonStyle(RowButtonStyle())
+                .help("Start “\(recent.name)” for \(TimeFormatter.compact(recent.seconds))")
+                .accessibilityLabel("Start \(recent.name), \(TimeFormatter.spoken(recent.seconds))")
+            }
+        }
+        .padding(.horizontal, 6)
+        .padding(.top, 2)
+        .padding(.bottom, 6)
+    }
+
+    private var coach: some View {
+        HStack(spacing: 8) {
+            Text("Write what you’re working on, then how long:")
+                .foregroundStyle(Theme.primaryText)
+            Text("Write intro 25m")
+                .fontWeight(.semibold)
+                .foregroundStyle(Theme.accent)
+            Spacer(minLength: 6)
+            KeyCaps(text: "tab")
+            Text("to try it").foregroundStyle(Theme.secondaryText)
+        }
+        .font(.system(size: 12.5, weight: .medium))
+        .padding(.horizontal, 12)
         .frame(height: 34)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.accent.opacity(0.12)))
+        .padding(.horizontal, 12)
+        .padding(.bottom, 10)
         .accessibilityElement(children: .combine)
     }
 
     private var presetsRow: some View {
-        HStack(spacing: 6) {
-            ForEach(Array(settings.presets.prefix(5).enumerated()), id: \.offset) { item in
+        let task: String? = {
+            if case let .start(_, name, true) = currentPlan { return name }
+            return nil
+        }()
+        return HStack(spacing: 5) {
+            ForEach(Array(settings.presets.prefix(9).enumerated()), id: \.offset) { item in
                 let index = item.offset
                 let seconds = item.element
                 Button { startPreset(seconds) } label: {
@@ -318,7 +434,8 @@ struct ComposerView: View {
                 }
                 .buttonStyle(ChipStyle())
                 .keyboardShortcut(KeyEquivalent(Character("\(index + 1)")), modifiers: .command)
-                .help("Start \(TimeFormatter.compact(seconds)) (⌘\(index + 1))")
+                .help(task.map { "Start “\($0)” for \(TimeFormatter.compact(seconds)) (⌘\(index + 1))" }
+                      ?? "Start \(TimeFormatter.compact(seconds)) (⌘\(index + 1))")
                 .accessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
             }
             Button(action: startPomodoro) {
@@ -331,11 +448,108 @@ struct ComposerView: View {
             .keyboardShortcut("p", modifiers: .command)
             .help("25 min focus, then a 5 min break, on repeat. Every 4th break is 15 min. (⌘P)")
             .accessibilityLabel("Start a Pomodoro cycle")
-            Spacer()
+            Spacer(minLength: 0)
         }
         .padding(.horizontal, 12)
         .padding(.bottom, 12)
         .padding(.top, 2)
+    }
+}
+
+/// Drawn behind the text field: a soft pill under the time you typed, and the
+/// suggested length in grey after a task with no time.
+private struct FieldHighlight: View {
+    let text: String
+    let plan: CommandRunner.Plan
+    let suggestion: String
+
+    var body: some View {
+        HStack(spacing: 0) {
+            ForEach(Array(segments.enumerated()), id: \.offset) { item in
+                Text(visible(item.element.text))
+                    .foregroundStyle(Color.clear)
+                    .background(
+                        RoundedRectangle(cornerRadius: 5, style: .continuous)
+                            .fill(item.element.isTime ? Theme.accent.opacity(0.18) : Color.clear)
+                            .padding(.horizontal, -3)
+                            .padding(.vertical, 1)
+                    )
+            }
+            if case .start(_, _, true) = plan {
+                Text(visible(text.hasSuffix(" ") ? suggestion : " " + suggestion))
+                    .foregroundStyle(Theme.tertiaryText)
+                KeyCaps(text: "tab")
+                    .padding(.leading, 8)
+            }
+        }
+        .font(ComposerView.fieldFont)
+        .lineLimit(1)
+        .padding(.leading, 2)
+        .allowsHitTesting(false)
+        .accessibilityHidden(true)
+    }
+
+    private struct Segment { var text: String; var isTime: Bool }
+
+    private var segments: [Segment] {
+        guard !text.isEmpty else { return [] }
+        guard case .start(_, _, false) = plan else { return [Segment(text: text, isTime: false)] }
+        var out: [Segment] = []
+        var cursor = text.startIndex
+        for r in LauncherText.timeRanges(in: text) where r.lowerBound >= cursor {
+            if cursor < r.lowerBound { out.append(Segment(text: String(text[cursor..<r.lowerBound]), isTime: false)) }
+            out.append(Segment(text: String(text[r]), isTime: true))
+            cursor = r.upperBound
+        }
+        if cursor < text.endIndex { out.append(Segment(text: String(text[cursor...]), isTime: false)) }
+        return out
+    }
+
+    /// Spaces at the ends of a Text can collapse; non-breaking ones keep width.
+    private func visible(_ s: String) -> String {
+        s.replacingOccurrences(of: " ", with: "\u{00A0}")
+    }
+}
+
+/// The timer you're about to start, as it will look in the widget.
+struct MiniTimer: View {
+    let name: String?
+    let seconds: TimeInterval
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Circle().fill(Theme.accent).frame(width: 6, height: 6)
+            if let name {
+                Text(name).fontWeight(.semibold).foregroundStyle(Theme.primaryText).lineLimit(1)
+            } else {
+                Text("+ Add task").foregroundStyle(Theme.tertiaryText)
+            }
+            Text(TimeFormatter.clock(seconds))
+                .font(Theme.digits(13))
+                .foregroundStyle(Theme.primaryText)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 10)
+        .frame(height: 24)
+        .frame(maxWidth: 320, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
+    }
+}
+
+private struct RowButtonStyle: ButtonStyle {
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 13))
+            .padding(.horizontal, 10)
+            .frame(height: 28)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(configuration.isPressed || hovering ? Theme.control : Color.clear)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
     }
 }
 
@@ -346,7 +560,7 @@ private struct ChipStyle: ButtonStyle {
         configuration.label
             .font(.system(size: 12, weight: .medium).monospacedDigit())
             .foregroundStyle(hovering ? Theme.primaryText : Theme.secondaryText)
-            .padding(.horizontal, 10)
+            .padding(.horizontal, 9)
             .frame(height: 26)
             .background(
                 RoundedRectangle(cornerRadius: 7, style: .continuous)

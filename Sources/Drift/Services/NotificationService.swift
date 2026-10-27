@@ -65,7 +65,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 return ("Break's over", "Back to focus for \(TimeFormatter.spoken(next.duration)).")
             }
         }
-        let title = timer.name.map { "\($0) finished" } ?? "Timer finished"
+        let title = timer.name.map { "\($0) is done" } ?? "Timer done"
         return (title, "\(TimeFormatter.spoken(timer.duration)) complete.")
     }
 

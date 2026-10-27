@@ -16,6 +16,15 @@ final class CommandRunner {
         case failed(String)
     }
 
+    /// What Return will do in the launcher, for the live preview.
+    enum Plan: Equatable {
+        case empty
+        /// `suggested`: no time typed, so the default length is offered.
+        case start(seconds: TimeInterval, name: String?, suggested: Bool)
+        case command(Preview)
+        case invalid
+    }
+
     private let store: TimerStore
     private let settings: AppSettings
     var showWidget: () -> Void = {}
@@ -25,6 +34,19 @@ final class CommandRunner {
     init(store: TimerStore, settings: AppSettings) {
         self.store = store
         self.settings = settings
+    }
+
+    func plan(_ text: String) -> Plan {
+        let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
+        if trimmed.isEmpty { return .empty }
+        if let command = CommandParser.parse(trimmed) {
+            if case let .start(seconds, name) = command { return .start(seconds: seconds, name: name, suggested: false) }
+            return .command(preview(command))
+        }
+        if let task = LauncherText.task(from: trimmed) {
+            return .start(seconds: settings.defaultDuration, name: task, suggested: true)
+        }
+        return .invalid
     }
 
     /// What pressing Return would do — shown live under the composer's field.
@@ -84,7 +106,11 @@ final class CommandRunner {
             return .done
         }
         guard let command = CommandParser.parse(trimmed) else {
-            return .failed("Didn't recognise a duration. Try “25 minutes”.")
+            // Just the task: use the default length.
+            if let task = LauncherText.task(from: trimmed) {
+                return run(.start(seconds: settings.defaultDuration, name: task))
+            }
+            return .failed("Didn't recognise that. Try “Write intro 25m”.")
         }
         return run(command)
     }

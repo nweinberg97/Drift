@@ -42,6 +42,14 @@ public enum CommandParser {
             return .pomodoro(focus: ratio.focus, rest: ratio.rest)
         }
 
+        // A task that starts with a verb ("check email 25m", "stop by the
+        // bank 10m") is still a timer when it has a duration.
+        if !adjustVerbs.contains(verb), let d = DurationParser.parse(words.joined(separator: " ")) {
+            if controlVerbs.contains(verb) {
+                return .start(seconds: d.seconds, name: DurationParser.cleanLabel(labelWords(d.label)) ?? d.label)
+            }
+        }
+
         switch verb {
         case "pause", "hold", "freeze", "halt", "suspend":
             return .pause(target: target(rest))
@@ -65,10 +73,11 @@ public enum CommandParser {
             return .cancel(target: target(rest))
 
         case "show", "open", "display", "view", "list", "what", "what's", "whats", "how", "where", "check":
-            return .show
+            // "show my timers" yes; "check email" is a task, not a command.
+            return rest.allSatisfy(viewWords.contains) ? .show : nil
 
         case "hide", "close", "minimize", "minimise", "dismissall":
-            return .hide
+            return rest.allSatisfy(viewWords.contains) ? .hide : nil
 
         case "start", "begin", "run", "set", "create", "new", "make":
             if let d = DurationParser.parse(words.joined(separator: " ")) {
@@ -90,6 +99,22 @@ public enum CommandParser {
 
     static let wakeWords: Set<String> = [
         "hey", "hi", "ok", "okay", "drift", "please", "can", "could", "would", "will", "you", "um", "uh",
+    ]
+
+    static let adjustVerbs: Set<String> = [
+        "add", "plus", "extend", "increase", "subtract", "minus", "take", "reduce", "shorten", "cut", "less", "remove",
+    ]
+    static let controlVerbs: Set<String> = [
+        "pause", "hold", "freeze", "halt", "suspend", "resume", "continue", "unpause", "restart",
+        "cancel", "stop", "delete", "clear", "end", "kill", "dismiss", "discard",
+        "show", "open", "display", "view", "list", "what", "what's", "whats", "how", "where", "check",
+        "hide", "close", "minimize", "minimise", "dismissall",
+    ]
+    /// Words that can follow "show"/"hide" and still mean the timers.
+    static let viewWords: Set<String> = [
+        "my", "the", "all", "timer", "timers", "them", "me", "everything", "time", "left", "is", "are",
+        "how", "much", "many", "what", "whats", "what's", "remaining", "drift", "widget", "there", "do", "i", "have",
+        "it", "up", "running", "current", "this", "that", "please",
     ]
 
     static let pomodoroWords: Set<String> = ["pomodoro", "pomodoros", "pomo", "pomodori"]

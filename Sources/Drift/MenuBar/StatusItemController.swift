@@ -132,7 +132,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         applyShortcut(.newTimer, to: newItem)
         menu.addItem(newItem)
 
-        for seconds in settings.presets.prefix(4) {
+        let favourites = settings.presets.filter { [900, 1_500, 2_700, 3_600].contains($0) }
+        for seconds in (favourites.count >= 2 ? Array(favourites) : Array(settings.presets.prefix(4))) {
             let start = action("Start \(TimeFormatter.compact(seconds))", #selector(startPreset(_:)))
             start.representedObject = seconds
             start.indentationLevel = 1
@@ -247,7 +248,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             add(timer.isRunning ? "Pause" : "Resume", #selector(toggleTimer(_:)))
             add("Add 5 Minutes", #selector(addFive(_:)))
             add("Remove 5 Minutes", #selector(removeFive(_:)), enabled: timer.remaining(at: Date()) > 300)
-            add("Edit Time…", #selector(editTimer(_:)))
+            add("Change Time…", #selector(editTimer(_:)))
             add("Rename…", #selector(renameTimer(_:)))
             add("Duplicate", #selector(duplicateTimer(_:)))
             if store.primary?.id != timer.id {

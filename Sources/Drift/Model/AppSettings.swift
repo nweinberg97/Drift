@@ -53,6 +53,16 @@ final class AppSettings: ObservableObject {
         }
     }
 
+    /// A task you've timed before, offered under the launcher.
+    struct RecentTask: Codable, Equatable, Identifiable {
+        var name: String
+        var seconds: TimeInterval
+        var id: String { name.lowercased() }
+    }
+
+    static let defaultPresets: [TimeInterval] = [300, 600, 900, 1_200, 1_500, 1_800, 2_700, 3_600, 7_200]
+    private static let oldDefaultPresets: [TimeInterval] = [300, 900, 1_500, 2_700, 3_600]
+
     private let defaults: UserDefaults
 
     // Timer
@@ -85,11 +95,15 @@ final class AppSettings: ObservableObject {
     /// Set once the user opens the composer with the keyboard; the shortcut
     /// hint disappears after that.
     @Published var hasLearnedShortcut: Bool { didSet { set(hasLearnedShortcut, "hasLearnedShortcut") } }
+    /// Set once a timer has a task; the launcher's how-to line goes away.
+    @Published var hasWrittenTask: Bool { didSet { set(hasWrittenTask, "hasWrittenTask") } }
+    @Published private(set) var recents: [RecentTask] { didSet { saveRecents() } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaultDuration = defaults.object(forKey: "defaultDuration") as? Double ?? 1_500.0
-        presets = defaults.array(forKey: "presets") as? [Double] ?? [300.0, 900.0, 1_500.0, 2_700.0, 3_600.0]
+        let storedPresets = defaults.array(forKey: "presets") as? [Double]
+        presets = (storedPresets == nil || storedPresets == Self.oldDefaultPresets) ? Self.defaultPresets : storedPresets!
         finishedRetention = FinishedRetention(rawValue: defaults.string(forKey: "finishedRetention") ?? "") ?? .untilDismissed
         appearance = Appearance(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .compact
@@ -104,6 +118,13 @@ final class AppSettings: ObservableObject {
         focusVolume = defaults.object(forKey: "focusVolume") as? Double ?? 0.35
         widgetHidden = defaults.object(forKey: "widgetHidden") as? Bool ?? false
         hasLearnedShortcut = defaults.object(forKey: "hasLearnedShortcut") as? Bool ?? false
+        hasWrittenTask = defaults.object(forKey: "hasWrittenTask") as? Bool ?? false
+        if let data = defaults.data(forKey: "recentTasks"),
+           let stored = try? JSONDecoder().decode([RecentTask].self, from: data) {
+            recents = stored
+        } else {
+            recents = []
+        }
 
         var loaded = ShortcutAction.defaults
         if let data = defaults.data(forKey: "shortcuts"),
@@ -120,6 +141,27 @@ final class AppSettings: ObservableObject {
         case .system: NSApp.appearance = nil
         case .light: NSApp.appearance = NSAppearance(named: .aqua)
         case .dark: NSApp.appearance = NSAppearance(named: .darkAqua)
+        }
+    }
+
+    /// Remembers a named timer so it's one click away next time.
+    func remember(task name: String, seconds: TimeInterval) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return }
+        let rounded = max(60, (seconds / 60).rounded() * 60)
+        var list = recents.filter { $0.name.lowercased() != trimmed.lowercased() }
+        list.insert(RecentTask(name: trimmed, seconds: rounded), at: 0)
+        recents = Array(list.prefix(4))
+        if !hasWrittenTask { hasWrittenTask = true }
+    }
+
+    func forgetRecents() {
+        recents = []
+    }
+
+    private func saveRecents() {
+        if let data = try? JSONEncoder().encode(recents) {
+            defaults.set(data, forKey: "recentTasks")
         }
     }
 

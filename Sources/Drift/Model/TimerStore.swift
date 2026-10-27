@@ -97,6 +97,7 @@ final class TimerStore: ObservableObject {
         timer.start(at: current)
         timers.append(timer)
         primaryID = timer.id
+        if let name, pomodoro == nil { settings.remember(task: name, seconds: seconds) }
         delegate?.timerStore(self, didStart: timer)
         commit()
         return timer
@@ -127,8 +128,11 @@ final class TimerStore: ObservableObject {
     }
 
     func rename(_ id: UUID, to name: String?) {
-        let trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines)
-        mutate(id) { $0.name = (trimmed?.isEmpty ?? true) ? nil : trimmed }
+        var trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
+        trimmed = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
+        let value: String? = trimmed.isEmpty ? nil : trimmed
+        mutate(id) { $0.name = value }
+        if let value, let t = timer(id), t.pomodoro == nil { settings.remember(task: value, seconds: t.duration) }
     }
 
     func duplicate(_ id: UUID) {
