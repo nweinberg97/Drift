@@ -5,7 +5,7 @@
 
 Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, write what you're working on and for how long (`Write intro 45m`), press Return. A small timer appears in the top-left corner of your screen, and you get back to work.
 
-It's free, open source, needs no account and never touches the network.
+It needs no account and never touches the network.
 
 **Website:** https://nweinberg97.github.io/Drift/
 
@@ -50,6 +50,9 @@ Requirements: macOS 13 Ventura or newer. If the build fails on an older Mac, upd
 | Change the time | Click the time to open the dial. Drag around it (a minute per notch, a full turn is an hour), scroll, or use the arrow keys (⇧ for 5 min). Or tap −5/−1/+1/+5 or a preset. Cancel puts the old time back. |
 | Multiple timers | Click the ⌄ button on the widget to expand it, then **+ New timer**. With several running, the button shows `+2`; click it to see them all. Each one's name and time are clickable too. |
 | Pomodoro | Type `pomodoro` or `50/10`, or press **⌘P** in the launcher. Focus and break alternate until you cancel. |
+| Plan your day | Type when instead of (or as well as) how long: `Deep work 9-10:30 weekdays`, `Gym 6-7pm mon wed fri`, `Email at 1pm for 30m`. When it happens is highlighted in blue. The block joins **Today** in the expanded widget and the menu bar. |
+| When a block comes up | A soft chime, a banner and a card in the widget: **Start**, **In 5 min** or **Skip today**. Ignore it and it starts by itself after a minute. Its timer ends when the block ends, so starting late keeps the time box. |
+| Change a block | Click it in **Today** (or the menu bar). Drag it on the timeline to move it, drag its right edge to change the length, or nudge the start, pick a length and the days it repeats. For a repeating block, choose **Just today** or every day it repeats. |
 | Move it | Drag the widget anywhere. It remembers the position and display. |
 
 ### What you can type (or say)
@@ -59,6 +62,9 @@ Write intro 45m   → "Write intro", 45 minutes
 Write intro       → "Write intro", your default length (Tab to accept)
 check email 25m   → "Check email" (a task can start with any verb)
 25                25 minutes, no name yet (a bare number means minutes)
+Deep work 9-10:30 weekdays   → a block every weekday, 9:00–10:30
+Email at 1pm for 30m         → a block today (or tomorrow, if 1pm has passed)
+standup tomorrow at 9:15am   → once, with your default length
 1:30              1 hour 30 minutes
 90s · 2h 15m · 36h · 3d · 1.5h
 an hour and a half · half an hour · twenty five minutes
@@ -94,6 +100,7 @@ Drift is a menu-bar utility with one floating widget. It does one job: it gets a
 
 - **Floating widget** (top-left by default). It's a single line showing the state dot, the task, the time and pause. Click the task to rename it in place, click the time for the dial, click the ⌄ to expand. You can drag it, it remembers its position, and it shows above full-screen apps on every Space.
 - **Launcher** (⌥ Space). A task-first, Spotlight-style field: "What are you working on?" It highlights the time it found, previews the timer, suggests your default length when you leave it out, lists recent tasks, and has preset chips and a mic button.
+- **Scheduled blocks**. Plan time boxes in words (`Deep work 9-10:30 weekdays`). When one comes up Drift asks, then starts it on its own; it ends on schedule. Edit on a timeline, for every day or just today. Stored in `~/Library/Application Support/Drift/schedule.json`.
 - **Voice** (⌥ V). Push-to-talk, recognised on-device, using the same command grammar as typing.
 - **Multiple timers**. One featured timer plus an expandable tray, never a wall of widgets.
 - **Menu bar**. A tiny ring that empties as time passes, every timer with a full submenu (pause, ±5m, change time, rename, duplicate, cancel), presets, Pomodoro, focus sound, settings.
@@ -173,6 +180,8 @@ To open in Xcode: `open Package.swift`. Note that notifications and the app sand
 
 - [ ] ⌥ Space in Chrome, VS Code and a full-screen app → type `25` → Return → the timer appears top-left
 - [ ] Try `90s`, `1:30`, `2h 15m`, `36h`, `Write intro 45m`, `Write intro` (Tab), `pomodoro`. Each preview should be correct and the time highlighted.
+- [ ] Type `Standup at <two minutes from now> for 15m`. When it comes up: chime, banner, the card; leave it and it starts itself after a minute and ends at the block's end.
+- [ ] Edit a repeating block: move it 30 minutes and choose **Just today**; tomorrow's time is unchanged.
 - [ ] Click **+ Add task** on an unnamed timer, type, Return. Click the time, drag the dial, scroll, press arrows, then Cancel (time restores) and Done.
 - [ ] Click the widget's pause while typing in another app. Keep typing: your keystrokes still land in that app.
 - [ ] Click the time → −5m / +5m / Edit (`10m`) / Cancel

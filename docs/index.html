@@ -219,6 +219,57 @@
   .sw-tray div b { margin-left: auto; font: 500 13px var(--display); color: var(--cream); font-variant-numeric: tabular-nums; }
   .sw-tray div b.p { color: var(--faint); }
   .sw-tray div em { font-style: normal; color: var(--faint); }
+  /* Scheduled blocks */
+  .sw-prompt { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
+  .s-widget.prompting .sw-prompt { grid-template-rows: 1fr; }
+  .sw-prompt > div { overflow: hidden; min-height: 0; }
+  .sw-prompt .in { margin: 6px; padding: 10px 11px; border-radius: 10px; background: rgba(242,163,110,0.14); width: 250px; }
+  .sw-prompt .ps { white-space: nowrap; }
+  .sw-prompt .pt { display: flex; align-items: center; gap: 7px; font-size: 12.5px; font-weight: 650; }
+  .sw-prompt .pt svg, .sw-next svg { width: 11px; height: 11px; fill: none; stroke: var(--ember); stroke-width: 1.4; }
+  .sw-prompt .ps { margin: 3px 0 8px 18px; font-size: 10.5px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .sw-prompt .pb { display: flex; gap: 5px; margin-left: 18px; }
+  .sw-prompt .pb span { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.1); white-space: nowrap; transition: background .15s; }
+  .sw-prompt .pb span.pri { background: var(--ember-deep); color: #fff; }
+  .sw-prompt .pb span.hot { filter: brightness(1.25); }
+  .sw-today { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 4px 0; min-width: 236px; }
+  .sw-today:empty { display: none; }
+  .sw-today .th { display: flex; justify-content: space-between; padding: 3px 13px 4px; font-size: 10px; font-weight: 650; color: var(--faint); letter-spacing: .04em; }
+  .sw-today .th span { color: var(--ember); letter-spacing: 0; font-size: 11px; }
+  .sw-today .r { display: flex; align-items: center; gap: 8px; height: 26px; padding: 0 9px 0 13px; font-size: 11.5px; border-radius: 0; transition: background .15s; }
+  .sw-today .r.hot { background: rgba(255,255,255,0.08); }
+  .sw-today .r .t { width: 96px; flex: none; color: var(--muted); font-variant-numeric: tabular-nums; font-size: 10.5px; }
+  .sw-today .r b { font-weight: 500; flex: 1; }
+  .sw-today .r em { font-style: normal; font-size: 9.5px; font-weight: 650; padding: 1px 6px; border-radius: 8px; color: var(--faint); }
+  .sw-today .r em.now { background: var(--ember-deep); color: #fff; }
+  .sw-today .r em.next { background: rgba(242,163,110,0.16); color: var(--ember); }
+  .sw-next { display: none; align-items: center; gap: 5px; padding: 0 13px 8px 33px; margin-top: -4px; font-size: 11px; color: var(--muted); }
+  .sw-next b { color: var(--cream); font-weight: 600; }
+  .s-widget.has-next:not(.open):not(.prompting) .sw-next { display: flex; }
+  .sw-blockbox { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
+  .s-widget.editing .sw-blockbox { grid-template-rows: 1fr; }
+  .sw-blockbox > div { overflow: hidden; min-height: 0; }
+  .sw-blockbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 256px; }
+  .sw-blockbox .nm { height: 24px; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 12px; font-weight: 650; padding: 0 8px; display: flex; align-items: center; }
+  .sw-blockbox .rg { display: flex; justify-content: space-between; align-items: baseline; margin: 9px 1px 6px; }
+  .sw-blockbox .rg b { font: 500 17px var(--display); font-variant-numeric: tabular-nums; }
+  .sw-blockbox .rg span { font-size: 10.5px; color: var(--muted); }
+  .sw-tl { position: relative; height: 40px; border-radius: 7px; background: rgba(255,255,255,0.06); overflow: hidden; }
+  .sw-tl .h { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.08); }
+  .sw-tl .h span { position: absolute; left: 3px; top: 2px; font-size: 8.5px; color: var(--faint); }
+  .sw-tl .o { position: absolute; top: 16px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.12); }
+  .sw-tl .b { white-space: nowrap; overflow: hidden; position: absolute; top: 14px; height: 22px; border-radius: 5px; background: var(--ember-deep); color: #fff; font-size: 9.5px; font-weight: 650; padding: 0 7px; display: flex; align-items: center; transition: left .12s linear; }
+  .sw-blockbox .ft { display: flex; gap: 5px; justify-content: flex-end; margin-top: 10px; }
+  .sw-blockbox .ft span { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.08); transition: background .15s; }
+  .sw-blockbox .ft span.pri { background: var(--ember-deep); color: #fff; }
+  .sw-blockbox .ft span.hot { background: rgba(255,255,255,0.2); }
+  .sw-blockbox .hint { margin-top: 8px; font-size: 10px; color: var(--faint); }
+  .s-widget.pulse { animation: pulse 1.4s ease-in-out infinite; }
+  @keyframes pulse { 50% { box-shadow: 0 0 0 2px var(--ember), 0 14px 34px -12px rgba(0,0,0,0.7); } }
+  .sc-text .pill.when, .launcher .pill.when { color: #9CCBEE; background: rgba(142,195,234,0.15); box-shadow: 0 0 0 3px rgba(142,195,234,0.15); }
+  .mini.sched i { display: none; }
+  .mini.sched svg { width: 11px; height: 11px; fill: none; stroke: var(--ember); stroke-width: 1.4; }
+  .mini.sched .num { color: var(--muted); font-weight: 500; }
   .sw-foot { border-top: 0.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; padding: 6px 7px; font-size: 11.5px; font-weight: 500; }
   .sw-foot .add { color: var(--ember); padding: 3px 8px; border-radius: 6px; transition: background .15s; }
   .sw-foot .add.hot { background: rgba(255,255,255,0.12); }
@@ -378,7 +429,7 @@
   .float .sw-dot { background: var(--ember); border-color: var(--ember); box-shadow: 0 0 10px rgba(242,163,110,0.6); }
   .float.paused .sw-dot { background: transparent; border-color: var(--faint); box-shadow: none; }
   .float.done .f-time { color: var(--ember); }
-  .float .f-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 62px; }
+  .float .f-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 62px; white-space: nowrap; }
   .float button { width: 28px; height: 28px; border-radius: 50%; border: 0; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
   .float button:hover { background: rgba(255,255,255,0.1); color: var(--cream); }
   .float button svg { width: 10px; height: 10px; fill: currentColor; }
@@ -463,7 +514,7 @@
         <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
       </div>
     </div>
-    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Or plan your day, and each block starts on time.</p>
     <div class="actions">
       <a class="btn btn-ember" href="#install">Install for Mac</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
@@ -475,7 +526,7 @@
 
   <section id="features">
     <h2>Name it, time it, get back to work.</h2>
-    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long. A small timer stays in the corner of your screen while you work. Click it to rename, change the time or add another.</p>
+    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long, or when. A small timer stays in the corner of your screen while you work. Click it to rename, change the time, add another or see today's plan.</p>
 
     <div class="demo">
       <div class="stage-wrap" id="stage-wrap">
@@ -503,6 +554,11 @@
           </div>
 
           <div class="s-widget hidden" id="sw" data-run="1">
+            <div class="sw-prompt"><div><div class="in">
+              <div class="pt"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg><span><span id="pr-name">Deep work</span> starts now</span></div>
+              <div class="ps" id="pr-sub">9:00–10:30 AM · starts by itself in 0:58</div>
+              <div class="pb"><span class="pri" id="pr-start">Start</span><span>In 5 min</span><span>Skip today</span></div>
+            </div></div></div>
             <div class="sw-row">
               <span class="sw-dot"></span>
               <span class="sw-name" id="sw-name"></span>
@@ -512,16 +568,25 @@
               </span>
               <span class="sw-btn"><svg viewBox="0 0 10 10"><path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/></svg></span>
             </div>
+            <div class="sw-next" id="sw-next"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>Next <b id="nx-name">Deep work</b> at <span id="nx-time">9:00 AM</span></div>
             <div class="sw-exp"><div>
               <div class="sw-progress"><i id="sw-prog"></i></div>
               <div class="sw-controls"><span id="c-minus">−5 min</span><span id="c-plus">+5 min</span><span class="acc">Set time…</span><span class="sp"></span></div>
               <div class="sw-tray" id="sw-tray"></div>
+              <div class="sw-today" id="sw-today"></div>
               <div class="sw-foot"><span class="add" id="c-add">+ New timer</span><kbd>⌥ Space</kbd></div>
             </div></div>
             <div class="sw-dialbox"><div><div class="in">
               <div class="hd"><b id="dl-name">Write intro</b><span>drag, scroll or arrows</span></div>
               <div class="sw-ring" id="sw-ring"><svg viewBox="0 0 200 200" id="dl-svg"></svg><div class="v"><b id="dl-val">20:00</b><span>Turn to adjust</span></div></div>
               <div class="sw-presets" id="dl-presets"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span></div>
+            </div></div></div>
+            <div class="sw-blockbox"><div><div class="in">
+              <div class="nm">Deep work</div>
+              <div class="rg"><b id="be-range">9:00–10:30 AM</b><span>1h 30m</span></div>
+              <div class="sw-tl" id="be-tl"></div>
+              <div class="hint" id="be-hint">Drag the block to move it, its right edge to change the length.</div>
+              <div class="ft" id="be-ft"><span>Cancel</span><span class="pri">Save</span></div>
             </div></div></div>
           </div>
           <div class="waves" id="waves"><i></i><i></i><i></i><i></i><i></i><span>Rain</span></div>
@@ -559,10 +624,14 @@
         <li><button data-scene="1"><b>Or just say it</b><span>⌥ V, or ⌥ Space twice, then talk: “twenty five minutes for reading”.</span><i></i></button></li>
         <li><button data-scene="2"><b>Name it in place</b><span>In a hurry, type 25. Click “+ Add task” on the timer later and type the name.</span><i></i></button></li>
         <li><button data-scene="3"><b>Turn the dial</b><span>Click the time. Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h.</span><i></i></button></li>
-        <li><button data-scene="4"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
-        <li><button data-scene="5"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
-        <li><button data-scene="6"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
-        <li><button data-scene="7"><b>Soft focus sound</b><span>Nature, chill or focus sounds: rain, lo-fi, binaural beats and more, made on your Mac.</span><i></i></button></li>
+        <li><button data-scene="4"><b>Plan your day</b><span>Type when, not just how long: “Deep work 9–10:30 weekdays”. It joins today's plan.</span><i></i></button></li>
+        <li><button data-scene="5"><b>Starts on time</b><span>When a block comes up, Drift asks. Ignore it and it starts by itself, ending on schedule.</span><i></i></button></li>
+        <li><button data-scene="6"><b>Move it, just for today</b><span>Drag a block on its timeline. Change today only, or every day it repeats.</span><i></i></button></li>
+        <li><button data-scene="7"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
+        <li><button data-scene="8"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
+        <li><button data-scene="9"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
+        <li><button data-scene="10"><b>Hard to miss the end</b><span>A soft chime that repeats until you look, and a nudge if you want five more minutes.</span><i></i></button></li>
+        <li><button data-scene="11"><b>Soft focus sound</b><span>Nature, chill or focus sounds: rain, lo-fi, binaural beats and more, made on your Mac.</span><i></i></button></li>
       </ol>
     </div>
   </section>
@@ -571,13 +640,15 @@
     <div class="try">
       <div>
         <h2>Write it the way you'd say it.</h2>
-        <p class="sub">What you're working on, then how long. The time lights up as you type, so you can see Drift understood.</p>
+        <p class="sub">What you're working on, then how long or when. How long lights up in orange and when in blue, so you can see Drift understood.</p>
         <div class="phrasebook">
           <div class="phrase"><code>Write intro 45m</code><span>Write intro <b>45:00</b></span></div>
           <div class="phrase"><code>Write intro</code><span>Write intro <b>25:00</b>, your default</span></div>
           <div class="phrase"><code>Reading for an hour and a half</code><span>Reading <b>1:30:00</b></span></div>
           <div class="phrase"><code>25</code><span><b>25:00</b>, name it later</span></div>
           <div class="phrase"><code>pomodoro</code><span><b>25:00</b> focus, then a break</span></div>
+          <div class="phrase"><code>Deep work 9-10:30 weekdays</code><span>Every weekday, <b>9:00–10:30</b></span></div>
+          <div class="phrase"><code>Email at 1pm for 30m</code><span>Once, <b>1:00–1:30 PM</b></span></div>
           <div class="phrase"><code>add 5 minutes</code><span>to the timer that's running</span></div>
         </div>
       </div>
@@ -624,9 +695,9 @@
         <p>Speech is recognised on-device, only while you're talking, and never stored.</p>
       </div>
       <div>
-        <svg viewBox="0 0 24 24"><path d="M8 8l-4 4 4 4M16 8l4 4-4 4M13.5 5l-3 14"/></svg>
-        <h3>Free and open source</h3>
-        <p>Every line is on GitHub. You build it on your own Mac, so you run exactly that code.</p>
+        <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M14 13h4"/></svg>
+        <h3>Out of your way</h3>
+        <p>No Dock icon and no windows to manage. It lives in the menu bar and one small corner of your screen.</p>
       </div>
     </div>
   </section>
@@ -653,7 +724,7 @@
   </section>
 </main>
 
-<footer><img src="icon.png" alt="">Drift is free and open source.</footer>
+<footer><img src="icon.png" alt="">Drift. Stay with it.</footer>
 
 <div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
   <span class="sw-dot"></span>
@@ -775,9 +846,65 @@
     if (!out.length) { const b = text.match(/^\s*\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*$/); if (b && parse(text)) out.push([b.index, b.index + b[0].length]); }
     return out;
   }
+  const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DAYW = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5, sat: 6, saturday: 6 };
+  const fmtT = (min, suf = true) => { min = ((min % 1440) + 1440) % 1440; const h = Math.floor(min / 60), m = min % 60; return `${h % 12 || 12}:${String(m).padStart(2, '0')}${suf ? (h < 12 ? ' AM' : ' PM') : ''}`; };
+  const fmtR = (s0, dur) => { const e = s0 + Math.round(dur / 60), same = (s0 % 1440 < 720) === (e % 1440 < 720); return `${fmtT(s0, !same)}–${fmtT(e)}`; };
+  function fmtDays(days) {
+    if (!days) return 'Once';
+    const k = days.slice().sort().join('');
+    if (k === '0123456') return 'Every day'; if (k === '12345') return 'Weekdays'; if (k === '06') return 'Weekends';
+    return days.slice().sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => DAYN[d]).join(', ');
+  }
+  // "Deep work 9-10:30 weekdays", "Email at 1pm for 30m". Needs a time of day.
+  function parseSchedule(raw) {
+    const lower = raw.replace(/[–—]/g, '-').toLowerCase(), spans = [], cut = [];
+    const TM = '(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?';
+    const toMin = (h, m, s) => { h = +h; m = +(m || 0); if (h > 23 || m > 59) return null; if (s) { if (h > 12) return null; if (s[0] === 'p' && h < 12) h += 12; if (s[0] === 'a' && h === 12) h = 0; } return { min: h * 60 + m, s: s ? s[0] : null, h24: !s && (h > 12 || h === 0) }; };
+    const guess = t => (!t.s && !t.h24 && t.min >= 60 && t.min < 480) ? t.min + 720 : t.min;
+    let start = null, end = null, m;
+    if ((m = lower.match(new RegExp(`(?:\\bfrom\\s+)?\\b${TM}\\s*(?:-|to|until)\\s*${TM}(?![\\d:])`)))) {
+      const a = toMin(m[1], m[2], m[3]), b = toMin(m[4], m[5], m[6]);
+      if (a && b) {
+        let s0 = a.min, e0 = b.min;
+        if (a.s && !b.s && !b.h24) { e0 = b.min + (a.s === 'p' && b.min < 720 ? 720 : 0); if (e0 <= s0) e0 += 720; }
+        else if (!a.s && b.s && !a.h24) { s0 = a.min + (b.s === 'p' && a.min < 720 ? 720 : 0); if (s0 >= e0) s0 -= 720; }
+        else if (!a.s && !b.s) { s0 = guess(a); e0 = guess(b); if (e0 <= s0) e0 += 720; }
+        if (e0 <= s0) e0 += 1440;
+        start = s0; end = e0; spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]);
+      }
+    }
+    if (start === null && (m = lower.match(new RegExp(`(?:\\bat\\s+)${TM}(?![\\d:])`)))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = guess(a); spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]); } }
+    if (start === null && (m = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)/))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = a.min; spans.push([m.index, m.index + m[0].length, 'when']); cut.push(m[0]); } }
+    if (start === null) return null;
+    let days = null;
+    const dre = /\b(every\s*day|daily|weekdays|weekends?|(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?(?:\s*(?:,|\/|and|&|\s)\s*(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?)*)\b/g;
+    let dm;
+    while ((dm = dre.exec(lower))) {
+      const w = dm[0];
+      if (/every\s*day|daily/.test(w)) days = [0, 1, 2, 3, 4, 5, 6];
+      else if (/weekday/.test(w)) days = [1, 2, 3, 4, 5];
+      else if (/weekend/.test(w)) days = [0, 6];
+      else { const l = w.split(/[\s,\/&]+/).map(x => DAYW[x.replace(/s$/, '')]).filter(x => x !== undefined); if (l.length) days = l; }
+      spans.push([dm.index, dm.index + w.length, 'when']); cut.push(w);
+    }
+    let rest = lower; cut.forEach(c => { rest = rest.replace(c, ' '); });
+    let dur = end !== null ? (end - start) * 60 : null, name = null;
+    const d = parse(rest);
+    if (dur === null && d) {
+      dur = d.seconds; name = d.name;
+      const t = timeSpans(raw).filter(([a, b]) => !spans.some(([x, y]) => a < y && b > x)); spans.push(...t);
+    }
+    if (!name) { const w = rest.split(/\s+/).filter(x => x && !['for', 'from', 'to', 'at', 'every', 'on'].includes(x)).join(' '); name = w ? w[0].toUpperCase() + w.slice(1) : 'Focus'; }
+    dur = dur || DEFAULT;
+    spans.sort((a, b) => a[0] - b[0]);
+    return { name, start: start % 1440, dur, days, spans };
+  }
   function model(text) {
     const v = text.trim();
     if (!v) return { kind: 'empty' };
+    const sc = parseSchedule(text);
+    if (sc) return { kind: 'sched', spec: sc, spans: sc.spans };
     if (/^(pomodoro|pomo)\b/i.test(v)) return { kind: 'pomo' };
     if (/^(add|plus|extend)\b/i.test(v)) { const p = parse(v.replace(/^\w+\s*/, '')); return p ? { kind: 'add', secs: p.seconds } : { kind: 'bad' }; }
     const p = parse(v);
@@ -787,7 +914,7 @@
   }
   function markedText(text, m) {
     let h = '', i = 0;
-    for (const [a, b] of (m.kind === 'start' ? m.spans : [])) { h += esc(text.slice(i, a)) + `<span class="pill">${esc(text.slice(a, b))}</span>`; i = b; }
+    for (const [a, b, k] of (m.kind === 'start' || m.kind === 'sched' ? m.spans : [])) { if (a < i) continue; h += esc(text.slice(i, a)) + `<span class="pill ${k || ''}">${esc(text.slice(a, b))}</span>`; i = b; }
     return h + esc(text.slice(i));
   }
   const ghostHTML = (text, m) => m.ghost ? `${/\s$/.test(text) ? '' : ' '}25m<kbd>tab</kbd>` : '';
@@ -796,6 +923,7 @@
     switch (m.kind) {
       case 'empty': return `<span class="h" style="margin-left:0">Write the task, then how long. Return starts 25m.</span>`;
       case 'start': return `${mini(m.name, m.secs)}<span class="h">${m.ghost ? 'Tab for 25m, or type a time' : m.name ? 'Return to start' : 'Return to start, name it later'}</span><kbd>return</kbd>`;
+      case 'sched': return `<span class="mini sched"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>${esc(m.spec.name)} <span class="num">${fmtDays(m.spec.days)} · ${fmtR(m.spec.start, m.spec.dur)}</span></span><span class="h">Return to schedule</span><kbd>return</kbd>`;
       case 'pomo': return `<span>Pomodoro</span><span class="h" style="margin-left:6px">25m focus, then a 5m break</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
       case 'add': return `<span>Add ${clockText(m.secs)}</span><span class="h" style="margin-left:6px">to the running timer</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
       default: return `<span class="h" style="margin-left:0">Write a task and a time, like “Write intro 25m”</span>`;
@@ -848,14 +976,32 @@
     return a;
   }
 
+  // Today's plan in the demo widget: [start minute, duration s, name, tag, repeats, editedToday]
+  const swToday = $('sw-today');
+  function renderToday(rows) {
+    if (!rows) { swToday.innerHTML = ''; return; }
+    swToday.innerHTML = `<div class="th">TODAY<span>+ Schedule</span></div>` + rows.map(([s0, d, n, tag, rep, ed]) =>
+      `<div class="r"><span class="t">${fmtR(s0, d)}</span><b>${n}</b>${ed ? '<em>today</em>' : rep ? '<em>↻</em>' : ''}${tag ? `<em class="${tag.toLowerCase()}">${tag}</em>` : ''}</div>`).join('');
+  }
+  function drawTimeline(startMin, win = 360) {
+    const tl = $('be-tl'), W = 232, span = 480, x = m => (m - win) / span * W;
+    let h = '';
+    for (let hr = Math.ceil(win / 60); hr * 60 <= win + span; hr++) h += `<div class="h" style="left:${x(hr * 60)}px"><span>${fmtT(hr * 60).replace(':00', '').replace(' ', '')}</span></div>`;
+    h += `<div class="o" style="left:${x(780)}px;width:${30 / span * W}px"></div>`;
+    h += `<div class="b" id="be-b" style="left:${x(startMin)}px;width:${90 / span * W}px">Deep work</div>`;
+    tl.innerHTML = h;
+  }
+
   function reset() {
     stopClock();
-    sw.classList.add('hidden'); sw.classList.remove('open', 'done', 'dialing');
+    sw.classList.add('hidden'); sw.classList.remove('open', 'done', 'dialing', 'prompting', 'editing', 'has-next', 'pulse');
+    renderToday(null);
     sw.dataset.run = '1';
     swName.textContent = ''; swName.classList.remove('add', 'editing'); chip('down'); swTray.innerHTML = '';
     sc.classList.remove('on', 'listening'); scText.textContent = ''; scGhost.textContent = '';
     menu.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
     note.classList.remove('on'); waves.classList.remove('on'); $('m-check').textContent = '';
+    $('note-t').textContent = 'Focus is done'; $('note-b').textContent = '25 minutes complete. Break for 5 minutes.';
     keys.innerHTML = '';
     cursor.style.opacity = 0; cursor.style.left = '600px'; cursor.style.top = '380px';
     setTime(2700);
@@ -940,6 +1086,79 @@
       startClock(2700, 1800);
       await wait(1400, id);
     },
+    // Plan your day
+    async id => {
+      showWidget('Write intro', 2700, 1500);
+      await wait(500, id);
+      await openSc(id);
+      await typeSc('Deep work 9-10:30 weekdays', id);
+      await wait(1500, id);
+      await pressKeys(['return'], id, 300);
+      sc.classList.remove('on');
+      renderToday([[540, 5400, 'Deep work', 'Next', true]]);
+      sw.classList.add('open'); chip('up');
+      await wait(1300, id);
+      await openSc(id);
+      await typeSc('Email at 1pm for 30m', id);
+      await wait(1100, id);
+      await pressKeys(['return'], id, 300);
+      sc.classList.remove('on');
+      renderToday([[540, 5400, 'Deep work', 'Next', true], [780, 1800, 'Email', '', false]]);
+      await wait(2200, id);
+    },
+    // Starts on time
+    async id => {
+      showWidget('Email', 1500, 1100);
+      $('nx-name').textContent = 'Deep work'; $('nx-time').textContent = '9:00 AM'; sw.classList.add('has-next');
+      await wait(1800, id);
+      sw.classList.remove('has-next');
+      $('pr-name').textContent = 'Deep work';
+      sw.classList.add('prompting');
+      $('note-t').textContent = 'Deep work starts now'; $('note-b').textContent = '9:00–10:30 AM. Starts by itself in a minute.'; note.classList.add('on');
+      for (let s = 58; s > 54; s--) { $('pr-sub').textContent = `9:00–10:30 AM · starts by itself in 0:${s}`; await wait(500, id); }
+      const st = $('pr-start');
+      await cursorTo(st, id, 2, 4);
+      await click(st, id);
+      note.classList.remove('on'); sw.classList.remove('prompting'); cursor.style.opacity = 0;
+      showWidget('Deep work', 5400, 5397);
+      await wait(900, id);
+      sw.classList.add('open'); chip('up');
+      renderToday([[540, 5400, 'Deep work', 'Now', true], [780, 1800, 'Email', 'Next', false]]);
+      await wait(2200, id);
+    },
+    // Move it, just for today
+    async id => {
+      showWidget('Write intro', 2700, 1500);
+      sw.classList.add('open'); chip('up');
+      renderToday([[540, 5400, 'Deep work', 'Next', true], [780, 1800, 'Email', '', false]]);
+      await wait(800, id);
+      const row = swToday.querySelector('.r');
+      await cursorTo(row, id, 30, 4);
+      await click(row, id);
+      sw.classList.remove('open'); sw.classList.add('editing');
+      let st = 540; drawTimeline(st); $('be-range').textContent = fmtR(st, 5400);
+      $('be-hint').textContent = 'Drag the block to move it, its right edge to change the length.';
+      $('be-ft').innerHTML = '<span>Cancel</span><span class="pri">Save</span>';
+      await wait(800, id);
+      const blk = $('be-b');
+      await cursorTo(blk, id, 0, 4);
+      cursor.style.transition = 'left .12s linear, top .12s linear, opacity .3s';
+      for (let k = 0; k < 6; k++) {
+        st += 5; blk.style.left = ((st - 360) / 480 * 232) + 'px'; $('be-range').textContent = fmtR(st, 5400);
+        cursor.style.left = (parseFloat(cursor.style.left) + 2.4) + 'px';
+        await wait(140, id);
+      }
+      cursor.style.transition = '';
+      $('be-hint').textContent = 'Save this change for today only, or for all weekdays.';
+      $('be-ft').innerHTML = '<span>Cancel</span><span id="be-today">Just today</span><span class="pri">All weekdays</span>';
+      await wait(1200, id);
+      const jt = $('be-today');
+      await cursorTo(jt, id, 2, 4);
+      await click(jt, id);
+      sw.classList.remove('editing'); sw.classList.add('open'); cursor.style.opacity = 0;
+      renderToday([[570, 5400, 'Deep work', 'Next', true, true], [780, 1800, 'Email', '', false]]);
+      await wait(2400, id);
+    },
     // Several timers
     async id => {
       showWidget('Write intro', 2700, 1620); chip(2);
@@ -989,6 +1208,20 @@
       note.classList.remove('on');
       await wait(500, id);
     },
+    // Hard to miss the end
+    async id => {
+      showWidget('Email', 1500, 4);
+      await wait(4200, id);
+      stopClock(); swTime.textContent = 'Done'; sw.classList.add('done', 'pulse', 'open'); chip('up');
+      $('note-t').textContent = 'Email is done'; $('note-b').textContent = '25 minutes complete.'; note.classList.add('on');
+      await wait(1800, id);
+      const plus = $('c-plus');
+      await cursorTo(plus, id, 2, 4);
+      await click(plus, id);
+      sw.classList.remove('done', 'pulse'); note.classList.remove('on');
+      startClock(300, 300);
+      await wait(1600, id);
+    },
     // Focus sound
     async id => {
       showWidget('Write intro', 2700, 1190);
@@ -1021,7 +1254,7 @@
     items.forEach(b => b.querySelector('i').style.setProperty('--p', '0%'));
     const started = performance.now();
     cancelAnimationFrame(progressAnim);
-    const est = [8600, 7000, 8200, 8400, 7600, 5800, 7600, 6200][i];
+    const est = [8600, 7000, 8200, 8400, 9800, 8200, 9400, 7600, 5800, 7600, 8800, 6200][i];
     const step = () => {
       bar.style.setProperty('--p', Math.min(100, (performance.now() - started) / est * 100) + '%');
       if (id === run) progressAnim = requestAnimationFrame(step);
@@ -1096,6 +1329,14 @@
     F.end = Date.now() + sec * 1000; F.state = 'run'; fName.textContent = name || '';
     fl.setAttribute('aria-hidden', 'false'); fl.classList.add('on'); fRender();
   }
+  // A planned block: shows what's next instead of counting down.
+  function fSchedule(spec) {
+    clearTimeout(F.t); F.state = 'sched';
+    fl.classList.remove('done'); fl.classList.add('paused', 'on'); fl.setAttribute('aria-hidden', 'false');
+    fName.textContent = `Next: ${spec.name}`;
+    fTime.textContent = `${spec.days ? fmtDays(spec.days) + ' ' : ''}${fmtT(spec.start)}`;
+    fToggle.style.display = 'none';
+  }
   fToggle.addEventListener('click', () => {
     if (F.state === 'run') { F.left = (F.end - Date.now()) / 1000; F.state = 'pause'; }
     else if (F.state === 'pause') { F.end = Date.now() + F.left * 1000; F.state = 'run'; }
@@ -1123,6 +1364,7 @@
     if (m.kind === 'empty') fStart(DEFAULT, '');
     else if (m.kind === 'start') fStart(m.secs, m.name);
     else if (m.kind === 'pomo') fStart(1500, 'Focus');
+    else if (m.kind === 'sched') fSchedule(m.spec);
     else if (m.kind === 'add' && F.state !== 'off') {
       if (F.state === 'run') F.end += m.secs * 1000; else if (F.state === 'pause') F.left += m.secs; else { F.end = Date.now() + m.secs * 1000; F.state = 'run'; }
       fRender();
