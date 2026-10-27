@@ -18,6 +18,9 @@ enum Theme {
     static let surface = dynamic(light: NSColor(srgbRed: 0.985, green: 0.975, blue: 0.96, alpha: 0.82),
                                  dark: NSColor(srgbRed: 0.11, green: 0.105, blue: 0.10, alpha: 0.80))
 
+    /// Times of day and days in the launcher: "when", distinct from "how long".
+    static let schedule = dynamic(light: NSColor(srgbRed: 0.18, green: 0.44, blue: 0.62, alpha: 1),
+                                  dark: NSColor(srgbRed: 0.56, green: 0.76, blue: 0.92, alpha: 1))
     static let hairline = dynamic(light: NSColor(white: 0, alpha: 0.10),
                                   dark: NSColor(white: 1, alpha: 0.10))
 

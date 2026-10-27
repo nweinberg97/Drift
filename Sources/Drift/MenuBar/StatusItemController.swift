@@ -16,20 +16,24 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var openSettings: () -> Void
         var rename: (UUID) -> Void
         var edit: (UUID) -> Void
+        /// Opens the block editor; nil for a new block.
+        var editBlock: (UUID?) -> Void
     }
 
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
     private let store: TimerStore
     private let settings: AppSettings
+    private let schedule: ScheduleStore
     private let actions: Actions
     private var cancellables = Set<AnyCancellable>()
     private var timerItems: [UUID: NSMenuItem] = [:]
     private var lastIconKey = ""
     private var lastTitle = ""
 
-    init(store: TimerStore, settings: AppSettings, actions: Actions) {
+    init(store: TimerStore, settings: AppSettings, schedule: ScheduleStore, actions: Actions) {
         self.store = store
         self.settings = settings
+        self.schedule = schedule
         self.actions = actions
         super.init()
 
@@ -126,6 +130,43 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             }
         }
 
+        menu.addItem(.separator())
+
+        // Today's plan.
+        let entries = schedule.today()
+        if !schedule.blocks.isEmpty {
+            let header = NSMenuItem(title: "Today", action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            menu.addItem(header)
+            if entries.isEmpty {
+                let none = NSMenuItem(title: "Nothing planned today", action: nil, keyEquivalent: "")
+                none.isEnabled = false
+                none.indentationLevel = 1
+                menu.addItem(none)
+            }
+            for entry in entries {
+                let occ = entry.occurrence
+                let prefix: String
+                switch entry.state {
+                case .running: prefix = "Now · "
+                case .skipped: prefix = "Skipped · "
+                default: prefix = ""
+                }
+                let row = action("\(occ.name)   \(prefix)\(Schedule.range(startMinute: occ.startMinute, duration: occ.duration))", #selector(editBlock(_:)))
+                row.representedObject = entry.block.id
+                row.indentationLevel = 1
+                let faded: Bool
+                switch entry.state {
+                case .done, .passed, .skipped: faded = true
+                default: faded = false
+                }
+                if faded {
+                    row.attributedTitle = NSAttributedString(string: row.title, attributes: [.foregroundColor: NSColor.secondaryLabelColor])
+                }
+                menu.addItem(row)
+            }
+        }
+        menu.addItem(action("Schedule a Block…", #selector(newBlock)))
         menu.addItem(.separator())
 
         let newItem = action("New Timer…", #selector(newTimer))
@@ -288,6 +329,11 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func newTimer() { actions.newTimer() }
+    @objc private func newBlock() { actions.editBlock(nil) }
+    @objc private func editBlock(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? UUID else { return }
+        actions.editBlock(id)
+    }
     @objc private func voice() { actions.voice() }
     @objc private func toggleWidget() { actions.toggleWidget() }
     @objc private func openSettings() { actions.openSettings() }

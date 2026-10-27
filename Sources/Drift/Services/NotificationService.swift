@@ -54,6 +54,18 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         }
     }
 
+    /// Shows a banner right away (a scheduled block coming due).
+    func postNow(title: String, body: String, enabled: Bool) {
+        guard enabled, let center else { return }
+        requestAuthorizationIfNeeded()
+        let content = UNMutableNotificationContent()
+        content.title = title
+        content.body = body
+        content.sound = nil
+        content.threadIdentifier = "drift.schedule"
+        center.add(UNNotificationRequest(identifier: "block-\(UUID().uuidString)", content: content, trigger: nil))
+    }
+
     static func copy(for timer: DriftTimer) -> (title: String, body: String) {
         if let cycle = timer.pomodoro {
             let next = cycle.upNext

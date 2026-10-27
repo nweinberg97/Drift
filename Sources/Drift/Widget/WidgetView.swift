@@ -12,6 +12,8 @@ final class WidgetUIState: ObservableObject {
     @Published var dialID: UUID?
     @Published var dialValue: TimeInterval = 0
     var dialOriginal: TimeInterval = 0
+    /// A scheduled block open in the editor.
+    @Published var blockDraft: BlockDraft?
     /// Shown for a moment after hiding, so the widget never just vanishes.
     @Published var hideHint = false
     /// A finished timer is chiming; the widget pulses until it's handled.
@@ -20,6 +22,30 @@ final class WidgetUIState: ObservableObject {
 
 extension WidgetUIState {
     static let dialMaximum: TimeInterval = 12 * 3_600
+
+    /// Opens the editor on an existing block (as it runs today) or a new one.
+    func editBlock(_ id: UUID?, schedule: ScheduleStore) {
+        closeDial(commit: true, store: nil)
+        renamingID = nil
+        let now = schedule.now
+        let cal = Calendar.current
+        let nowMinute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        var draft: BlockDraft
+        if let id, let block = schedule.block(id) {
+            let e = schedule.occurrenceToday(id)
+            let name = e?.name ?? block.name, start = e?.startMinute ?? block.startMinute, dur = e?.duration ?? block.duration
+            draft = BlockDraft(id: id, name: name, startMinute: start, duration: dur, days: block.days,
+                               date: block.date ?? schedule.dayKey,
+                               original: .init(name: name, startMinute: start, duration: dur, days: block.days),
+                               windowStart: 0)
+        } else {
+            let start = min(23 * 60, (nowMinute / 15 + 1) * 15 + 15)
+            draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: [1, 2, 3, 4, 5],
+                               date: schedule.dayKey, original: nil, windowStart: 0)
+        }
+        draft.windowStart = max(0, min(1_440 - BlockTimeline.span, (draft.startMinute / 60) * 60 - 120))
+        blockDraft = draft
+    }
 
     func beginRename(_ t: DriftTimer) {
         guard t.pomodoro == nil else { return }
@@ -73,38 +99,62 @@ struct WidgetView: View {
     @ObservedObject var store: TimerStore
     @ObservedObject var settings: AppSettings
     @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
     let actions: WidgetActions
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     private var scale: CGFloat { settings.widgetSize.scale }
     private var expandedWidth: CGFloat { 272 * scale }
+    private var editorWidth: CGFloat { 344 }
+
+    private var width: CGFloat? {
+        if ui.hideHint { return nil }
+        if ui.blockDraft != nil { return max(editorWidth, expandedWidth) }
+        if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return expandedWidth }
+        return nil
+    }
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
+            if !ui.hideHint, let prompt = schedule.prompt, let occ = schedule.occurrenceToday(prompt.blockID) {
+                BlockPrompt(occurrence: occ, prompt: prompt, schedule: schedule, actions: actions)
+                    .transition(.opacity)
+            }
             if ui.hideHint {
                 HideHint(settings: settings, scale: scale)
             } else if let primary = store.primary {
                 PrimaryRow(timer: primary, store: store, ui: ui, scale: scale,
                            othersCount: store.others.count, actions: actions)
+                if !ui.expanded, ui.dialID == nil, ui.blockDraft == nil, schedule.prompt == nil,
+                   let next = schedule.next(), !next.tomorrow,
+                   next.entry.occurrence.start.timeIntervalSince(schedule.now) < 2 * 3_600,
+                   primary.blockID != next.entry.block.id {
+                    NextBlockLine(entry: next.entry, tomorrow: false, ui: ui, schedule: schedule, actions: actions, scale: scale)
+                }
             } else {
-                IdleRow(store: store, settings: settings, ui: ui, scale: scale, actions: actions)
+                IdleRow(store: store, settings: settings, ui: ui, schedule: schedule, scale: scale, actions: actions)
             }
 
-            if let id = ui.dialID, let t = store.timer(id), !ui.hideHint {
+            if ui.blockDraft != nil, !ui.hideHint {
+                BlockEditor(ui: ui, schedule: schedule, actions: actions)
+                    .transition(.opacity)
+            } else if let id = ui.dialID, let t = store.timer(id), !ui.hideHint {
                 DialSection(timer: t, store: store, settings: settings, ui: ui, actions: actions)
                     .transition(.opacity)
             } else if ui.expanded && !ui.hideHint {
-                ExpandedSection(store: store, settings: settings, ui: ui, scale: scale, actions: actions)
+                ExpandedSection(store: store, settings: settings, ui: ui, schedule: schedule, scale: scale, actions: actions)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
             }
         }
-        .frame(width: (ui.expanded || ui.dialID != nil) && !ui.hideHint ? expandedWidth : nil, alignment: .leading)
+        .frame(width: width, alignment: .leading)
         .driftSurface(cornerRadius: Theme.cornerRadius * min(scale, 1.15), opacity: settings.widgetOpacity)
         .overlay(AlertPulse(active: ui.alerting, cornerRadius: Theme.cornerRadius * min(scale, 1.15)))
         .contextMenu { contextMenu }
         .animation(reduceMotion ? nil : Theme.quick, value: ui.expanded)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.hideHint)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.dialID)
+        .animation(reduceMotion ? nil : Theme.quick, value: ui.blockDraft == nil)
+        .animation(reduceMotion ? nil : Theme.quick, value: schedule.prompt)
         .animation(reduceMotion ? nil : Theme.quick, value: store.timers.map(\.id))
         .fixedSize()
         .reportSize(actions.resize)
@@ -384,6 +434,7 @@ private struct IdleRow: View {
     @ObservedObject var store: TimerStore
     @ObservedObject var settings: AppSettings
     @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
     let scale: CGFloat
     let actions: WidgetActions
 
@@ -411,9 +462,22 @@ private struct IdleRow: View {
                 .buttonStyle(IconButtonStyle(size: 26 * scale, tint: Theme.accent))
                 .help("Start \(TimeFormatter.compact(settings.defaultDuration))")
                 .accessibilityLabel("Start \(TimeFormatter.spoken(settings.defaultDuration)) timer")
+
+                if !schedule.blocks.isEmpty {
+                    Button { ui.expanded.toggle() } label: {
+                        Image(systemName: ui.expanded ? "chevron.up" : "chevron.down")
+                            .font(.system(size: 10 * scale, weight: .bold))
+                    }
+                    .buttonStyle(IconButtonStyle(size: 26 * scale, tint: Theme.secondaryText))
+                    .help(ui.expanded ? "Collapse" : "Today's plan")
+                    .accessibilityLabel(ui.expanded ? "Collapse" : "Show today's plan")
+                }
             }
 
-            if let shortcut = settings.shortcuts[.newTimer] {
+            if !ui.expanded, let next = schedule.next() {
+                NextBlockLine(entry: next.entry, tomorrow: next.tomorrow, ui: ui, schedule: schedule, actions: actions, scale: scale)
+                    .padding(.leading, -13 * scale)
+            } else if schedule.blocks.isEmpty, let shortcut = settings.shortcuts[.newTimer] {
                 HStack(spacing: 6) {
                     KeyCaps(text: shortcut.display)
                     Text("write a task and a time, from any app")
@@ -436,6 +500,7 @@ private struct ExpandedSection: View {
     @ObservedObject var store: TimerStore
     @ObservedObject var settings: AppSettings
     @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
     let scale: CGFloat
     let actions: WidgetActions
 
@@ -461,6 +526,9 @@ private struct ExpandedSection: View {
                 }
                 .padding(.vertical, 4)
             }
+
+            Hairline()
+            TodaySection(ui: ui, schedule: schedule, actions: actions, scale: scale)
 
             Hairline()
             FocusSoundRow(settings: settings, scale: scale)
@@ -1008,6 +1076,509 @@ private struct PresetChipStyle: ButtonStyle {
                 RoundedRectangle(cornerRadius: 7, style: .continuous)
                     .fill(selected ? Theme.accent : (configuration.isPressed || hovering ? Theme.controlHover : Theme.control))
             )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+    }
+}
+
+// MARK: - Schedule
+
+/// "Deep work starts now": start, push it five minutes, or skip today.
+/// Left alone, the block starts by itself when the countdown runs out.
+private struct BlockPrompt: View {
+    let occurrence: BlockOccurrence
+    let prompt: ScheduleStore.Prompt
+    @ObservedObject var schedule: ScheduleStore
+    let actions: WidgetActions
+
+    var body: some View {
+        let left = max(0, prompt.deadline.timeIntervalSince(schedule.now))
+        VStack(alignment: .leading, spacing: 3) {
+            HStack(spacing: 7) {
+                Image(systemName: "calendar")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(Theme.accent)
+                Text("\(occurrence.name) starts now")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Theme.primaryText)
+                    .lineLimit(1)
+            }
+            Text("\(Schedule.range(startMinute: occurrence.startMinute, duration: occurrence.duration)) · starts by itself in \(TimeFormatter.clock(left))")
+                .font(.system(size: 11.5).monospacedDigit())
+                .foregroundStyle(Theme.secondaryText)
+                .padding(.leading, 18)
+            HStack(spacing: 5) {
+                Button("Start") { schedule.start(prompt.blockID) }
+                    .buttonStyle(PillButtonStyle(prominent: true))
+                Button("In 5 min") { schedule.snooze(prompt.blockID) }
+                    .buttonStyle(PillButtonStyle())
+                Button("Skip today") { schedule.skipToday(prompt.blockID) }
+                    .buttonStyle(PillButtonStyle())
+            }
+            .padding(.leading, 18)
+            .padding(.top, 6)
+        }
+        .padding(11)
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.accent.opacity(0.13)))
+        .padding(6)
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("\(occurrence.name) starts now")
+    }
+}
+
+/// "Next: Email at 1:00 PM" under the timer.
+private struct NextBlockLine: View {
+    let entry: ScheduleStore.Entry
+    let tomorrow: Bool
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
+    let actions: WidgetActions
+    let scale: CGFloat
+
+    var body: some View {
+        Button {
+            ui.editBlock(entry.block.id, schedule: schedule)
+            actions.focusPanel()
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "calendar").font(.system(size: 10, weight: .semibold))
+                Text("Next")
+                Text(entry.occurrence.name).fontWeight(.semibold).foregroundStyle(Theme.primaryText).lineLimit(1)
+                Text("\(tomorrow ? "tomorrow " : "")at \(Schedule.time(entry.occurrence.startMinute))").lineLimit(1)
+            }
+            .font(.system(size: 11.5 * min(scale, 1.15)))
+            .foregroundStyle(Theme.secondaryText)
+        }
+        .buttonStyle(.plain)
+        .padding(.leading, 33 * scale)
+        .padding(.trailing, 10)
+        .padding(.bottom, 7)
+        .help("Click to change or skip it")
+    }
+}
+
+/// Today's plan, in the expanded widget.
+private struct TodaySection: View {
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
+    let actions: WidgetActions
+    let scale: CGFloat
+
+    var body: some View {
+        let entries = schedule.today()
+        VStack(alignment: .leading, spacing: 0) {
+            HStack {
+                Text("TODAY")
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .foregroundStyle(Theme.tertiaryText)
+                Spacer()
+                Button {
+                    ui.editBlock(nil, schedule: schedule)
+                    actions.focusPanel()
+                } label: {
+                    HStack(spacing: 4) {
+                        Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                        Text("Schedule")
+                    }
+                }
+                .buttonStyle(QuietButtonStyle(prominent: true))
+                .help("Plan a time box, like “Deep work 9–10:30 weekdays”")
+            }
+            .padding(.leading, 13 * scale)
+            .padding(.trailing, 7 * scale)
+            .padding(.top, 2)
+
+            if entries.isEmpty {
+                Text(schedule.blocks.isEmpty ? "Plan a block from ⌥ Space: “Deep work 9–10:30 weekdays”" : "Nothing planned today")
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.tertiaryText)
+                    .padding(.horizontal, 13 * scale)
+                    .padding(.bottom, 7)
+            }
+            ForEach(entries) { entry in
+                BlockRow(entry: entry) {
+                    ui.editBlock(entry.block.id, schedule: schedule)
+                    actions.focusPanel()
+                }
+            }
+        }
+        .padding(.bottom, 3)
+    }
+}
+
+private struct BlockRow: View {
+    let entry: ScheduleStore.Entry
+    let open: () -> Void
+    @State private var hovering = false
+
+    private var faded: Bool {
+        let quiet: [ScheduleStore.EntryState] = [.done, .passed, .skipped]
+        return quiet.contains(entry.state)
+    }
+
+    var body: some View {
+        Button(action: open) {
+            HStack(spacing: 8) {
+                Text(Schedule.range(startMinute: entry.occurrence.startMinute, duration: entry.occurrence.duration))
+                    .font(.system(size: 11.5).monospacedDigit())
+                    .foregroundStyle(faded ? Theme.tertiaryText : Theme.secondaryText)
+                    .frame(width: 104, alignment: .leading)
+                Text(entry.occurrence.name)
+                    .font(.system(size: 12, weight: .medium))
+                    .foregroundStyle(faded ? Theme.tertiaryText : Theme.primaryText)
+                    .strikethrough(entry.state == .skipped)
+                    .lineLimit(1)
+                Spacer(minLength: 4)
+                if entry.occurrence.edited {
+                    Tag(text: "today", style: .plain).help("Changed for today only")
+                } else if entry.block.isRepeating {
+                    Image(systemName: "repeat").font(.system(size: 9, weight: .semibold)).foregroundStyle(Theme.tertiaryText)
+                }
+                switch entry.state {
+                case .running: Tag(text: "Now", style: .strong)
+                case .next: Tag(text: "Next", style: .soft)
+                case .due: Tag(text: "Starting", style: .soft)
+                case .done: Tag(text: "Done", style: .plain)
+                case .skipped: Tag(text: "Skipped", style: .plain)
+                case .upcoming, .passed: EmptyView()
+                }
+            }
+            .padding(.leading, 13)
+            .padding(.trailing, 9)
+            .frame(height: 26)
+            .background(hovering ? Theme.control : Color.clear)
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { hovering = $0 }
+        .help("Click to change or skip")
+        .accessibilityLabel("\(entry.occurrence.name), \(Schedule.range(startMinute: entry.occurrence.startMinute, duration: entry.occurrence.duration))")
+    }
+}
+
+private struct Tag: View {
+    enum Style { case strong, soft, plain }
+    let text: String
+    let style: Style
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 10, weight: .semibold))
+            .foregroundStyle(style == .strong ? Color.white : style == .soft ? Theme.accent : Theme.tertiaryText)
+            .padding(.horizontal, 6)
+            .padding(.vertical, 1.5)
+            .background(Capsule().fill(style == .strong ? Theme.accent : style == .soft ? Theme.accent.opacity(0.14) : Color.clear))
+    }
+}
+
+/// Create or change a block: name, drag it on a timeline, length, repeat days.
+/// For a repeating block that's on today, a change can be for today only.
+private struct BlockEditor: View {
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
+    let actions: WidgetActions
+    @FocusState private var nameFocused: Bool
+
+    private static let lengths: [TimeInterval] = [900, 1_500, 1_800, 2_700, 3_600, 5_400, 7_200]
+
+    var body: some View {
+        if let draft = ui.blockDraft {
+            content(draft)
+        }
+    }
+
+    private func binding<T>(_ key: WritableKeyPath<BlockDraft, T>, _ fallback: T) -> Binding<T> {
+        Binding(get: { ui.blockDraft?[keyPath: key] ?? fallback },
+                set: { ui.blockDraft?[keyPath: key] = $0 })
+    }
+
+    @ViewBuilder
+    private func content(_ draft: BlockDraft) -> some View {
+        let block = draft.id.flatMap { schedule.block($0) }
+        let todayOcc = draft.id.flatMap { schedule.occurrenceToday($0) }
+        let key = schedule.dayKey
+        let skipped = block?.status[key] == .skipped
+        let twoWay = block?.isRepeating == true && todayOcc != nil && draft.changedTime && !draft.changedRepeat
+        VStack(alignment: .leading, spacing: 0) {
+            TextField("What is this block for?", text: binding(\.name, ""))
+                .textFieldStyle(.plain)
+                .font(.system(size: 13.5, weight: .semibold))
+                .focused($nameFocused)
+                .onSubmit { save(todayOnly: false) }
+                .padding(.horizontal, 9)
+                .frame(height: 28)
+                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.control))
+                .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(nameFocused ? Theme.accent : Color.clear, lineWidth: 1))
+                .onAppear { if draft.name.isEmpty { DispatchQueue.main.async { nameFocused = true } } }
+
+            HStack(alignment: .firstTextBaseline) {
+                Text(Schedule.range(startMinute: draft.startMinute, duration: draft.duration))
+                    .font(Theme.digits(19))
+                    .foregroundStyle(Theme.primaryText)
+                Spacer()
+                Text(TimeFormatter.compact(draft.duration))
+                    .font(.system(size: 11.5))
+                    .foregroundStyle(Theme.secondaryText)
+            }
+            .padding(.top, 11)
+            .padding(.bottom, 6)
+
+            BlockTimeline(ui: ui, schedule: schedule)
+
+            row("Start") {
+                ForEach([-15, -5, 5, 15], id: \.self) { (d: Int) in
+                    Button(stepTitle(d)) {
+                        ui.blockDraft?.startMinute = max(0, min(1_435, draft.startMinute + d))
+                    }
+                    .buttonStyle(PillButtonStyle())
+                }
+            }
+            row("Length") {
+                ForEach(Self.lengths.prefix(4), id: \.self) { l in lengthChip(l, draft) }
+            }
+            row("") {
+                ForEach(Self.lengths.suffix(3), id: \.self) { l in lengthChip(l, draft) }
+            }
+            row("Repeat") {
+                Button(onceTitle(draft, key)) {
+                    let cal = Calendar.current
+                    let nowMinute = cal.component(.hour, from: schedule.now) * 60 + cal.component(.minute, from: schedule.now)
+                    ui.blockDraft?.days = nil
+                    if draft.startMinute <= nowMinute, let t = cal.date(byAdding: .day, value: 1, to: schedule.now) {
+                        ui.blockDraft?.date = Schedule.dayKey(t)
+                    } else {
+                        ui.blockDraft?.date = key
+                    }
+                }
+                .buttonStyle(PillButtonStyle(selected: draft.days == nil))
+                Button("Weekdays") { ui.blockDraft?.days = [1, 2, 3, 4, 5] }
+                    .buttonStyle(PillButtonStyle(selected: Set(draft.days ?? []) == Set(1...5)))
+                Button("Every day") { ui.blockDraft?.days = Array(0...6) }
+                    .buttonStyle(PillButtonStyle(selected: Set(draft.days ?? []) == Set(0...6)))
+            }
+            row("") {
+                ForEach([1, 2, 3, 4, 5, 6, 0], id: \.self) { d in
+                    Button(String(Schedule.shortDayNames[d].prefix(1))) {
+                        var set = Set(draft.days ?? [])
+                        if set.contains(d) { set.remove(d) } else { set.insert(d) }
+                        ui.blockDraft?.days = set.isEmpty ? nil : set.sorted()
+                    }
+                    .buttonStyle(PillButtonStyle(selected: draft.days?.contains(d) == true, square: true))
+                    .help(Schedule.shortDayNames[d])
+                }
+            }
+
+            Text(hint(twoWay: twoWay, block: block))
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.tertiaryText)
+                .fixedSize(horizontal: false, vertical: true)
+                .padding(.top, 9)
+
+            HStack(spacing: 6) {
+                if let id = draft.id {
+                    Button("Delete") {
+                        schedule.delete(id)
+                        close()
+                    }
+                    .buttonStyle(PillButtonStyle(destructive: true))
+                }
+                if let id = draft.id, todayOcc != nil, !twoWay {
+                    Button(skipped ? "Don’t skip" : "Skip today") {
+                        schedule.skipToday(id, undo: skipped)
+                    }
+                    .buttonStyle(PillButtonStyle())
+                }
+                Spacer()
+                Button("Cancel") { close() }
+                    .buttonStyle(PillButtonStyle())
+                    .keyboardShortcut(.cancelAction)
+                if twoWay, let block {
+                    Button("Just today") { save(todayOnly: true) }
+                        .buttonStyle(PillButtonStyle())
+                    Button(allLabel(block)) { save(todayOnly: false) }
+                        .buttonStyle(PillButtonStyle(prominent: true))
+                        .keyboardShortcut(.defaultAction)
+                } else {
+                    Button(draft.id == nil ? "Schedule" : "Save") { save(todayOnly: false) }
+                        .buttonStyle(PillButtonStyle(prominent: true))
+                        .keyboardShortcut(.defaultAction)
+                }
+            }
+            .padding(.top, 12)
+        }
+        .padding(12)
+        .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 0.5) }
+    }
+
+    private func onceTitle(_ draft: BlockDraft, _ key: String) -> String {
+        draft.days == nil && draft.date == key ? "Today only" : "Once"
+    }
+
+    private func stepTitle(_ d: Int) -> String { d > 0 ? "+\(d)" : "−\(-d)" }
+
+    private func hint(twoWay: Bool, block: ScheduledBlock?) -> String {
+        guard twoWay, let block else { return "Drag the block to move it, its right edge to change the length." }
+        let all = allLabel(block)
+        return "Save this change for today only, or for " + all.prefix(1).lowercased() + all.dropFirst() + "."
+    }
+
+    private func lengthChip(_ l: TimeInterval, _ draft: BlockDraft) -> some View {
+        Button(TimeFormatter.compact(l)) { ui.blockDraft?.duration = l }
+            .buttonStyle(PillButtonStyle(selected: draft.duration == l))
+    }
+
+    private func row<Content: View>(_ label: String, @ViewBuilder _ content: () -> Content) -> some View {
+        HStack(spacing: 5) {
+            Text(label)
+                .font(.system(size: 11.5))
+                .foregroundStyle(Theme.secondaryText)
+                .frame(width: 50, alignment: .leading)
+            content()
+            Spacer(minLength: 0)
+        }
+        .padding(.top, 8)
+    }
+
+    private func allLabel(_ block: ScheduledBlock) -> String {
+        switch schedule.describeDays(block) {
+        case "Every day": return "Every day"
+        case "Weekdays": return "All weekdays"
+        case "Weekends": return "All weekends"
+        case let d: return "Every " + d.replacingOccurrences(of: ", ", with: "/")
+        }
+    }
+
+    private func save(todayOnly: Bool) {
+        guard let draft = ui.blockDraft else { return }
+        schedule.save(draft, todayOnly: todayOnly)
+        close()
+        ui.expanded = true
+    }
+
+    private func close() {
+        ui.blockDraft = nil
+        actions.releaseFocus()
+    }
+}
+
+/// Eight hours around the block. Drag it to move; drag its right edge to resize.
+/// Other blocks today show as grey shapes so you can see the gaps.
+struct BlockTimeline: View {
+    static let span = 480
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
+    @State private var dragOrigin: (start: Int, duration: TimeInterval)?
+
+    private let width: CGFloat = 320
+    private let height: CGFloat = 46
+
+    var body: some View {
+        if let draft = ui.blockDraft {
+            let w0 = draft.windowStart
+            let x: (Int) -> CGFloat = { CGFloat($0 - w0) / CGFloat(Self.span) * width }
+            let others = schedule.today().filter { $0.block.id != draft.id }
+            let cal = Calendar.current
+            let nowMinute = cal.component(.hour, from: schedule.now) * 60 + cal.component(.minute, from: schedule.now)
+            ZStack(alignment: .topLeading) {
+                RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control)
+                ForEach(Array(stride(from: (w0 + 59) / 60 * 60, through: w0 + Self.span, by: 60)), id: \.self) { m in
+                    Rectangle().fill(Theme.hairline).frame(width: 1, height: height).offset(x: x(m))
+                    Text(Schedule.time(m).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: " ", with: ""))
+                        .font(.system(size: 9))
+                        .foregroundStyle(Theme.tertiaryText)
+                        .offset(x: x(m) + 3, y: 3)
+                }
+                ForEach(others) { o in
+                    RoundedRectangle(cornerRadius: 5, style: .continuous)
+                        .fill(Theme.controlHover)
+                        .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(Self.span) * width), height: 22)
+                        .offset(x: x(o.occurrence.startMinute), y: 18)
+                }
+                if nowMinute >= w0 && nowMinute <= w0 + Self.span {
+                    Rectangle().fill(Theme.accent.opacity(0.7)).frame(width: 1.5, height: height).offset(x: x(nowMinute))
+                }
+                block(draft, x: x(draft.startMinute))
+            }
+            .frame(width: width, height: height, alignment: .topLeading)
+            .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .accessibilityElement(children: .ignore)
+            .accessibilityLabel("Time")
+            .accessibilityValue(Schedule.range(startMinute: draft.startMinute, duration: draft.duration))
+            .accessibilityAdjustableAction { direction in
+                let d = direction == .increment ? 5 : -5
+                ui.blockDraft?.startMinute = max(0, min(1_435, draft.startMinute + d))
+            }
+        }
+    }
+
+    private func block(_ draft: BlockDraft, x: CGFloat) -> some View {
+        let w = max(18, CGFloat(draft.duration / 60) / CGFloat(Self.span) * width)
+        return ZStack(alignment: .trailing) {
+            RoundedRectangle(cornerRadius: 6, style: .continuous)
+                .fill(Theme.accent)
+                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            Text(draft.name.isEmpty ? "Block" : draft.name)
+                .font(.system(size: 10.5, weight: .semibold))
+                .foregroundStyle(.white)
+                .lineLimit(1)
+                .padding(.horizontal, 8)
+                .frame(maxWidth: .infinity, alignment: .leading)
+            // Resize grip.
+            Capsule()
+                .fill(Color.white.opacity(0.75))
+                .frame(width: 2, height: 10)
+                .padding(.trailing, 4)
+                .frame(width: 12, height: 26)
+                .contentShape(Rectangle())
+                .highPriorityGesture(drag(resizing: true))
+        }
+        .frame(width: w, height: 26)
+        .contentShape(Rectangle())
+        .gesture(drag(resizing: false))
+        .offset(x: x, y: 16)
+    }
+
+    private func drag(resizing: Bool) -> some Gesture {
+        DragGesture(minimumDistance: 1)
+            .onChanged { g in
+                guard let draft = ui.blockDraft else { return }
+                if dragOrigin == nil { dragOrigin = (draft.startMinute, draft.duration) }
+                guard let origin = dragOrigin else { return }
+                let minutes = Int((g.translation.width / width * CGFloat(Self.span) / 5).rounded()) * 5
+                if resizing {
+                    let m = max(15, min(8 * 60, Int(origin.duration / 60) + minutes))
+                    ui.blockDraft?.duration = TimeInterval(m * 60)
+                } else {
+                    ui.blockDraft?.startMinute = max(0, min(1_440 - 15, origin.start + minutes))
+                }
+            }
+            .onEnded { _ in dragOrigin = nil }
+    }
+}
+
+private struct PillButtonStyle: ButtonStyle {
+    var prominent = false
+    var selected = false
+    var square = false
+    var destructive = false
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        let filled = prominent || selected
+        configuration.label
+            .font(.system(size: 11.5, weight: prominent ? .semibold : .medium).monospacedDigit())
+            .foregroundStyle(filled ? Color.white : destructive ? Color.red : (hovering ? Theme.primaryText : Theme.secondaryText))
+            .lineLimit(1)
+            .fixedSize()
+            .padding(.horizontal, square ? 0 : 9)
+            .frame(minWidth: square ? 24 : nil)
+            .frame(height: 24)
+            .background(
+                RoundedRectangle(cornerRadius: 7, style: .continuous)
+                    .fill(filled ? Theme.accent : destructive ? Color.clear : (configuration.isPressed || hovering ? Theme.controlHover : Theme.control))
+            )
+            .opacity(configuration.isPressed ? 0.85 : 1)
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
     }

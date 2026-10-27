@@ -135,6 +135,14 @@ final class TimerStore: ObservableObject {
         if let value, let t = timer(id), t.pomodoro == nil { settings.remember(task: value, seconds: t.duration) }
     }
 
+    /// Marks a timer as the run of a scheduled block on a given day.
+    func attachBlock(_ id: UUID, block: UUID, day: String) {
+        mutate(id) {
+            $0.blockID = block
+            $0.blockDay = day
+        }
+    }
+
     func duplicate(_ id: UUID) {
         guard let t = timer(id) else { return }
         let copy = t.duplicated(at: Date())

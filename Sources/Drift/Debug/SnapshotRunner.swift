@@ -15,6 +15,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
     private let directory: URL
     private let settings: AppSettings
     private let store: TimerStore
+    private let schedule: ScheduleStore
     private let voice = VoiceController()
     private var window: NSWindow?
 
@@ -25,6 +26,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         settings = AppSettings(defaults: suite)
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("drift-snapshots-\(UUID().uuidString).json")
         store = TimerStore(settings: settings, fileURL: file)
+        let scheduleFile = FileManager.default.temporaryDirectory.appendingPathComponent("drift-snapshots-schedule-\(UUID().uuidString).json")
+        schedule = ScheduleStore(timers: store, settings: settings, fileURL: scheduleFile, autoTick: false)
         super.init()
     }
 
@@ -47,6 +50,11 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         var alerting = false
         var renaming = false
         var dial: TimeInterval?
+        var blocks: [ScheduledBlock] = []
+        var promptFor: Int?
+        /// Open the editor on this block; -1 for a new one.
+        var editBlock: Int?
+        var editChange: ((inout BlockDraft) -> Void)?
         var focusSound = false
         var dark = false
     }
@@ -102,6 +110,28 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "13-unnamed-collapsed", timers: [unnamed], primary: unnamed.id),
             Scenario(name: "14-dial", timers: [writing], primary: writing.id, dial: 1_920),
             Scenario(name: "15-dial-dark-hours", timers: [laundry], primary: laundry.id, dial: 5_400, dark: true),
+            Scenario(name: "30-plan-idle-next", timers: [], blocks: plan()),
+            Scenario(name: "31-plan-expanded", timers: [writing], primary: writing.id, expanded: true, blocks: plan()),
+            Scenario(name: "32-plan-prompt", timers: [writing], primary: writing.id, blocks: plan(), promptFor: 1),
+            Scenario(name: "33-plan-editor-new", timers: [writing], primary: writing.id, blocks: plan(), editBlock: -1),
+            Scenario(name: "34-plan-editor-just-today", timers: [writing], primary: writing.id, blocks: plan(), editBlock: 0,
+                     editChange: { $0.startMinute += 30 }),
+            Scenario(name: "35-plan-dark-expanded", timers: [], expanded: true, blocks: plan(), dark: true),
+        ]
+    }
+
+    /// A day's plan around the current time: one block every day an hour from
+    /// now, one starting now (for the prompt), and one later on.
+    private func plan() -> [ScheduledBlock] {
+        let cal = Calendar.current
+        let now = Date()
+        let minute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        let key = Schedule.dayKey(now)
+        let soon = min(1_380, (minute / 15 + 4) * 15)
+        return [
+            ScheduledBlock(name: "Deep work", startMinute: soon, duration: 5_400, days: Array(0...6), date: nil),
+            ScheduledBlock(name: "Email", startMinute: max(0, minute - 1), duration: 1_800, days: nil, date: key),
+            ScheduledBlock(name: "Reading", startMinute: min(1_410, soon + 120), duration: 1_800, days: [0, 1, 2, 3, 4, 5, 6], date: nil),
         ]
     }
 
@@ -123,11 +153,24 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                 ui.dialID = id
                 ui.dialValue = value
             }
+            var prompt: ScheduleStore.Prompt?
+            if let i = s.promptFor, i < s.blocks.count {
+                prompt = .init(blockID: s.blocks[i].id, deadline: Date().addingTimeInterval(42))
+            }
+            schedule.replaceAll(s.blocks, prompt: prompt)
+            if let i = s.editBlock {
+                ui.editBlock(i >= 0 && i < s.blocks.count ? s.blocks[i].id : nil, schedule: schedule)
+                if i < 0 { ui.blockDraft?.name = "Gym" }
+                if let change = s.editChange, var d = ui.blockDraft {
+                    change(&d)
+                    ui.blockDraft = d
+                }
+            }
             let actions = WidgetActions(
                 openComposer: {}, openVoice: {}, acknowledge: {}, hide: {},
                 resize: { _ in }, focusPanel: {}, releaseFocus: {}
             )
-            let view = WidgetView(store: store, settings: settings, ui: ui, actions: actions)
+            let view = WidgetView(store: store, settings: settings, ui: ui, schedule: schedule, actions: actions)
             await render(view, name: s.name, dark: s.dark)
         }
 
@@ -140,6 +183,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             ("23-launcher-number", "25", false, false),
             ("24-launcher-recents", "", true, false),
             ("25-launcher-dark-words", "Reading for an hour and a half", true, true),
+            ("26-launcher-schedule", "Deep work 9-10:30 weekdays", true, false),
+            ("27-launcher-schedule-at", "Email at 1pm for 30m", true, true),
         ]
         for (name, text, returning, dark) in launcher {
             settings.forgetRecents()

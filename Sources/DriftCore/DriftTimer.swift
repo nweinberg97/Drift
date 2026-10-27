@@ -123,6 +123,9 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
     public var createdAt: Date
     public var startedAt: Date?
     public var pomodoro: PomodoroCycle?
+    /// Set when the timer was started by a scheduled block, with that day's key.
+    public var blockID: UUID?
+    public var blockDay: String?
 
     public init(
         id: UUID = UUID(),

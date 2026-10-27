@@ -22,6 +22,8 @@ final class CommandRunner {
         /// `suggested`: no time typed, so the default length is offered.
         case start(seconds: TimeInterval, name: String?, suggested: Bool)
         case command(Preview)
+        /// A time of day or days: plan it rather than start it.
+        case schedule(ScheduleSpec)
         case invalid
     }
 
@@ -30,6 +32,8 @@ final class CommandRunner {
     var showWidget: () -> Void = {}
     var revealTimers: () -> Void = {}
     var hideWidget: () -> Void = {}
+    /// Adds a scheduled block (set up by the app delegate).
+    var addBlock: (ScheduleSpec) -> Void = { _ in }
 
     init(store: TimerStore, settings: AppSettings) {
         self.store = store
@@ -39,6 +43,7 @@ final class CommandRunner {
     func plan(_ text: String) -> Plan {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return .empty }
+        if let spec = ScheduleParser.parse(text, defaultDuration: settings.defaultDuration) { return .schedule(spec) }
         if let command = CommandParser.parse(trimmed) {
             if case let .start(seconds, name) = command { return .start(seconds: seconds, name: name, suggested: false) }
             return .command(preview(command))
@@ -54,6 +59,10 @@ final class CommandRunner {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty {
             return Preview(title: "Start \(TimeFormatter.clock(settings.defaultDuration))", detail: nil, isValid: true)
+        }
+        if let spec = ScheduleParser.parse(trimmed, defaultDuration: settings.defaultDuration) {
+            let days = Schedule.describeDays(spec.days, date: spec.date)
+            return Preview(title: "Schedule \(spec.name)", detail: "\(days) · \(Schedule.range(startMinute: spec.startMinute, duration: spec.duration))", isValid: true)
         }
         guard let command = CommandParser.parse(trimmed) else {
             return Preview(title: "Try 25, 1:30, 90s, 2h 15m, or 45m writing", detail: nil, isValid: false)
@@ -103,6 +112,11 @@ final class CommandRunner {
         if trimmed.isEmpty {
             store.create(seconds: settings.defaultDuration)
             showWidget()
+            return .done
+        }
+        if let spec = ScheduleParser.parse(trimmed, defaultDuration: settings.defaultDuration) {
+            addBlock(spec)
+            revealTimers()
             return .done
         }
         guard let command = CommandParser.parse(trimmed) else {

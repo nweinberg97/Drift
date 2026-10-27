@@ -332,7 +332,7 @@ struct ComposerView: View {
             } else {
                 switch currentPlan {
                 case .empty:
-                    Text("Write the task, then how long. Return starts \(TimeFormatter.compact(settings.defaultDuration)).")
+                    Text("Write the task, then how long, or when: “Deep work 9–10:30 weekdays”.")
                         .foregroundStyle(Theme.tertiaryText)
                         .lineLimit(1)
                     Spacer(minLength: 8)
@@ -356,6 +356,13 @@ struct ComposerView: View {
                     }
                     Spacer()
                     if p.isValid { KeyCaps(text: "↩") }
+                case let .schedule(spec):
+                    MiniSchedule(spec: spec)
+                    Spacer(minLength: 8)
+                    Text("Return to schedule")
+                        .foregroundStyle(Theme.tertiaryText)
+                        .lineLimit(1)
+                    KeyCaps(text: "↩")
                 case .invalid:
                     Text("Write a task and a time, like “Write intro 25m”")
                         .foregroundStyle(Theme.tertiaryText)
@@ -481,11 +488,21 @@ private struct FieldHighlight: View {
     private var highlighted: AttributedString {
         var a = AttributedString(text)
         a.swiftUI.foregroundColor = Color.clear
-        guard case .start(_, _, false) = plan else { return a }
-        for r in LauncherText.timeRanges(in: text) {
-            guard let lower = AttributedString.Index(r.lowerBound, within: a),
+        var marks: [(Range<String.Index>, Color)] = []
+        switch plan {
+        case .start(_, _, false):
+            marks = LauncherText.timeRanges(in: text).map { ($0, Theme.accent.opacity(0.22)) }
+        case let .schedule(spec):
+            // When it happens in blue, how long in ember.
+            marks = spec.whenRanges.map { ($0, Theme.schedule.opacity(0.2)) } + spec.lengthRanges.map { ($0, Theme.accent.opacity(0.22)) }
+        default:
+            break
+        }
+        for (r, color) in marks {
+            guard r.upperBound <= text.endIndex,
+                  let lower = AttributedString.Index(r.lowerBound, within: a),
                   let upper = AttributedString.Index(r.upperBound, within: a) else { continue }
-            a[lower..<upper].swiftUI.backgroundColor = Theme.accent.opacity(0.22)
+            a[lower..<upper].swiftUI.backgroundColor = color
         }
         return a
     }
@@ -494,6 +511,27 @@ private struct FieldHighlight: View {
         guard case .start(_, _, true) = plan else { return Text("") }
         return Text(text.hasSuffix(" ") ? suggestion : " " + suggestion)
             .foregroundColor(Theme.tertiaryText)
+    }
+}
+
+/// The block you're about to schedule: what, which days, when.
+struct MiniSchedule: View {
+    let spec: ScheduleSpec
+
+    var body: some View {
+        HStack(spacing: 7) {
+            Image(systemName: "calendar")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.accent)
+            Text(spec.name).fontWeight(.semibold).foregroundStyle(Theme.primaryText).lineLimit(1)
+            Text("\(Schedule.describeDays(spec.days, date: spec.date)) · \(Schedule.range(startMinute: spec.startMinute, duration: spec.duration))")
+                .foregroundStyle(Theme.secondaryText)
+                .lineLimit(1)
+        }
+        .padding(.leading, 8)
+        .padding(.trailing, 10)
+        .frame(height: 24)
+        .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
     }
 }
 

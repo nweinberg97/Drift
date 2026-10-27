@@ -33,6 +33,7 @@ enum DriftMain {
 final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     private var settings: AppSettings!
     private var store: TimerStore!
+    private var schedule: ScheduleStore!
     private var runner: CommandRunner!
     private var widget: WidgetController!
     private var composer: ComposerController!
@@ -51,14 +52,27 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         store = TimerStore(settings: settings)
         store.delegate = self
 
+        schedule = ScheduleStore(timers: store, settings: settings)
         runner = CommandRunner(store: store, settings: settings)
-        widget = WidgetController(store: store, settings: settings)
+        widget = WidgetController(store: store, settings: settings, schedule: schedule)
         composer = ComposerController(runner: runner, settings: settings, voice: voice)
         settingsWindow = SettingsWindowController(settings: settings)
 
         runner.showWidget = { [weak self] in self?.widget.show() }
         runner.revealTimers = { [weak self] in self?.widget.reveal() }
         runner.hideWidget = { [weak self] in self?.widget.hide() }
+        runner.addBlock = { [weak self] spec in self?.schedule.add(spec) }
+        // A scheduled block came due: a soft cue, a banner, and the widget in view.
+        schedule.onPrompt = { [weak self] occ in
+            guard let self else { return }
+            if self.settings.completionSound { self.chimes.playPhase(volume: self.settings.soundVolume) }
+            self.widget.show()
+            self.notifications.postNow(
+                title: "\(occ.name) starts now",
+                body: "\(Schedule.range(startMinute: occ.startMinute, duration: occ.duration)). Starts by itself in a minute.",
+                enabled: self.settings.notifications
+            )
+        }
         widget.openComposer = { [weak self] in self?.composer.show() }
         widget.openVoice = { [weak self] in self?.composer.show(listening: true) }
         widget.acknowledge = { [weak self] in self?.stopAlert() }
@@ -81,13 +95,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             self?.widget.show()
         }
 
-        statusItem = StatusItemController(store: store, settings: settings, actions: .init(
+        statusItem = StatusItemController(store: store, settings: settings, schedule: schedule, actions: .init(
             newTimer: { [weak self] in self?.composer.show() },
             voice: { [weak self] in self?.composer.show(listening: true) },
             toggleWidget: { [weak self] in self?.widget.toggle() },
             openSettings: { [weak self] in self?.settingsWindow.show() },
             rename: { [weak self] id in self?.beginEditing(id, rename: true) },
-            edit: { [weak self] id in self?.beginEditing(id, rename: false) }
+            edit: { [weak self] id in self?.beginEditing(id, rename: false) },
+            editBlock: { [weak self] id in self?.widget.editBlock(id) }
         ))
 
         registerHotKeys()

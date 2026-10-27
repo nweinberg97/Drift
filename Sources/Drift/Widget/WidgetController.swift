@@ -9,6 +9,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
     private let panel = FloatingPanel()
     private let store: TimerStore
     private let settings: AppSettings
+    private let schedule: ScheduleStore
     let ui = WidgetUIState()
     private var hosting: PanelHostingView<WidgetView>?
     private var cancellables = Set<AnyCancellable>()
@@ -23,9 +24,10 @@ final class WidgetController: NSObject, NSWindowDelegate {
     private static let placementKey = "widgetPlacement"
     private static let inset: CGFloat = 14
 
-    init(store: TimerStore, settings: AppSettings) {
+    init(store: TimerStore, settings: AppSettings, schedule: ScheduleStore) {
         self.store = store
         self.settings = settings
+        self.schedule = schedule
         super.init()
 
         panel.delegate = self
@@ -43,7 +45,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
             focusPanel: { [weak self] in self?.focus() },
             releaseFocus: { [weak self] in self?.releaseFocus() }
         )
-        let view = WidgetView(store: store, settings: settings, ui: ui, actions: actions)
+        let view = WidgetView(store: store, settings: settings, ui: ui, schedule: schedule, actions: actions)
         let hosting = PanelHostingView(rootView: view)
         hosting.sizingOptions = []
         panel.contentView = hosting
@@ -59,12 +61,16 @@ final class WidgetController: NSObject, NSWindowDelegate {
         store.$timers
             .map(\.isEmpty)
             .removeDuplicates()
-            .sink { [weak self] empty in if empty { self?.ui.expanded = false } }
+            .sink { [weak self] empty in
+                guard let self else { return }
+                if empty && self.schedule.blocks.isEmpty { self.ui.expanded = false }
+            }
             .store(in: &cancellables)
 
         // Dragging on the dial turns it; it mustn't move the widget.
         ui.$dialID
-            .sink { [weak self] id in self?.panel.draggable = (id == nil) }
+            .combineLatest(ui.$blockDraft.map { $0 != nil }.removeDuplicates())
+            .sink { [weak self] id, editing in self?.panel.draggable = (id == nil && !editing) }
             .store(in: &cancellables)
 
         // Scrolling over the open dial turns it too.
@@ -96,6 +102,13 @@ final class WidgetController: NSObject, NSWindowDelegate {
         guard let t = store.timer(id) else { return }
         show()
         ui.beginRename(t)
+        focus()
+    }
+
+    /// Opens the block editor: an existing block, or a new one when `id` is nil.
+    func editBlock(_ id: UUID?) {
+        show()
+        ui.editBlock(id, schedule: schedule)
         focus()
     }
 
@@ -202,7 +215,9 @@ final class WidgetController: NSObject, NSWindowDelegate {
     }
 
     private func handleEscape() {
-        if ui.dialID != nil {
+        if ui.blockDraft != nil {
+            ui.blockDraft = nil
+        } else if ui.dialID != nil {
             ui.closeDial(commit: false, store: store)
         } else if ui.renamingID != nil {
             ui.renamingID = nil
@@ -227,7 +242,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
             default: return false
             }
         }
-        guard ui.renamingID == nil, let primary = store.primary else { return false }
+        guard ui.renamingID == nil, ui.blockDraft == nil, let primary = store.primary else { return false }
         switch event.charactersIgnoringModifiers {
         case " ":
             if primary.isFinished { store.remove(primary.id) } else { store.toggle(primary.id) }
