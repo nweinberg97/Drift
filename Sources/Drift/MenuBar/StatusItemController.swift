@@ -162,11 +162,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
         let scapes = NSMenuItem(title: "Sound: \(settings.soundscape.title)", action: nil, keyEquivalent: "")
         let scapeMenu = NSMenu()
-        for scape in Soundscape.allCases {
-            let s = action(scape.title, #selector(selectSoundscape(_:)))
-            s.representedObject = scape.rawValue
-            s.state = settings.soundscape == scape ? .on : .off
-            scapeMenu.addItem(s)
+        for category in Soundscape.Category.allCases {
+            if category != Soundscape.Category.allCases.first { scapeMenu.addItem(.separator()) }
+            let header = NSMenuItem(title: category.title, action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            scapeMenu.addItem(header)
+            for scape in category.scapes {
+                let s = action(scape.title, #selector(selectSoundscape(_:)))
+                s.representedObject = scape.rawValue
+                s.state = settings.soundscape == scape ? .on : .off
+                s.toolTip = scape.subtitle
+                s.indentationLevel = 1
+                scapeMenu.addItem(s)
+            }
         }
         scapeMenu.addItem(.separator())
         scapeMenu.addItem(volumeItem())

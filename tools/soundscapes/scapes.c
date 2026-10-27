@@ -272,6 +272,144 @@ static inline double softclip(double x) {
   return x < 0 ? -y : y;
 }
 
+
+// ---------- shared note voices (keys, bells, bass) ----------
+#define NN 32
+typedef struct { double f, ph, mph, tph, amp, decay, idx, idxDecay, tIdx, tDecay, pan, att, attStep; int kind; } Note;
+static Note notes[NN];
+static void note_on(int kind, double f, double vel, double pan) {
+  int slot = 0; double quiet = 1e9;
+  for (int i = 0; i < NN; i++) { if (notes[i].amp < quiet) { quiet = notes[i].amp; slot = i; } }
+  Note n; memset(&n, 0, sizeof n);
+  n.kind = kind; n.f = f; n.amp = vel; n.pan = pan; n.att = 0;
+  if (kind == 0) {        // electric piano (FM): warm body + short tine
+    n.decay = exp(-1.0 / (1.7 * FS)); n.idx = 1.3; n.idxDecay = exp(-1.0 / (0.35 * FS));
+    n.tIdx = 0.35; n.tDecay = exp(-1.0 / (0.04 * FS)); n.attStep = 1.0 / (0.004 * FS);
+  } else if (kind == 1) { // bell / soft mallet
+    n.decay = exp(-1.0 / (2.6 * FS)); n.attStep = 1.0 / (0.008 * FS);
+  } else {                // bass
+    n.decay = exp(-1.0 / (0.55 * FS)); n.attStep = 1.0 / (0.006 * FS);
+  }
+  notes[slot] = n;
+}
+static inline void notes_tick(double wow, double *l, double *r) {
+  for (int i = 0; i < NN; i++) {
+    Note *n = &notes[i];
+    if (n->amp < 1e-5) continue;
+    if (n->att < 1) { n->att += n->attStep; if (n->att > 1) n->att = 1; }
+    double f = n->f * wow, s;
+    if (n->kind == 0) {
+      s = sin(n->ph + n->idx * sin(n->mph) + n->tIdx * sin(n->tph));
+      n->mph += TAU * f / FS; n->tph += TAU * f * 14.0 / FS;
+      n->idx *= n->idxDecay; n->tIdx *= n->tDecay;
+    } else if (n->kind == 1) {
+      s = sin(n->ph) + 0.28 * sin(2.0 * n->ph) * n->amp + 0.08 * sin(3.01 * n->ph) * n->amp;
+    } else {
+      s = sin(n->ph) + 0.18 * sin(2 * n->ph);
+    }
+    n->ph += TAU * f / FS;
+    if (n->ph > 1e6) { n->ph = fmod(n->ph, TAU); n->mph = fmod(n->mph, TAU); n->tph = fmod(n->tph, TAU); }
+    s *= n->amp * n->att;
+    n->amp *= n->decay;
+    *l += s * (1 - n->pan); *r += s * n->pan;
+  }
+}
+
+// 6. Lo-fi: a slow, swung beat with jazzy electric-piano chords, bass and vinyl.
+static const double lfChords[4][4] = {
+  {174.61, 220.00, 261.63, 329.63}, // Fmaj7
+  {164.81, 196.00, 246.94, 293.66}, // Em7
+  {146.83, 174.61, 220.00, 261.63}, // Dm7
+  {130.81, 164.81, 196.00, 246.94}, // Cmaj7
+};
+static const double lfBass[4] = {87.31, 82.41, 73.42, 65.41};
+static double lfT, lfNext; static int lfStep;
+static double kAmp, kPh, kF, sAmp, sPh, hAmp; static OnePole sHp, hHp, vHp; static Biquad lfLp[2]; static Reverb lfRv; static double lfWowPh; static Pink lfP;
+static void lofi_init(void) {
+  lfT = 0; lfNext = 0; lfStep = 0; kAmp = sAmp = hAmp = 0; kPh = sPh = 0; kF = 50; lfWowPh = 0;
+  op_set(&sHp, 1200); op_set(&hHp, 7000); op_set(&vHp, 3000);
+  bq_lowpass(&lfLp[0], 5200, 0.7); bq_lowpass(&lfLp[1], 5200, 0.7);
+  rv_init(&lfRv, 0.76, 0.5); memset(notes, 0, sizeof notes);
+}
+static void lofi_step(int step) {
+  int bar = (step / 16) % 4, k = step % 16;
+  double hum = 0.9 + 0.2 * rnd01();
+  if (k == 0 || k == 7 || k == 10) { kAmp = (k == 0 ? 0.42 : 0.28) * hum; kF = 115; }
+  if (k == 4 || k == 12) sAmp = 0.30 * hum;
+  if (k % 2 == 0) hAmp = (k % 4 == 0 ? 0.20 : 0.13) * hum;
+  if (k == 15 && rnd01() < 0.5) hAmp = 0.06;
+  if (k == 0 || k == 10) {
+    double vel = (k == 0 ? 0.30 : 0.17) * hum;
+    for (int v = 0; v < 4; v++) note_on(0, lfChords[bar][v], vel * (v == 0 ? 0.8 : 1.0), 0.2 + 0.2 * v);
+  }
+  if (k == 0 || k == 8) note_on(2, lfBass[bar], 0.17 * hum, 0.5);
+  if (k == 14) note_on(2, lfBass[bar] * 1.5, 0.11 * hum, 0.5);
+}
+static void lofi_tick(double *l, double *r) {
+  const double s16 = 60.0 / 74.0 / 4.0, swing = 0.6;
+  lfT += 1.0 / FS;
+  while (lfT >= lfNext) { lofi_step(lfStep); lfNext += s16 * 2 * (lfStep % 2 == 0 ? swing : 1 - swing); lfStep++; }
+  lfWowPh += TAU * 0.45 / FS;
+  double wow = 1 + 0.0025 * sin(lfWowPh);
+  double nl = 0, nr = 0; notes_tick(wow, &nl, &nr);
+  // drums
+  double kick = sin(kPh) * kAmp; kPh += TAU * kF / FS; kF = 48 + (kF - 48) * 0.9993; kAmp *= exp(-1.0 / (0.22 * FS));
+  double sn = (op_hp(&sHp, white()) * 0.7 + sin(sPh) * 0.4) * sAmp; sPh += TAU * 185 / FS; sAmp *= exp(-1.0 / (0.12 * FS));
+  double hat = op_hp(&hHp, white()) * hAmp; hAmp *= exp(-1.0 / (0.028 * FS));
+  double drums = kick + sn * 0.8;
+  double L = nl + drums + hat * 0.45, R = nr + drums + hat * 1.0;
+  double wl = rv_channel(&lfRv, 0, (nl + nr + sn) * 0.012), wr = rv_channel(&lfRv, 1, (nl + nr + sn) * 0.012);
+  L = bq(&lfLp[0], L + wl); R = bq(&lfLp[1], R + wr);
+  L = tanh(L * 1.4) / 1.4; R = tanh(R * 1.4) / 1.4;
+  // vinyl: soft hiss and the odd pop
+  double hiss = op_hp(&vHp, pink(&lfP)) * 0.018;
+  double pop = rnd01() < 7.0 / FS ? (white() * 0.12) : 0;
+  *l = L + hiss + pop; *r = R + hiss + pop;
+}
+
+// 7. Ambient: a slow drone with sparse, unhurried bell notes in a big room.
+static const double amScale[10] = {293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25, 739.99, 880.00, 987.77};
+static double amT, amNext, amEcho, amEchoF, drPh[2]; static Wander amW[2]; static Reverb amRv; static Biquad amLp[2];
+static void ambient_init(void) {
+  amT = 0; amNext = 1.0; amEcho = -1; drPh[0] = drPh[1] = 0;
+  wander_init(&amW[0], 9); wander_init(&amW[1], 11.5);
+  rv_init(&amRv, 0.90, 0.3); bq_lowpass(&amLp[0], 4000, 0.6); bq_lowpass(&amLp[1], 4000, 0.6);
+  memset(notes, 0, sizeof notes);
+}
+static void ambient_tick(double *l, double *r) {
+  amT += 1.0 / FS;
+  if (amT >= amNext) {
+    int i = (int)(rnd01() * 10);
+    note_on(1, amScale[i], 0.22 + 0.12 * rnd01(), 0.15 + 0.7 * rnd01());
+    if (rnd01() < 0.25) { amEcho = amT + 0.18 + 0.2 * rnd01(); amEchoF = amScale[(i + 2) % 10]; }
+    amNext = amT + 0.9 + 2.6 * rnd01();
+  }
+  if (amEcho > 0 && amT >= amEcho) { note_on(1, amEchoF, 0.15, 0.15 + 0.7 * rnd01()); amEcho = -1; }
+  double nl = 0, nr = 0; notes_tick(1.0, &nl, &nr);
+  double d1 = sin(drPh[0]) * (0.018 + 0.018 * wander(&amW[0])), d2 = sin(drPh[1]) * (0.014 + 0.014 * wander(&amW[1]));
+  drPh[0] += TAU * 73.42 / FS; drPh[1] += TAU * 110.0 / FS;
+  if (drPh[0] > TAU) drPh[0] -= TAU; if (drPh[1] > TAU) drPh[1] -= TAU;
+  double wl = rv_channel(&amRv, 0, (nl + nr) * 0.03), wr = rv_channel(&amRv, 1, (nl + nr) * 0.03);
+  *l = bq(&amLp[0], nl * 0.6 + wl) + d1 + d2 * 0.6; *r = bq(&amLp[1], nr * 0.6 + wr) + d1 * 0.6 + d2;
+}
+
+// 8/9. Binaural beats: a slightly different tone in each ear, over a soft bed.
+// Needs headphones. Focus = 15 Hz (beta), Calm = 10 Hz (alpha).
+static double bbPh[2], bbBeat, bbCarrier; static Pink bbP[2]; static Biquad bbLp[2]; static Wander bbW;
+static void binaural_setup(double carrier, double beat) {
+  bbPh[0] = bbPh[1] = 0; bbCarrier = carrier; bbBeat = beat;
+  bq_lowpass(&bbLp[0], 900, 0.6); bq_lowpass(&bbLp[1], 900, 0.6); wander_init(&bbW, 8);
+}
+static void bfocus_init(void) { binaural_setup(220, 15); }
+static void bcalm_init(void) { binaural_setup(160, 10); }
+static void binaural_tick(double *l, double *r) {
+  double swell = 0.85 + 0.15 * wander(&bbW);
+  bbPh[0] += TAU * bbCarrier / FS; bbPh[1] += TAU * (bbCarrier + bbBeat) / FS;
+  if (bbPh[0] > TAU) bbPh[0] -= TAU; if (bbPh[1] > TAU) bbPh[1] -= TAU;
+  double bedL = bq(&bbLp[0], pink(&bbP[0])) * 0.55, bedR = bq(&bbLp[1], pink(&bbP[1])) * 0.55;
+  *l = sin(bbPh[0]) * 0.16 * swell + bedL; *r = sin(bbPh[1]) * 0.16 * swell + bedR;
+}
+
 // ---------- render ----------
 static void write_wav(const char *path, const float *data, int frames) {
   FILE *f = fopen(path, "wb");
@@ -287,14 +425,17 @@ static void write_wav(const char *path, const float *data, int frames) {
 
 int main(int argc, char **argv) {
   double seconds = argc > 1 ? atof(argv[1]) : 20;
-  const char *names[] = {"brown", "rain", "ocean", "fire", "pad"};
-  void (*inits[])(void) = {brown_init, rain_init, ocean_init, fire_init, pad_init};
-  Scape ticks[] = {brown_tick, rain_tick, ocean_tick, fire_tick, pad_tick};
+  const char *names[] = {"brown", "rain", "ocean", "fire", "pad", "lofi", "ambient", "bfocus", "bcalm"};
+  void (*inits[])(void) = {brown_init, rain_init, ocean_init, fire_init, pad_init, lofi_init, ambient_init, bfocus_init, bcalm_init};
+  Scape ticks[] = {brown_tick, rain_tick, ocean_tick, fire_tick, pad_tick, lofi_tick, ambient_tick, binaural_tick, binaural_tick};
+#define NSCAPE 9
   int frames = (int)(seconds * FS);
   float *buf = malloc(sizeof(float) * frames * 2);
-  double gains[5] = {1, 1, 1, 1, 1};
-  if (argc > 2) for (int i = 0; i < 5; i++) gains[i] = atof(argv[2 + i]);
-  for (int s = 0; s < 5; s++) {
+  double gains[NSCAPE] = {1, 1, 1, 1, 1, 1, 1, 1, 1};
+  for (int i = 0; i < NSCAPE && 2 + i < argc; i++) gains[i] = atof(argv[2 + i]);
+  const char *only = getenv("ONLY");
+  for (int s = 0; s < NSCAPE; s++) {
+    if (only && !strstr(only, names[s])) continue;
     memset(voices, 0, sizeof voices);
     inits[s]();
     Biquad dcL, dcR; memset(&dcL, 0, sizeof dcL); memset(&dcR, 0, sizeof dcR);

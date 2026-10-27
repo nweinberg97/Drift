@@ -6,22 +6,70 @@ import Foundation
 /// The reference implementation (and preview renderer) is
 /// `tools/soundscapes/scapes.c`; keep the two in step.
 enum Soundscape: String, CaseIterable, Identifiable {
+    enum Category: String, CaseIterable, Identifiable {
+        case nature, chill, focus
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .nature: return "Nature"
+            case .chill: return "Chill"
+            case .focus: return "Focus"
+            }
+        }
+        var scapes: [Soundscape] { Soundscape.allCases.filter { $0.category == self } }
+    }
+
+    // Nature
     case rain
     case ocean
     case fireplace
+    // Chill
+    case lofi
+    case ambientMusic
     /// Raw value kept from v1 so saved preferences carry over.
     case ambient
+    // Focus
+    /// Raw value kept from v1 (was "Brown Noise").
     case brownNoise
+    case binauralFocus
+    case binauralCalm
 
     var id: String { rawValue }
+
+    var category: Category {
+        switch self {
+        case .rain, .ocean, .fireplace: return .nature
+        case .lofi, .ambientMusic, .ambient: return .chill
+        case .brownNoise, .binauralFocus, .binauralCalm: return .focus
+        }
+    }
 
     var title: String {
         switch self {
         case .rain: return "Rain"
         case .ocean: return "Ocean"
         case .fireplace: return "Fireplace"
+        case .lofi: return "Lo-fi"
+        case .ambientMusic: return "Ambient"
         case .ambient: return "Soft Pad"
-        case .brownNoise: return "Brown Noise"
+        case .brownNoise: return "Hush"
+        case .binauralFocus: return "Binaural Focus"
+        case .binauralCalm: return "Binaural Calm"
+        }
+    }
+
+    /// One line shown under the picker.
+    var subtitle: String {
+        switch self {
+        case .rain: return "Steady rain with a little room"
+        case .ocean: return "Slow waves rolling in and out"
+        case .fireplace: return "Low fire with soft crackles"
+        case .lofi: return "Slow beat, warm keys, vinyl"
+        case .ambientMusic: return "Sparse bells over a low drone"
+        case .ambient: return "Slow, warm chords"
+        case .brownNoise: return "Deep, smooth noise that masks chatter"
+        case .binauralFocus: return "15 Hz beat. Use headphones"
+        case .binauralCalm: return "10 Hz beat. Use headphones"
         }
     }
 
@@ -30,8 +78,12 @@ enum Soundscape: String, CaseIterable, Identifiable {
         case .rain: return "cloud.rain"
         case .ocean: return "water.waves"
         case .fireplace: return "flame"
+        case .lofi: return "headphones"
+        case .ambientMusic: return "sparkles"
         case .ambient: return "music.note"
-        case .brownNoise: return "waveform"
+        case .brownNoise: return "wind"
+        case .binauralFocus: return "brain.head.profile"
+        case .binauralCalm: return "brain"
         }
     }
 
@@ -44,6 +96,10 @@ enum Soundscape: String, CaseIterable, Identifiable {
         case .ocean: return 1.97
         case .fireplace: return 1.65
         case .ambient: return 1.34
+        case .lofi: return 1.19
+        case .ambientMusic: return 2.02
+        case .binauralFocus: return 1.64
+        case .binauralCalm: return 1.98
         }
     }
 }
@@ -383,6 +439,45 @@ final class SoundGenerator: @unchecked Sendable {
     private var padT = 0.0
     private var padAir = Brown()
 
+    // Note voices shared by lo-fi (keys, bass) and ambient (bells)
+    struct Note {
+        enum Kind { case keys, bell, bass }
+        var kind = Kind.bell
+        var f = 0.0, ph = 0.0, mph = 0.0, tph = 0.0
+        var amp = 0.0, decay = 0.0, idx = 0.0, idxDecay = 0.0, tIdx = 0.0, tDecay = 0.0
+        var pan = 0.5, att = 0.0, attStep = 0.0
+    }
+    private var notes = [Note](repeating: Note(), count: 32)
+
+    // Lo-fi
+    private static let lfChords: [[Double]] = [
+        [174.61, 220.00, 261.63, 329.63], // Fmaj7
+        [164.81, 196.00, 246.94, 293.66], // Em7
+        [146.83, 174.61, 220.00, 261.63], // Dm7
+        [130.81, 164.81, 196.00, 246.94], // Cmaj7
+    ]
+    private static let lfBass: [Double] = [87.31, 82.41, 73.42, 65.41]
+    private var lfT = 0.0, lfNext = 0.0, lfStep = 0
+    private var kAmp = 0.0, kPh = 0.0, kF = 50.0, sAmp = 0.0, sPh = 0.0, hAmp = 0.0
+    private var sHp = OnePole(1200), hHp = OnePole(7000), vHp = OnePole(3000)
+    private var lfLp = [Biquad.lowpass(5200, 0.7), Biquad.lowpass(5200, 0.7)]
+    private let lfRv = Reverb(feedback: 0.76, damp: 0.5)
+    private var lfWowPh = 0.0
+    private var lfP = Pink()
+
+    // Ambient music
+    private static let amScale: [Double] = [293.66, 329.63, 369.99, 440.00, 493.88, 587.33, 659.25, 739.99, 880.00, 987.77]
+    private var amT = 0.0, amNext = 1.0, amEcho = -1.0, amEchoF = 0.0, drPh = [0.0, 0.0]
+    private var amW = [Wander(seconds: 9, a: 0.5, b: 0.8), Wander(seconds: 11.5, a: 0.6, b: 0.3)]
+    private let amRv = Reverb(feedback: 0.90, damp: 0.3)
+    private var amLp = [Biquad.lowpass(4000, 0.6), Biquad.lowpass(4000, 0.6)]
+
+    // Binaural
+    private var bbPh = [0.0, 0.0]
+    private var bbP = [Pink(), Pink()]
+    private var bbLp = [Biquad.lowpass(900, 0.6), Biquad.lowpass(900, 0.6)]
+    private var bbW = Wander(seconds: 8, a: 0.5, b: 0.8)
+
     // Master
     private var dcL = Biquad.highpass(35, 0.707), dcR = Biquad.highpass(35, 0.707)
 
@@ -411,6 +506,10 @@ final class SoundGenerator: @unchecked Sendable {
             case .ocean: (l, r) = oceanTick()
             case .fireplace: (l, r) = fireTick()
             case .ambient: (l, r) = padTick()
+            case .lofi: (l, r) = lofiTick()
+            case .ambientMusic: (l, r) = ambientTick()
+            case .binauralFocus: (l, r) = binauralTick(carrier: 220, beat: 15)
+            case .binauralCalm: (l, r) = binauralTick(carrier: 160, beat: 10)
             }
             l = Self.softclip(dcL.run(l) * gain)
             r = Self.softclip(dcR.run(r) * gain)
@@ -534,5 +633,146 @@ final class SoundGenerator: @unchecked Sendable {
         let l = padLp[0].run(sumL) * startGain + air, r = padLp[1].run(sumR) * startGain + air
         let wl = padRv.run(0, (l + r) * 0.02), wr = padRv.run(1, (l + r) * 0.02)
         return ((l * 0.55 + wl) * 0.9, (r * 0.55 + wr) * 0.9)
+    }
+
+    // MARK: Notes
+
+    private func noteOn(_ kind: Note.Kind, _ f: Double, _ vel: Double, _ pan: Double) {
+        var slot = 0, quiet = Double.greatestFiniteMagnitude
+        for i in 0..<notes.count where notes[i].amp < quiet { quiet = notes[i].amp; slot = i }
+        var n = Note()
+        n.kind = kind; n.f = f; n.amp = vel; n.pan = pan
+        switch kind {
+        case .keys:
+            n.decay = exp(-1 / (1.7 * Self.fs)); n.idx = 1.3; n.idxDecay = exp(-1 / (0.35 * Self.fs))
+            n.tIdx = 0.35; n.tDecay = exp(-1 / (0.04 * Self.fs)); n.attStep = 1 / (0.004 * Self.fs)
+        case .bell:
+            n.decay = exp(-1 / (2.6 * Self.fs)); n.attStep = 1 / (0.008 * Self.fs)
+        case .bass:
+            n.decay = exp(-1 / (0.55 * Self.fs)); n.attStep = 1 / (0.006 * Self.fs)
+        }
+        notes[slot] = n
+    }
+
+    @inline(__always) private func notesTick(wow: Double) -> (Double, Double) {
+        var l = 0.0, r = 0.0
+        for i in 0..<notes.count where notes[i].amp >= 1e-5 {
+            if notes[i].att < 1 { notes[i].att = min(1, notes[i].att + notes[i].attStep) }
+            let f = notes[i].f * wow
+            var s: Double
+            switch notes[i].kind {
+            case .keys:
+                s = sin(notes[i].ph + notes[i].idx * sin(notes[i].mph) + notes[i].tIdx * sin(notes[i].tph))
+                notes[i].mph += Self.tau * f / Self.fs
+                notes[i].tph += Self.tau * f * 14 / Self.fs
+                notes[i].idx *= notes[i].idxDecay
+                notes[i].tIdx *= notes[i].tDecay
+            case .bell:
+                let ph = notes[i].ph
+                s = sin(ph) + 0.28 * sin(2 * ph) * notes[i].amp + 0.08 * sin(3.01 * ph) * notes[i].amp
+            case .bass:
+                s = sin(notes[i].ph) + 0.18 * sin(2 * notes[i].ph)
+            }
+            notes[i].ph += Self.tau * f / Self.fs
+            if notes[i].ph > 1e6 {
+                notes[i].ph = notes[i].ph.truncatingRemainder(dividingBy: Self.tau)
+                notes[i].mph = notes[i].mph.truncatingRemainder(dividingBy: Self.tau)
+                notes[i].tph = notes[i].tph.truncatingRemainder(dividingBy: Self.tau)
+            }
+            s *= notes[i].amp * notes[i].att
+            notes[i].amp *= notes[i].decay
+            l += s * (1 - notes[i].pan)
+            r += s * notes[i].pan
+        }
+        return (l, r)
+    }
+
+    // MARK: Lo-fi
+
+    private func lofiStep(_ step: Int) {
+        let bar = (step / 16) % 4, k = step % 16
+        let hum = 0.9 + 0.2 * rnd01()
+        if k == 0 || k == 7 || k == 10 { kAmp = (k == 0 ? 0.42 : 0.28) * hum; kF = 115 }
+        if k == 4 || k == 12 { sAmp = 0.30 * hum }
+        if k % 2 == 0 { hAmp = (k % 4 == 0 ? 0.20 : 0.13) * hum }
+        if k == 15 && rnd01() < 0.5 { hAmp = 0.06 }
+        if k == 0 || k == 10 {
+            let vel = (k == 0 ? 0.30 : 0.17) * hum
+            for v in 0..<4 { noteOn(.keys, Self.lfChords[bar][v], vel * (v == 0 ? 0.8 : 1.0), 0.2 + 0.2 * Double(v)) }
+        }
+        if k == 0 || k == 8 { noteOn(.bass, Self.lfBass[bar], 0.17 * hum, 0.5) }
+        if k == 14 { noteOn(.bass, Self.lfBass[bar] * 1.5, 0.11 * hum, 0.5) }
+    }
+
+    private func lofiTick() -> (Double, Double) {
+        let s16 = 60.0 / 74.0 / 4.0, swing = 0.6
+        lfT += 1 / Self.fs
+        while lfT >= lfNext {
+            lofiStep(lfStep)
+            lfNext += s16 * 2 * (lfStep % 2 == 0 ? swing : 1 - swing)
+            lfStep += 1
+        }
+        lfWowPh += Self.tau * 0.45 / Self.fs
+        if lfWowPh > Self.tau { lfWowPh -= Self.tau }
+        let wow = 1 + 0.0025 * sin(lfWowPh)
+        let (nl, nr) = notesTick(wow: wow)
+        let kick = sin(kPh) * kAmp
+        kPh += Self.tau * kF / Self.fs
+        if kPh > Self.tau { kPh -= Self.tau }
+        kF = 48 + (kF - 48) * 0.9993
+        kAmp *= exp(-1 / (0.22 * Self.fs))
+        let sn = (sHp.hp(white()) * 0.7 + sin(sPh) * 0.4) * sAmp
+        sPh += Self.tau * 185 / Self.fs
+        if sPh > Self.tau { sPh -= Self.tau }
+        sAmp *= exp(-1 / (0.12 * Self.fs))
+        let hat = hHp.hp(white()) * hAmp
+        hAmp *= exp(-1 / (0.028 * Self.fs))
+        let drums = kick + sn * 0.8
+        var l = nl + drums + hat * 0.45, r = nr + drums + hat
+        let wl = lfRv.run(0, (nl + nr + sn) * 0.012), wr = lfRv.run(1, (nl + nr + sn) * 0.012)
+        l = lfLp[0].run(l + wl)
+        r = lfLp[1].run(r + wr)
+        l = tanh(l * 1.4) / 1.4
+        r = tanh(r * 1.4) / 1.4
+        let hiss = vHp.hp(lfP.next(white())) * 0.018
+        let pop = rnd01() < 7 / Self.fs ? white() * 0.12 : 0
+        return (l + hiss + pop, r + hiss + pop)
+    }
+
+    // MARK: Ambient music
+
+    private func ambientTick() -> (Double, Double) {
+        amT += 1 / Self.fs
+        if amT >= amNext {
+            let i = min(9, Int(rnd01() * 10))
+            noteOn(.bell, Self.amScale[i], 0.22 + 0.12 * rnd01(), 0.15 + 0.7 * rnd01())
+            if rnd01() < 0.25 { amEcho = amT + 0.18 + 0.2 * rnd01(); amEchoF = Self.amScale[(i + 2) % 10] }
+            amNext = amT + 0.9 + 2.6 * rnd01()
+        }
+        if amEcho > 0 && amT >= amEcho { noteOn(.bell, amEchoF, 0.15, 0.15 + 0.7 * rnd01()); amEcho = -1 }
+        let (nl, nr) = notesTick(wow: 1)
+        let d1 = sin(drPh[0]) * (0.018 + 0.018 * amW[0].next(&rng))
+        let d2 = sin(drPh[1]) * (0.014 + 0.014 * amW[1].next(&rng))
+        drPh[0] += Self.tau * 73.42 / Self.fs
+        drPh[1] += Self.tau * 110.0 / Self.fs
+        if drPh[0] > Self.tau { drPh[0] -= Self.tau }
+        if drPh[1] > Self.tau { drPh[1] -= Self.tau }
+        let wl = amRv.run(0, (nl + nr) * 0.03), wr = amRv.run(1, (nl + nr) * 0.03)
+        return (amLp[0].run(nl * 0.6 + wl) + d1 + d2 * 0.6, amLp[1].run(nr * 0.6 + wr) + d1 * 0.6 + d2)
+    }
+
+    // MARK: Binaural
+
+    /// A slightly different tone in each ear (the difference is the beat)
+    /// over a soft noise bed. Only works on headphones.
+    private func binauralTick(carrier: Double, beat: Double) -> (Double, Double) {
+        let swell = 0.85 + 0.15 * bbW.next(&rng)
+        bbPh[0] += Self.tau * carrier / Self.fs
+        bbPh[1] += Self.tau * (carrier + beat) / Self.fs
+        if bbPh[0] > Self.tau { bbPh[0] -= Self.tau }
+        if bbPh[1] > Self.tau { bbPh[1] -= Self.tau }
+        let bedL = bbLp[0].run(bbP[0].next(white())) * 0.55
+        let bedR = bbLp[1].run(bbP[1].next(white())) * 0.55
+        return (sin(bbPh[0]) * 0.16 * swell + bedL, sin(bbPh[1]) * 0.16 * swell + bedR)
     }
 }

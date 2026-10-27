@@ -6,8 +6,9 @@ line, so you can tune a sound here, listen, then port the change.
 
 ```bash
 cc -O2 -o scapes scapes.c -lm
-./scapes 30 1.06 0.73 1.97 1.65 1.34   # seconds, then per-scape gains
-# → brown.wav rain.wav ocean.wav fire.wav pad.wav
+./scapes 30 1.06 0.73 1.97 1.65 1.34 1.19 2.02 1.64 1.98   # seconds, then per-scape gains
+# → brown rain ocean fire pad lofi ambient bfocus bcalm (.wav)
+ONLY="lofi" ./scapes 30 ...   # render just some
 ```
 
 The gains match perceived loudness across scapes (A-weighted, about −26 dB).

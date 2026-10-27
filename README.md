@@ -91,7 +91,7 @@ Drift is a menu-bar utility with one floating widget. It does one job: it gets a
 - **Voice** (⌥ V). Push-to-talk, recognised on-device, using the same command grammar as typing.
 - **Multiple timers**. One featured timer plus an expandable tray, never a wall of widgets.
 - **Menu bar**. A tiny ring that empties as time passes, every timer with a full submenu (pause, ±5m, edit, rename, duplicate, cancel), presets, Pomodoro, focus sound, settings.
-- **Sound**. A soft synthesised start tick and a two-note completion bell. **Focus sound** is off by default and offers procedural brown noise, rain or a low ambient drone, all generated live and offline.
+- **Sound**. A soft synthesised start tick and a three-note completion bell that keeps chiming until you dismiss it (or once, if you prefer). **Focus sound** is off by default and offers nine sounds in three sets, all generated live and offline: Nature (Rain, Ocean, Fireplace), Chill (Lo-fi, Ambient, Soft Pad) and Focus (Hush, Binaural Focus, Binaural Calm).
 - **Notifications** are scheduled with macOS at start, so they arrive on time even if Drift is asleep or quit.
 - **Settings** are one short page: default length, presets, finished-timer behavior, theme, widget size and opacity, sounds, shortcuts and launch at login.
 

@@ -311,6 +311,9 @@ struct TimeText: View {
         .font(Theme.digits(size))
         .kerning(-0.3)
         .lineLimit(1)
+        // Never truncate the time: the name gives way instead.
+        .fixedSize()
+        .layoutPriority(2)
     }
 }
 
@@ -635,12 +638,23 @@ private struct FocusSoundRow: View {
                 .foregroundStyle(Theme.secondaryText)
             Spacer(minLength: 4)
             Menu {
-                Picker("Sound", selection: $settings.soundscape) {
-                    ForEach(Soundscape.allCases) { scape in
-                        Label(scape.title, systemImage: scape.symbol).tag(scape)
+                ForEach(Soundscape.Category.allCases) { category in
+                    Section(category.title) {
+                        ForEach(category.scapes) { scape in
+                            Button {
+                                settings.soundscape = scape
+                                settings.focusSoundEnabled = true
+                            } label: {
+                                if settings.soundscape == scape {
+                                    Label(scape.title, systemImage: "checkmark")
+                                } else {
+                                    Text(scape.title)
+                                }
+                            }
+                            .help(scape.subtitle)
+                        }
                     }
                 }
-                .pickerStyle(.inline)
             } label: {
                 Text(settings.soundscape.title)
                     .font(.system(size: 11.5, weight: .medium))

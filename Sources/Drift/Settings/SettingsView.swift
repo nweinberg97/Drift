@@ -100,8 +100,15 @@ struct SettingsView: View {
             Section {
                 Toggle("Play while a timer runs", isOn: $settings.focusSoundEnabled)
                 Picker("Sound", selection: $settings.soundscape) {
-                    ForEach(Soundscape.allCases) { Label($0.title, systemImage: $0.symbol).tag($0) }
+                    ForEach(Soundscape.Category.allCases) { category in
+                        Section(category.title) {
+                            ForEach(category.scapes) { Text($0.title).tag($0) }
+                        }
+                    }
                 }
+                Text(settings.soundscape.subtitle)
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
                 LabeledContent("Volume") {
                     Slider(value: $settings.focusVolume, in: 0...1)
                         .frame(maxWidth: 200)
@@ -109,7 +116,7 @@ struct SettingsView: View {
             } header: {
                 Text("Focus Sound")
             } footer: {
-                Text("Generated live on your Mac. Pauses during Pomodoro breaks.")
+                Text("Made live on your Mac, no downloads. Plays while a timer runs and pauses during Pomodoro breaks.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
