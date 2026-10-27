@@ -162,6 +162,17 @@ public struct ScheduleSpec: Equatable {
     public var whenRanges: [Range<String.Index>]
     /// "30m": how long, when it isn't implied by a range.
     public var lengthRanges: [Range<String.Index>]
+
+    public init(name: String, startMinute: Int, duration: TimeInterval, days: [Int]?, date: String?,
+                whenRanges: [Range<String.Index>] = [], lengthRanges: [Range<String.Index>] = []) {
+        self.name = name
+        self.startMinute = startMinute
+        self.duration = duration
+        self.days = days
+        self.date = date
+        self.whenRanges = whenRanges
+        self.lengthRanges = lengthRanges
+    }
 }
 
 public enum ScheduleParser {
