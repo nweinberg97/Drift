@@ -230,6 +230,8 @@ struct ComposerView: View {
     let toggleVoice: () -> Void
     let close: () -> Void
     let resize: (CGSize) -> Void
+    /// Off only for marketing screenshots, where a focused field shows a selection.
+    var autofocus = true
 
     @FocusState private var focused: Bool
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
@@ -254,7 +256,7 @@ struct ComposerView: View {
         .fixedSize(horizontal: false, vertical: true)
         .reportSize(resize)
         .onChange(of: model.focusToken) { _ in focusField() }
-        .onAppear { focusField() }
+        .onAppear { if autofocus { focusField() } }
     }
 
     private func focusField() {

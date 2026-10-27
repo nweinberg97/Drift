@@ -225,7 +225,12 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         let laundry = running("Laundry", total: 3_600, left: 2_462.4)
         let tea = paused("Tea", total: 300, left: 192)
         let reading = running("Reading", total: 1_800, left: 1_312.4)
-        let plan = self.plan()
+        // Store shots show a typical day, not the build machine's clock.
+        let plan = [
+            ScheduledBlock(name: "Deep work", startMinute: 9 * 60, duration: 5_400, days: Array(0...6), date: nil),
+            ScheduledBlock(name: "Email", startMinute: 13 * 60, duration: 1_800, days: Array(0...6), date: nil),
+            ScheduledBlock(name: "Reading", startMinute: 20 * 60, duration: 1_800, days: Array(0...6), date: nil),
+        ]
 
         func widget(_ timers: [DriftTimer], primary: UUID?, blocks: [ScheduledBlock] = [], prompt: Int? = nil,
                     focus: Bool = false, configure: (WidgetUIState) -> Void = { _ in }) -> WidgetView {
@@ -250,7 +255,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             model: model, settings: settings, voice: voice,
             preview: { runner.preview($0) }, plan: { runner.plan($0) },
             submit: {}, startPreset: { _ in }, startRecent: { _ in }, startPomodoro: {},
-            toggleVoice: {}, close: {}, resize: { _ in }
+            toggleVoice: {}, close: {}, resize: { _ in }, autofocus: false
         )
         let w1 = widget([writing], primary: writing.id)
         await renderShot(
@@ -260,8 +265,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             layout: .stacked
         ) {
             ZStack {
-                launcher.fixedSize().scaleEffect(1.45).position(x: 720, y: 470)
-                w1.fixedSize().scaleEffect(1.8).position(x: 720, y: 740)
+                launcher.fixedSize().scaleEffect(1.7).position(x: 720, y: 470)
+                w1.fixedSize().scaleEffect(2.1).position(x: 720, y: 755)
             }
         }
 
@@ -273,7 +278,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         await renderShot(name: "store-2-dial", headline: "Click the time.\nTurn the dial.",
                          sub: "Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30 or 45 minutes, 1 or 2 hours.",
                          layout: .side) {
-            w2.fixedSize().scaleEffect(1.55).position(x: 1_040, y: 460)
+            w2.fixedSize().scaleEffect(1.75).position(x: 1_060, y: 455)
         }
 
         // 3. Plan your day.
@@ -281,11 +286,11 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         await renderShot(name: "store-3-plan", headline: "Plan your day.\nBlocks start on time.",
                          sub: "Type “Deep work 9–10:30 weekdays”. When it's time, Drift asks, then starts it. Move any block just for today.",
                          layout: .side) {
-            w3.fixedSize().scaleEffect(1.5).position(x: 1_040, y: 450)
+            w3.fixedSize().scaleEffect(1.85).position(x: 1_060, y: 450)
         }
 
         // 4. Several timers, named in place.
-        let w4 = widget([email, laundry, tea, reading], primary: email.id) { ui in
+        let w4 = widget([email, laundry, tea, reading], primary: email.id, blocks: plan) { ui in
             ui.expanded = true
             ui.renamingID = email.id
             ui.draft = "Email inbox"
@@ -293,15 +298,15 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         await renderShot(name: "store-4-several", headline: "Name it in place.\nRun several at once.",
                          sub: "Click a name to type, a time to change it. Every timer in one small widget.",
                          layout: .side) {
-            w4.fixedSize().scaleEffect(1.65).position(x: 1_040, y: 450)
+            w4.fixedSize().scaleEffect(1.85).position(x: 1_060, y: 450)
         }
 
         // 5. Focus sound.
-        let w5 = widget([reading], primary: reading.id, focus: true) { ui in ui.expanded = true }
+        let w5 = widget([reading], primary: reading.id, blocks: plan, focus: true) { ui in ui.expanded = true }
         await renderShot(name: "store-5-sound", headline: "Soft focus sound,\nmade on your Mac.",
                          sub: "Rain, ocean, fireplace, lo-fi, binaural beats and more. Off until you want it; quiet on breaks.",
                          layout: .side) {
-            w5.fixedSize().scaleEffect(1.75).position(x: 1_040, y: 450)
+            w5.fixedSize().scaleEffect(1.95).position(x: 1_060, y: 450)
         }
         settings.focusSoundEnabled = false
     }
