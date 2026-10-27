@@ -300,8 +300,8 @@ struct ComposerView: View {
                 Spacer()
                 if p.isValid { KeyCaps(text: "↩") }
             }
-            Spacer(minLength: 0)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .font(.system(size: 12.5, weight: .medium))
         .padding(.horizontal, 16)
         .frame(height: 34)
