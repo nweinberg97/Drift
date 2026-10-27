@@ -56,11 +56,13 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
 
     static func copy(for timer: DriftTimer) -> (title: String, body: String) {
         if let cycle = timer.pomodoro {
+            let next = cycle.upNext
             switch cycle.phase {
             case .focus:
-                return ("Focus complete", "\(TimeFormatter.spoken(cycle.focus)) done. Break for \(TimeFormatter.spoken(cycle.rest)).")
-            case .rest:
-                return ("Break's over", "Back to focus for \(TimeFormatter.spoken(cycle.focus)).")
+                return ("Focus \(cycle.roundInSet) of \(cycle.roundsPerSet) done",
+                        "\(next.name) for \(TimeFormatter.spoken(next.duration)). It's started; step away.")
+            case .rest, .longRest:
+                return ("Break's over", "Back to focus for \(TimeFormatter.spoken(next.duration)).")
             }
         }
         let title = timer.name.map { "\($0) finished" } ?? "Timer finished"
