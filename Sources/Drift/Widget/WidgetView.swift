@@ -944,8 +944,8 @@ private struct DialFace: View {
             ZStack {
                 ForEach(0..<60, id: \.self) { i in
                     Capsule()
-                        .fill(Theme.tertiaryText.opacity(i % 5 == 0 ? 1 : 0.55))
-                        .frame(width: i % 5 == 0 ? 1.6 : 0.9, height: i % 5 == 0 ? 6 : 3.5)
+                        .fill(Theme.tertiaryText.opacity(i % 5 == 0 ? 1 : 0.7))
+                        .frame(width: i % 5 == 0 ? 1.6 : 1.1, height: i % 5 == 0 ? 6 : 4)
                         .offset(y: -(size / 2 - 4))
                         .rotationEffect(.degrees(Double(i) * 6))
                 }

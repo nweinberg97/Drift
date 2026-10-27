@@ -171,6 +171,28 @@
   .s-widget[data-run="1"] .sw-dot { background: var(--ember); border-color: var(--ember); box-shadow: 0 0 10px rgba(242,163,110,0.6); }
   .sw-name { font-size: 12px; font-weight: 500; color: var(--muted); white-space: nowrap; }
   .sw-name:empty { display: none; }
+  .sw-name { border-radius: 5px; padding: 1px 3px; margin: 0 -3px; transition: background .15s; }
+  .sw-name.add { color: var(--faint); }
+  .sw-name.add::before { content: "+ "; font-weight: 700; }
+  .sw-name.hot, .sw-time.hot { background: rgba(255,255,255,0.1); }
+  .sw-name.editing { color: var(--cream); background: rgba(0,0,0,0.25); box-shadow: 0 0 0 1px var(--ember); min-width: 92px; padding: 2px 6px; margin: 0; }
+  .sw-name.editing::after { content: ""; display: inline-block; width: 1.5px; height: 13px; background: var(--ember); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+  .sw-time { border-radius: 5px; padding: 1px 3px; margin: 0 -3px; }
+  .s-widget.dialing .sw-time { background: rgba(242,163,110,0.16); }
+  .sw-dialbox { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
+  .s-widget.dialing .sw-dialbox { grid-template-rows: 1fr; }
+  .sw-dialbox > div { overflow: hidden; min-height: 0; }
+  .sw-dialbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 236px; }
+  .sw-dialbox .hd { display: flex; justify-content: space-between; align-items: baseline; font-size: 12px; font-weight: 600; }
+  .sw-dialbox .hd span { font-size: 10.5px; font-weight: 400; color: var(--faint); }
+  .sw-ring { position: relative; width: 150px; height: 150px; margin: 8px auto 10px; }
+  .sw-ring svg { width: 100%; height: 100%; display: block; }
+  .sw-ring .v { position: absolute; inset: 0; display: grid; place-content: center; text-align: center; }
+  .sw-ring .v b { font: 500 27px/1 var(--display); letter-spacing: -0.4px; font-variant-numeric: tabular-nums; }
+  .sw-ring .v span { font-size: 10px; color: var(--muted); margin-top: 5px; }
+  .sw-presets { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; }
+  .sw-presets span { height: 22px; display: grid; place-items: center; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 10.5px; font-weight: 500; color: var(--muted); font-variant-numeric: tabular-nums; transition: background .15s, color .15s; }
+  .sw-presets span.on { background: var(--ember-deep); color: #fff; }
   .sw-time { font: 500 22px/1 var(--display); letter-spacing: -0.3px; min-width: 64px; transition: color .3s; }
   .s-widget.done .sw-time { color: var(--ember); }
   .sw-time.bump { animation: bump .45s cubic-bezier(.2,.8,.2,1); }
@@ -188,6 +210,7 @@
   .sw-controls span { padding: 4px 8px; border-radius: 6px; transition: background .15s, color .15s; }
   .sw-controls span.hot { background: rgba(255,255,255,0.12); color: var(--cream); }
   .sw-controls .sp { flex: 1; padding: 0; }
+  .sw-controls .acc { color: var(--ember); }
   .sw-tray { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 4px 0; }
   .sw-tray:empty { display: none; }
   .sw-tray div { display: flex; align-items: center; gap: 8px; height: 28px; padding: 0 13px; font-size: 12px; color: var(--muted); }
@@ -195,6 +218,7 @@
   .sw-tray div .run { background: var(--ember); border-color: var(--ember); }
   .sw-tray div b { margin-left: auto; font: 500 13px var(--display); color: var(--cream); font-variant-numeric: tabular-nums; }
   .sw-tray div b.p { color: var(--faint); }
+  .sw-tray div em { font-style: normal; color: var(--faint); }
   .sw-foot { border-top: 0.5px solid rgba(255,255,255,0.1); display: flex; align-items: center; gap: 8px; padding: 6px 7px; font-size: 11.5px; font-weight: 500; }
   .sw-foot .add { color: var(--ember); padding: 3px 8px; border-radius: 6px; transition: background .15s; }
   .sw-foot .add.hot { background: rgba(255,255,255,0.12); }
@@ -202,7 +226,7 @@
 
   /* Composer inside the stage */
   .s-composer {
-    position: absolute; left: 50%; top: 110px; width: 440px; margin-left: -220px; z-index: 5;
+    position: absolute; left: 50%; top: 110px; width: 500px; margin-left: -250px; z-index: 5;
     background: rgba(44,40,37,0.94); backdrop-filter: blur(24px);
     border: 0.5px solid rgba(255,255,255,0.13); border-radius: 16px;
     box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8);
@@ -215,6 +239,17 @@
   .s-composer.listening .sc-in .ed { animation: listen .5s ease-in-out infinite alternate; }
   @keyframes listen { to { transform: scale(2.1); box-shadow: 0 0 14px rgba(242,163,110,0.8); } }
   .sc-text:empty::before { content: attr(data-ph); color: var(--faint); }
+  .sc-text { white-space: pre; }
+  .sc-ghost { margin-left: -12px; white-space: pre; }
+  .sc-text .pill, .launcher .pill { color: var(--ember); background: rgba(242,163,110,0.16); box-shadow: 0 0 0 3px rgba(242,163,110,0.16); border-radius: 5px; }
+  .sc-text .ghost, .launcher .ghost { color: var(--faint); }
+  .ghost kbd { font: 500 10px var(--sans); color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 4px; vertical-align: 4px; margin-left: 6px; }
+  .mini { display: inline-flex; align-items: center; gap: 7px; padding: 3px 9px 3px 8px; border-radius: 7px; background: rgba(255,255,255,0.07); font-weight: 600; white-space: nowrap; }
+  .mini i { width: 6px; height: 6px; border-radius: 50%; background: var(--ember); }
+  .mini em { font-style: normal; font-weight: 500; color: var(--faint); }
+  .mini .num { font-variant-numeric: tabular-nums; }
+  .sc-pre .h, .pre .h { color: var(--faint); font-weight: 400; margin-left: auto; white-space: nowrap; }
+  .sc-pre .h + kbd, .pre .h + kbd { margin-left: 0; }
   .sc-caret { width: 2px; height: 24px; background: var(--ember); margin-left: -10px; animation: blink 1s steps(1) infinite; }
   .s-composer.listening .sc-caret { display: none; }
   .sc-mic { margin-left: auto; color: var(--muted); }
@@ -223,8 +258,8 @@
   .sc-pre { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px; border-top: 0.5px solid rgba(255,255,255,0.1); font-size: 12.5px; font-weight: 500; }
   .sc-pre .m { color: var(--muted); }
   .sc-pre kbd { margin-left: auto; font-size: 10.5px; color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; }
-  .sc-chips { display: flex; gap: 6px; padding: 2px 12px 12px; }
-  .sc-chips span { font-size: 11.5px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,0.07); border-radius: 7px; padding: 5px 9px; }
+  .sc-chips { display: flex; gap: 5px; padding: 2px 12px 12px; }
+  .sc-chips span { font-size: 11px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,0.07); border-radius: 7px; padding: 5px 8px; }
 
   /* Menu dropdown */
   .s-menu {
@@ -309,7 +344,10 @@
   }
   .launcher label { display: flex; align-items: center; gap: 12px; height: 70px; padding: 0 20px; cursor: text; }
   .launcher .ed { width: 9px; height: 9px; border-radius: 50%; background: var(--ember); flex: none; margin: 0 6px; box-shadow: 0 0 12px rgba(242,163,110,0.7); }
-  .launcher input { flex: 1; min-width: 0; font: 400 24px var(--display); color: var(--cream); background: transparent; border: 0; outline: none; }
+  .launcher .field { position: relative; flex: 1; min-width: 0; height: 32px; }
+  .launcher input, .launcher .mirror { position: absolute; inset: 0; width: 100%; font: 400 24px/32px var(--display); padding: 0; margin: 0; border: 0; letter-spacing: 0; white-space: pre; }
+  .launcher input { color: transparent; caret-color: var(--ember); background: transparent; outline: none; }
+  .launcher .mirror { pointer-events: none; color: var(--cream); overflow: hidden; }
   .launcher input::placeholder { color: var(--faint); }
   .launcher .pre { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 20px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 500; }
   .pre .what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -425,7 +463,7 @@
         <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
       </div>
     </div>
-    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, type how long, and get back to work.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it.</p>
     <div class="actions">
       <a class="btn btn-ember" href="#install">Install for Mac</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
@@ -476,25 +514,30 @@
             </div>
             <div class="sw-exp"><div>
               <div class="sw-progress"><i id="sw-prog"></i></div>
-              <div class="sw-controls"><span id="c-minus">−5m</span><span id="c-plus">+5m</span><span>Edit</span><span class="sp"></span><span>Cancel</span></div>
+              <div class="sw-controls"><span id="c-minus">−5 min</span><span id="c-plus">+5 min</span><span class="acc">Set time…</span><span class="sp"></span></div>
               <div class="sw-tray" id="sw-tray"></div>
-              <div class="sw-foot"><span class="add" id="c-add">+ Add timer</span><kbd>⌥ Space</kbd></div>
+              <div class="sw-foot"><span class="add" id="c-add">+ New timer</span><kbd>⌥ Space</kbd></div>
             </div></div>
+            <div class="sw-dialbox"><div><div class="in">
+              <div class="hd"><b id="dl-name">Write intro</b><span>drag, scroll or arrows</span></div>
+              <div class="sw-ring" id="sw-ring"><svg viewBox="0 0 200 200" id="dl-svg"></svg><div class="v"><b id="dl-val">20:00</b><span>Turn to adjust</span></div></div>
+              <div class="sw-presets" id="dl-presets"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span></div>
+            </div></div></div>
           </div>
           <div class="waves" id="waves"><i></i><i></i><i></i><i></i><i></i><span>Rain</span></div>
 
           <div class="s-composer" id="sc">
             <div class="sc-in">
               <span class="ed"></span>
-              <span class="sc-text" id="sc-text" data-ph="25m, 1:30, 45m writing…"></span><span class="sc-caret"></span>
+              <span class="sc-text" id="sc-text" data-ph="What are you working on?"></span><span class="sc-caret"></span><span class="ghost sc-ghost" id="sc-ghost"></span>
               <span class="sc-mic"><svg viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2.5"/></svg></span>
             </div>
-            <div class="sc-pre"><span id="sc-pre">Start 25:00</span><span class="m" id="sc-name"></span><kbd>return</kbd></div>
-            <div class="sc-chips"><span>5m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span><span>25 / 5</span></div>
+            <div class="sc-pre" id="sc-pre"></div>
+            <div class="sc-chips"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span><span>Pomodoro</span></div>
           </div>
 
           <div class="s-menu" id="s-menu">
-            <div><span class="chk"></span>Writing<b>19:42</b></div>
+            <div><span class="chk"></span>Write intro<b>19:42</b></div>
             <div class="sep"></div>
             <div><span class="chk"></span>New Timer…</div>
             <div class="ind">Start 25m</div>
@@ -505,20 +548,21 @@
             <div><span class="chk"></span>Settings…</div>
           </div>
 
-          <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Focus complete</b><span id="note-b">25 minutes done. Break for 5 minutes.</span></div></div>
+          <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Focus is done</b><span id="note-b">25 minutes complete. Break for 5 minutes.</span></div></div>
           <div class="s-keys" id="s-keys"></div>
           <div class="s-cursor" id="cursor"><svg width="20" height="26" viewBox="0 0 20 26"><path d="M2 2v19l5-4.5 3.5 7.5 3-1.4-3.4-7.3H17z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
         </div>
       </div>
 
       <ol class="features" id="features-list">
-        <li><button data-scene="0"><b>Start with a keystroke</b><span>⌥ Space, type 45m writing, press Return.</span><i></i></button></li>
-        <li><button data-scene="1"><b>Or just say it</b><span>⌥ V, then talk. It stops listening when you do.</span><i></i></button></li>
-        <li><button data-scene="2"><b>Change it mid-run</b><span>Add or take off five minutes without stopping.</span><i></i></button></li>
-        <li><button data-scene="3"><b>Run several at once</b><span>One stays in view. The rest wait in a tray.</span><i></i></button></li>
-        <li><button data-scene="4"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
-        <li><button data-scene="5"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
-        <li><button data-scene="6"><b>Soft focus sound</b><span>Nature, chill or focus sounds: rain, lo-fi, binaural beats and more, made on your Mac.</span><i></i></button></li>
+        <li><button data-scene="0"><b>Write the task, then the time</b><span>⌥ Space, type Write intro 45m, press Return. Leave out the time and it offers your default.</span><i></i></button></li>
+        <li><button data-scene="1"><b>Or just say it</b><span>⌥ V, or ⌥ Space twice, then talk: “twenty five minutes for reading”.</span><i></i></button></li>
+        <li><button data-scene="2"><b>Name it in place</b><span>In a hurry, type 25. Click “+ Add task” on the timer later and type the name.</span><i></i></button></li>
+        <li><button data-scene="3"><b>Turn the dial</b><span>Click the time. Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h.</span><i></i></button></li>
+        <li><button data-scene="4"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
+        <li><button data-scene="5"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
+        <li><button data-scene="6"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
+        <li><button data-scene="7"><b>Soft focus sound</b><span>Nature, chill or focus sounds: rain, lo-fi, binaural beats and more, made on your Mac.</span><i></i></button></li>
       </ol>
     </div>
   </section>
@@ -526,14 +570,14 @@
   <section id="try">
     <div class="try">
       <div>
-        <h2>Type it the way you'd say it.</h2>
-        <p class="sub">No fields or pickers. Extra words become the timer's name.</p>
+        <h2>Write it the way you'd say it.</h2>
+        <p class="sub">What you're working on, then how long. The time lights up as you type, so you can see Drift understood.</p>
         <div class="phrasebook">
-          <div class="phrase"><code>25</code><span><b>25:00</b></span></div>
-          <div class="phrase"><code>45m writing</code><span>Writing <b>45:00</b></span></div>
-          <div class="phrase"><code>1:30</code><span><b>1:30:00</b></span></div>
-          <div class="phrase"><code>half an hour</code><span><b>30:00</b></span></div>
-          <div class="phrase"><code>36h</code><span><b>36h 0m</b></span></div>
+          <div class="phrase"><code>Write intro 45m</code><span>Write intro <b>45:00</b></span></div>
+          <div class="phrase"><code>Write intro</code><span>Write intro <b>25:00</b>, your default</span></div>
+          <div class="phrase"><code>Reading for an hour and a half</code><span>Reading <b>1:30:00</b></span></div>
+          <div class="phrase"><code>25</code><span><b>25:00</b>, name it later</span></div>
+          <div class="phrase"><code>pomodoro</code><span><b>25:00</b> focus, then a break</span></div>
           <div class="phrase"><code>add 5 minutes</code><span>to the timer that's running</span></div>
         </div>
       </div>
@@ -541,18 +585,23 @@
         <form class="launcher" id="launcher" autocomplete="off">
           <label>
             <span class="ed" aria-hidden="true"></span>
-            <input id="q" type="text" placeholder="Try 10s, or 25m reading" aria-label="Type a duration to start a demo timer" spellcheck="false">
+            <span class="field"><span class="mirror" id="q-mirror" aria-hidden="true"></span><input id="q" type="text" placeholder="What are you working on?" aria-label="What are you working on, and for how long? Starts a demo timer" spellcheck="false"></span>
           </label>
-          <div class="pre" aria-live="polite"><span class="what" id="what">Start 25:00</span><kbd>return</kbd></div>
+          <div class="pre" aria-live="polite" id="what"></div>
           <div class="chips">
             <button type="button" data-q="10s">10s</button>
             <button type="button" data-q="5m">5m</button>
+            <button type="button" data-q="10m">10m</button>
+            <button type="button" data-q="15m">15m</button>
+            <button type="button" data-q="20m">20m</button>
             <button type="button" data-q="25m">25m</button>
+            <button type="button" data-q="30m">30m</button>
             <button type="button" data-q="45m">45m</button>
             <button type="button" data-q="1h">1h</button>
+            <button type="button" data-q="2h">2h</button>
           </div>
         </form>
-        <p class="try-note">Press Return and watch the top-left corner of this page.</p>
+        <p class="try-note">Press Return and watch the top-left corner of this page. Tab takes the suggested time; a chip starts your task for that long.</p>
       </div>
     </div>
   </section>
@@ -593,7 +642,7 @@
       <ol class="steps">
         <li>Open <b>Terminal</b>. Press ⌘ Space and type Terminal.</li>
         <li>Paste the line and press Return. If macOS offers the free <b>Command Line Tools</b>, install them and run it again.</li>
-        <li>Drift appears in the top-left corner. Press <b>⌥ Space</b> and type 25.</li>
+        <li>Drift appears in the top-left corner. Press <b>⌥ Space</b> and write what you're working on, like <b>Write intro 25m</b>.</li>
       </ol>
       <div class="links">
         <a href="https://github.com/nweinberg97/Drift">Source on GitHub</a>
@@ -659,7 +708,7 @@
 
   /* ---------------- Demo engine ---------------- */
   const sw = $('sw'), swName = $('sw-name'), swTime = $('sw-time'), swChip = $('sw-chip'), swTray = $('sw-tray'), swProg = $('sw-prog');
-  const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scName = $('sc-name');
+  const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scGhost = $('sc-ghost');
   const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
   const CANCEL = Symbol('cancel');
   let run = 0;
@@ -716,23 +765,95 @@
       ? `+${mode}`
       : `<svg width="9" height="9" viewBox="0 0 10 10"><path d="${mode === 'up' ? 'M1.5 6.5L5 3l3.5 3.5' : 'M1.5 3.5L5 7l3.5-3.5'}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   }
-  async function launch(text, name, secs, id) {
+  /* What the launcher understands, shared by the demo and the Try it box. */
+  const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const DEFAULT = 1500;
+  const TIME_RE = /\b\d{1,3}:\d{2}(?::\d{2})?\b|\bhalf an hour\b|\b(?:an?|one|\d+(?:\.\d+)?|(?:twenty|thirty|forty|fifty|sixty)(?:[\s-](?:one|two|three|four|five|six|seven|eight|nine))?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|ninety)\s*(?:h|hrs?|hours?|m|mins?|minutes?|s|secs?|seconds?|d|days?)\b(?:\s+and a half)?/gi;
+  function timeSpans(text) {
+    const out = []; let m; TIME_RE.lastIndex = 0;
+    while ((m = TIME_RE.exec(text))) out.push([m.index, m.index + m[0].length]);
+    if (!out.length) { const b = text.match(/^\s*\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*$/); if (b && parse(text)) out.push([b.index, b.index + b[0].length]); }
+    return out;
+  }
+  function model(text) {
+    const v = text.trim();
+    if (!v) return { kind: 'empty' };
+    if (/^(pomodoro|pomo)\b/i.test(v)) return { kind: 'pomo' };
+    if (/^(add|plus|extend)\b/i.test(v)) { const p = parse(v.replace(/^\w+\s*/, '')); return p ? { kind: 'add', secs: p.seconds } : { kind: 'bad' }; }
+    const p = parse(v);
+    if (p) return { kind: 'start', secs: p.seconds, name: p.name, spans: timeSpans(text) };
+    if (/[a-z]/i.test(v)) return { kind: 'start', secs: DEFAULT, name: (v[0].toUpperCase() + v.slice(1)).slice(0, 40), spans: [], ghost: true };
+    return { kind: 'bad' };
+  }
+  function markedText(text, m) {
+    let h = '', i = 0;
+    for (const [a, b] of (m.kind === 'start' ? m.spans : [])) { h += esc(text.slice(i, a)) + `<span class="pill">${esc(text.slice(a, b))}</span>`; i = b; }
+    return h + esc(text.slice(i));
+  }
+  const ghostHTML = (text, m) => m.ghost ? `${/\s$/.test(text) ? '' : ' '}25m<kbd>tab</kbd>` : '';
+  function preHTML(m) {
+    const mini = (name, secs) => `<span class="mini"><i></i>${name ? esc(name) : '<em>+ Add task</em>'} <span class="num">${clockText(secs)}</span></span>`;
+    switch (m.kind) {
+      case 'empty': return `<span class="h" style="margin-left:0">Write the task, then how long. Return starts 25m.</span>`;
+      case 'start': return `${mini(m.name, m.secs)}<span class="h">${m.ghost ? 'Tab for 25m, or type a time' : m.name ? 'Return to start' : 'Return to start, name it later'}</span><kbd>return</kbd>`;
+      case 'pomo': return `<span>Pomodoro</span><span class="h" style="margin-left:6px">25m focus, then a 5m break</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
+      case 'add': return `<span>Add ${clockText(m.secs)}</span><span class="h" style="margin-left:6px">to the running timer</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
+      default: return `<span class="h" style="margin-left:0">Write a task and a time, like “Write intro 25m”</span>`;
+    }
+  }
+
+  function renderSc(text) {
+    const m = model(text);
+    scText.innerHTML = markedText(text, m);
+    scGhost.innerHTML = ghostHTML(text, m);
+    scPre.innerHTML = preHTML(m);
+  }
+  async function typeSc(text, id, from = '') {
+    let t = from;
+    for (const ch of text) { t += ch; renderSc(t); await wait(70 + Math.random() * 40, id); }
+    return t;
+  }
+  async function openSc(id) {
     await pressKeys(['⌥', 'Space'], id, 380);
-    sc.classList.add('on'); scText.textContent = ''; scPre.textContent = 'Start 25:00'; scName.textContent = '';
+    sc.classList.add('on'); renderSc('');
     await wait(450, id);
-    await typeInto(scText, text, id);
-    scPre.textContent = secs ? `Start ${clockText(secs)}` : 'Pomodoro'; scName.textContent = name ? '· ' + name : (secs ? '' : '· 25m focus, 5m break');
-    await wait(700, id);
+  }
+  async function launch(text, id) {
+    await openSc(id);
+    await typeSc(text, id);
+    await wait(800, id);
     await pressKeys(['return'], id, 300);
     sc.classList.remove('on');
+  }
+  function setName(name) {
+    swName.classList.remove('editing', 'add');
+    if (name) swName.textContent = name;
+    else { swName.textContent = 'Add task'; swName.classList.add('add'); }
+  }
+
+  /* The dial, drawn into the widget */
+  const dlSvg = $('dl-svg'), dlVal = $('dl-val'), ring = $('sw-ring');
+  function drawDial(v) {
+    const m = (v % 3600) / 3600, a = m * 2 * Math.PI - Math.PI / 2, R = 76, c = 100;
+    let t = '';
+    for (let i = 0; i < 60; i++) {
+      const big = i % 5 === 0, g = i / 60 * 2 * Math.PI - Math.PI / 2, r1 = big ? 90 : 93;
+      t += `<line x1="${c + r1 * Math.cos(g)}" y1="${c + r1 * Math.sin(g)}" x2="${c + 97 * Math.cos(g)}" y2="${c + 97 * Math.sin(g)}" style="stroke:rgba(244,238,230,${big ? 0.45 : 0.2})" stroke-width="${big ? 1.8 : 1}"/>`;
+    }
+    const arc = m > 0 ? `<path d="M ${c} ${c - R} A ${R} ${R} 0 ${m > 0.5 ? 1 : 0} 1 ${c + R * Math.cos(a)} ${c + R * Math.sin(a)}" fill="none" style="stroke:var(--ember)" stroke-width="10" stroke-linecap="round"/>` : '';
+    dlSvg.innerHTML = `${t}<circle cx="${c}" cy="${c}" r="${R}" fill="none" style="stroke:rgba(255,255,255,0.1)" stroke-width="10"/>${arc}<circle cx="${c + R * Math.cos(a)}" cy="${c + R * Math.sin(a)}" r="11" style="fill:#1E1B19;stroke:var(--ember)" stroke-width="3"/>`;
+    dlVal.textContent = clockText(v);
+    const label = v % 3600 === 0 ? `${v / 3600}h` : v < 3600 ? `${v / 60}m` : '';
+    document.querySelectorAll('#dl-presets span').forEach(s => s.classList.toggle('on', s.textContent === label));
+    return a;
   }
 
   function reset() {
     stopClock();
-    sw.classList.add('hidden'); sw.classList.remove('open', 'done');
+    sw.classList.add('hidden'); sw.classList.remove('open', 'done', 'dialing');
     sw.dataset.run = '1';
-    swName.textContent = ''; chip('down'); swTray.innerHTML = '';
-    sc.classList.remove('on', 'listening'); scText.textContent = '';
+    swName.textContent = ''; swName.classList.remove('add', 'editing'); chip('down'); swTray.innerHTML = '';
+    sc.classList.remove('on', 'listening'); scText.textContent = ''; scGhost.textContent = '';
     menu.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
     note.classList.remove('on'); waves.classList.remove('on'); $('m-check').textContent = '';
     keys.innerHTML = '';
@@ -740,77 +861,109 @@
     setTime(2700);
   }
   function showWidget(name, total, remaining = total) {
-    swName.textContent = name; startClock(total, remaining);
+    setName(name); startClock(total, remaining);
     sw.classList.remove('hidden');
   }
 
   const scenes = [
-    // Start with a keystroke
+    // Write the task, then the time
     async id => {
-      await wait(500, id);
-      await launch('45m writing', 'Writing', 2700, id);
+      await wait(400, id);
+      await openSc(id);
+      let t = await typeSc('Write intro', id);
+      await wait(1500, id);
+      t = await typeSc(' 45m', id, t);
+      await wait(1100, id);
+      await pressKeys(['return'], id, 300);
+      sc.classList.remove('on');
       await wait(120, id);
-      showWidget('Writing', 2700);
-      await wait(2600, id);
+      showWidget('Write intro', 2700);
+      await wait(2200, id);
     },
     // Voice
     async id => {
-      showWidget('Writing', 2700, 2694);
+      showWidget('Write intro', 2700, 2694);
       await wait(700, id);
       await pressKeys(['⌥', 'V'], id, 380);
-      sc.classList.add('on', 'listening'); scText.textContent = ''; scPre.textContent = 'Listening…'; scName.textContent = '';
+      sc.classList.add('on', 'listening'); renderSc(''); scPre.innerHTML = '<span class="h" style="margin-left:0">Listening…</span>';
       await wait(600, id);
-      for (const w of 'start a ten minute timer called break'.split(' ')) { scText.textContent += (scText.textContent ? ' ' : '') + w; await wait(230, id); }
-      scPre.textContent = 'Start 10:00'; scName.textContent = '· Break';
+      let t = '';
+      for (const w of 'twenty five minutes for reading'.split(' ')) { t += (t ? ' ' : '') + w; renderSc(t); await wait(240, id); }
       await wait(1000, id);
       sc.classList.remove('on', 'listening');
-      showWidget('Break', 600); chip(1);
+      showWidget('Reading', 1500); chip(1);
       await wait(2200, id);
     },
-    // Adjust
+    // Name it in place
     async id => {
-      showWidget('Writing', 2700, 1196);
+      await wait(300, id);
+      await launch('25', id);
+      showWidget('', 1500);
+      await wait(900, id);
+      await cursorTo(swName, id, 4, 6);
+      await click(swName, id);
+      swName.classList.remove('add'); swName.classList.add('editing'); swName.textContent = '';
+      await wait(300, id);
+      await typeInto(swName, 'Email', id, 90);
+      await wait(400, id);
+      await pressKeys(['return'], id, 300);
+      setName('Email');
+      await wait(1600, id);
+    },
+    // Turn the dial
+    async id => {
+      showWidget('Write intro', 2700, 1196);
       await wait(600, id);
       await cursorTo(swTime, id, 6, 4);
       await click(swTime, id);
-      sw.classList.add('open'); chip('up');
+      stopClock();
+      let v = 1200; setTime(v); drawDial(v);
+      sw.classList.add('dialing');
       await wait(700, id);
-      const plus = $('c-plus');
-      await cursorTo(plus, id, 2, 4);
-      await click(plus, id); setTime(W.remaining + 300, true);
+      const s = screen.getBoundingClientRect();
+      const r = ring.getBoundingClientRect();
+      const cx = (r.left - s.left) / scale + r.width / scale / 2, cy = (r.top - s.top) / scale + r.height / scale / 2;
+      cursor.style.transition = 'left .1s linear, top .1s linear, opacity .3s';
+      for (let k = 0; k < 12; k++) {
+        v += 60; const a = drawDial(v); setTime(v);
+        cursor.style.left = (cx + Math.cos(a) * 57 + 3) + 'px'; cursor.style.top = (cy + Math.sin(a) * 57 + 5) + 'px';
+        await wait(130, id);
+      }
+      cursor.style.transition = '';
+      await wait(700, id);
+      const thirty = [...document.querySelectorAll('#dl-presets span')].find(e => e.textContent === '30m');
+      await cursorTo(thirty, id, 2, 4);
+      await click(thirty, id);
+      v = 1800; drawDial(v); setTime(v, true);
       await wait(500, id);
-      await click(plus, id); setTime(W.remaining + 300, true);
-      await wait(800, id);
-      const minus = $('c-minus');
-      await cursorTo(minus, id, 2, 4);
-      await click(minus, id); setTime(W.remaining - 300, true);
+      sw.classList.remove('dialing'); cursor.style.opacity = 0;
+      startClock(2700, 1800);
       await wait(1400, id);
     },
     // Several timers
     async id => {
-      showWidget('Writing', 2700, 1620); chip(2);
+      showWidget('Write intro', 2700, 1620); chip(2);
       await wait(800, id);
       await cursorTo(swChip, id, 3, 4);
       await click(swChip, id);
-      swTray.innerHTML = '<div><span class="sw-dot run"></span>Tea<b>3:12</b></div><div><span class="sw-dot run"></span>Laundry<b>41:02</b></div>';
+      swTray.innerHTML = '<div><span class="sw-dot run"></span>Tea<b>3:12</b></div><div><span class="sw-dot run"></span><em>+ Add task</em><b>41:02</b></div>';
       sw.classList.add('open'); chip('up');
       await wait(1100, id);
       const add = $('c-add');
       await cursorTo(add, id, 4, 4);
       await click(add, id);
       cursor.style.opacity = 0;
-      sc.classList.add('on'); scText.textContent = ''; scPre.textContent = 'Start 25:00'; scName.textContent = '';
+      sc.classList.add('on'); renderSc('');
       await wait(350, id);
-      await typeInto(scText, '20m call', id);
-      scPre.textContent = 'Start 20:00'; scName.textContent = '· Call';
-      await wait(500, id);
+      await typeSc('Call 20m', id);
+      await wait(600, id);
       sc.classList.remove('on');
       swTray.insertAdjacentHTML('beforeend', '<div><span class="sw-dot run"></span>Call<b>20:00</b></div>');
       await wait(1800, id);
     },
     // Hide
     async id => {
-      showWidget('Writing', 2700, 1198);
+      showWidget('Write intro', 2700, 1198);
       await wait(1100, id);
       await pressKeys(['⌥', 'T'], id, 380);
       sw.classList.add('hidden'); mbTime.classList.add('on');
@@ -822,7 +975,7 @@
     // Pomodoro
     async id => {
       await wait(400, id);
-      await launch('pomodoro', '', 0, id);
+      await launch('pomodoro', id);
       swName.textContent = 'Focus'; sw.classList.remove('hidden');
       startClock(1500, 1500, 1);
       await wait(900, id);
@@ -838,7 +991,7 @@
     },
     // Focus sound
     async id => {
-      showWidget('Writing', 2700, 1190);
+      showWidget('Write intro', 2700, 1190);
       await wait(600, id);
       await cursorTo(mb, id, 2, 4);
       mb.classList.add('open'); menu.classList.add('on');
@@ -868,7 +1021,7 @@
     items.forEach(b => b.querySelector('i').style.setProperty('--p', '0%'));
     const started = performance.now();
     cancelAnimationFrame(progressAnim);
-    const est = [5600, 6400, 7000, 7400, 5800, 7600, 6200][i];
+    const est = [8600, 7000, 8200, 8400, 7600, 5800, 7600, 6200][i];
     const step = () => {
       bar.style.setProperty('--p', Math.min(100, (performance.now() - started) / est * 100) + '%');
       if (id === run) progressAnim = requestAnimationFrame(step);
@@ -892,28 +1045,33 @@
 
   /* ---------------- Try it: a real floating widget ---------------- */
   const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60, h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
-  const WORDS = { one:1, two:2, three:3, five:5, ten:10, fifteen:15, twenty:20, thirty:30, forty:40, sixty:60 };
-  const FILL = new Set(['a','an','the','for','timer','called','named','start','set','my','of','and']);
+  const WORDS = { a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, fifteen:15, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, ninety:90 };
+  const FILL = new Set(['a','an','the','for','on','timer','called','named','start','set','my','of','and','to','about']);
+  // "Write intro 45m", "Reading for an hour and a half", "25". null if there's no time in it.
   function parse(input) {
     let t = input.toLowerCase().trim();
     if (!t) return null;
-    if (/^(pomodoro|pomo)\b/.test(t)) return { seconds: 1500, name: 'Focus' };
-    if (t === 'half an hour') return { seconds: 1800, name: '' };
+    if (t === 'half an hour' || /\bhalf an hour\b/.test(t)) t = t.replace(/\bhalf an hour\b/, '30 m');
     let total = 0, found = false, rest = [], bare = null;
     const c = t.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
     if (c) { total += +c[2] * 3600 + +c[3] * 60 + +(c[4] || 0); found = true; t = t.replace(c[0], ' '); }
     const tk = t.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
     for (let i = 0; i < tk.length; i++) {
-      const n = /^\d+(\.\d+)?$/.test(tk[i]) ? parseFloat(tk[i]) : WORDS[tk[i]];
-      if (n !== undefined && UNITS[tk[i + 1]]) { total += n * UNITS[tk[i + 1]]; found = true; i++; continue; }
-      if (n !== undefined && bare === null) { bare = n; continue; }
+      let n = /^\d+(\.\d+)?$/.test(tk[i]) ? parseFloat(tk[i]) : WORDS[tk[i]], j = i + 1;
+      if (n >= 20 && n % 10 === 0 && WORDS[tk[j]] < 10 && UNITS[tk[j + 1]]) { n += WORDS[tk[j]]; j++; }
+      if (n !== undefined && UNITS[tk[j]]) {
+        const u = UNITS[tk[j]]; total += n * u; found = true; i = j;
+        if (tk[i + 1] === 'and' && tk[i + 2] === 'a' && tk[i + 3] === 'half') { total += u / 2; i += 3; }
+        continue;
+      }
+      if (n !== undefined && bare === null && /^\d/.test(tk[i])) { bare = n; continue; }
       rest.push(tk[i]);
     }
     if (!found && bare !== null) { total = bare * 60; found = true; } else if (bare !== null) rest.unshift(String(bare));
     if (!found || total < 1 || total > 366 * 86400) return null;
     while (rest.length && FILL.has(rest[0])) rest.shift();
     while (rest.length && FILL.has(rest.at(-1))) rest.pop();
-    const name = rest.join(' ').replace(/[<>&"]/g, '');
+    const name = rest.join(' ').replace(/[<>&"]/g, '').slice(0, 40);
     return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
   }
 
@@ -945,24 +1103,39 @@
   });
   $('f-close').addEventListener('click', () => { F.state = 'off'; clearTimeout(F.t); fl.classList.remove('on'); fl.setAttribute('aria-hidden', 'true'); });
 
-  const q = $('q'), what = $('what');
+  const q = $('q'), what = $('what'), qMirror = $('q-mirror');
   const preview = () => {
-    const v = q.value.trim();
-    if (!v) { what.className = 'what'; what.innerHTML = 'Start <span class="num">25:00</span>'; return; }
-    const p = parse(v);
-    if (!p) { what.className = 'what bad'; what.textContent = 'Try 25, 1:30, 90s or 45m writing'; return; }
-    what.className = 'what';
-    what.innerHTML = `Start <span class="num">${clockText(p.seconds)}</span>${p.name ? ` <span class="nm">· ${p.name}</span>` : ''}`;
+    const m = model(q.value);
+    qMirror.innerHTML = markedText(q.value, m) + (m.ghost ? `<span class="ghost">${ghostHTML(q.value, m)}</span>` : '');
+    what.innerHTML = preHTML(m);
   };
   q.addEventListener('input', preview);
+  q.addEventListener('scroll', () => { qMirror.scrollLeft = q.scrollLeft; });
+  q.addEventListener('keydown', e => {
+    if (e.key !== 'Tab' || e.shiftKey) return;
+    const m = model(q.value);
+    if (m.ghost) { e.preventDefault(); q.value = q.value.replace(/\s*$/, ' ') + '25m'; preview(); }
+    else if (!q.value.trim()) { e.preventDefault(); q.value = 'Write intro 25m'; preview(); }
+  });
   $('launcher').addEventListener('submit', e => {
     e.preventDefault();
-    const v = q.value.trim();
-    const p = v ? parse(v) : { seconds: 1500, name: '' };
-    if (!p) { q.focus(); return; }
-    fStart(p.seconds, p.name); q.value = ''; preview();
+    const m = model(q.value);
+    if (m.kind === 'empty') fStart(DEFAULT, '');
+    else if (m.kind === 'start') fStart(m.secs, m.name);
+    else if (m.kind === 'pomo') fStart(1500, 'Focus');
+    else if (m.kind === 'add' && F.state !== 'off') {
+      if (F.state === 'run') F.end += m.secs * 1000; else if (F.state === 'pause') F.left += m.secs; else { F.end = Date.now() + m.secs * 1000; F.state = 'run'; }
+      fRender();
+    } else { q.focus(); return; }
+    q.value = ''; preview();
   });
-  document.querySelectorAll('.launcher .chips button').forEach(b => b.addEventListener('click', () => fStart(parse(b.dataset.q).seconds, '')));
+  // A chip starts what you've written (if anything) for that long.
+  document.querySelectorAll('.launcher .chips button').forEach(b => b.addEventListener('click', () => {
+    const m = model(q.value);
+    fStart(parse(b.dataset.q).seconds, m.kind === 'start' && m.ghost ? m.name : '');
+    q.value = ''; preview();
+  }));
+  preview();
 
   /* ---------------- Copy ---------------- */
   const copy = $('copy');

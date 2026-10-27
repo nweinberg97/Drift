@@ -3,7 +3,7 @@
 <h1 align="center">Drift</h1>
 <p align="center"><em>Stay with it.</em></p>
 
-Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, type `25`, press Return. A small timer appears in the top-left corner of your screen, and you get back to work.
+Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, write what you're working on and for how long (`Write intro 45m`), press Return. A small timer appears in the top-left corner of your screen, and you get back to work.
 
 It's free, open source, needs no account and never touches the network.
 
@@ -38,23 +38,29 @@ Requirements: macOS 13 Ventura or newer. If the build fails on an older Mac, upd
 
 | Do this | How |
 |---|---|
-| Start a timer | **⌥ Space**, type `25` → Return. An empty field + Return starts your default (25m). |
-| Start a preset | **⌥ Space**, then **⌘1–⌘5**. Or pick one from the menu bar. |
-| Speak | **⌥ V**, then say "start a 45 minute timer called writing". Drift stops listening when you pause. |
+| Start a timer | **⌥ Space**, write the task and the time (`Write intro 45m`) → Return. The time is highlighted as you type, and a preview shows the timer you're about to start. |
+| Task, no time | Type just `Write intro`. Drift suggests your default length in grey; **Tab** or Return takes it. |
+| Time, no task | Type `25` → Return. The timer shows **+ Add task** so you can name it later. |
+| Quick lengths | Chips for **5, 10, 15, 20, 25, 30, 45 min, 1 h, 2 h** (**⌘1–⌘9**). If you've written a task, a chip starts that task for that long. |
+| Repeat a task | Recent tasks appear under the empty launcher with their usual length. One click starts one. |
+| Speak | **⌥ V**, or **⌥ Space** twice, then say "twenty five minutes for reading". Drift stops listening when you pause. |
 | Show / hide the widget | **⌥ T**. While hidden, the time shows in the menu bar and timers keep running. |
 | Pause / resume | Click ⏸ on the widget, or type `pause` / `resume` in the launcher. |
-| Adjust | Click the time to expand: **−5m · +5m · Edit · Cancel**. |
-| Multiple timers | Click the ⌄ button on the widget to expand it, then **+ Add timer**. With several running, the button shows `+2`; click it to see them all. |
+| Name or rename | Click a timer's name (or **+ Add task**) and type, right in the widget. Return saves. |
+| Change the time | Click the time to open the dial. Drag around it (a minute per notch, a full turn is an hour), scroll, or use the arrow keys (⇧ for 5 min). Or tap −5/−1/+1/+5 or a preset. Cancel puts the old time back. |
+| Multiple timers | Click the ⌄ button on the widget to expand it, then **+ New timer**. With several running, the button shows `+2`; click it to see them all. Each one's name and time are clickable too. |
 | Pomodoro | Type `pomodoro` or `50/10`, or press **⌘P** in the launcher. Focus and break alternate until you cancel. |
 | Move it | Drag the widget anywhere. It remembers the position and display. |
 
 ### What you can type (or say)
 
 ```
-25                25 minutes (a bare number means minutes)
+Write intro 45m   → "Write intro", 45 minutes
+Write intro       → "Write intro", your default length (Tab to accept)
+check email 25m   → "Check email" (a task can start with any verb)
+25                25 minutes, no name yet (a bare number means minutes)
 1:30              1 hour 30 minutes
 90s · 2h 15m · 36h · 3d · 1.5h
-45m writing       → a timer named "Writing"
 an hour and a half · half an hour · twenty five minutes
 pomodoro · 50/10
 pause · resume · pause laundry
@@ -86,11 +92,11 @@ Any website can try to open a custom link, so links can only start, show, pause,
 
 Drift is a menu-bar utility with one floating widget. It does one job: it gets a timer running in under two seconds from anywhere, then stays out of the way.
 
-- **Floating widget** (top-left by default). It's a single line showing the state dot, the optional name, the time and pause. Click the time to expand it. You can drag it, it remembers its position, and it shows above full-screen apps on every Space.
-- **Launcher** (⌥ Space). A Spotlight-style field that parses natural language, shows a live preview, has preset chips and a mic button.
+- **Floating widget** (top-left by default). It's a single line showing the state dot, the task, the time and pause. Click the task to rename it in place, click the time for the dial, click the ⌄ to expand. You can drag it, it remembers its position, and it shows above full-screen apps on every Space.
+- **Launcher** (⌥ Space). A task-first, Spotlight-style field: "What are you working on?" It highlights the time it found, previews the timer, suggests your default length when you leave it out, lists recent tasks, and has preset chips and a mic button.
 - **Voice** (⌥ V). Push-to-talk, recognised on-device, using the same command grammar as typing.
 - **Multiple timers**. One featured timer plus an expandable tray, never a wall of widgets.
-- **Menu bar**. A tiny ring that empties as time passes, every timer with a full submenu (pause, ±5m, edit, rename, duplicate, cancel), presets, Pomodoro, focus sound, settings.
+- **Menu bar**. A tiny ring that empties as time passes, every timer with a full submenu (pause, ±5m, change time, rename, duplicate, cancel), presets, Pomodoro, focus sound, settings.
 - **Sound**. A soft synthesised start tick and a three-note completion bell that keeps chiming until you dismiss it (or once, if you prefer). **Focus sound** is off by default and offers nine sounds in three sets, all generated live and offline: Nature (Rain, Ocean, Fireplace), Chill (Lo-fi, Ambient, Soft Pad) and Focus (Hush, Binaural Focus, Binaural Calm).
 - **Notifications** are scheduled with macOS at start, so they arrive on time even if Drift is asleep or quit.
 - **Settings** are one short page: default length, presets, finished-timer behavior, theme, widget size and opacity, sounds, shortcuts and launch at login.
@@ -128,6 +134,8 @@ Key decisions:
 ## 3. Key UX decisions
 
 - **One key, then type.** The fastest way to start a timer from anywhere is a launcher, not a button. ⌥ Space + `25` + Return takes about a second. Return on an empty field starts your default, so it's two keystrokes in total.
+- **Task first.** The launcher asks what you're working on, because a named timer is easier to come back to. The time can go anywhere in the sentence, and if you leave it out you get your default.
+- **Edit where it is.** Names and times are edited in place: click the name to type, click the time for a dial. No separate edit screens.
 - **A bare number means minutes**, and `1:30` means hours:minutes, because that's what people mean. Leftover words become the name (`45m writing` → *Writing*), so you never have to fill in a name field.
 - **A live preview under the field** shows exactly what Return will do ("Start 45:00 · Writing", "Pause · Laundry"). That removes the guesswork from parsing.
 - **Push-to-talk voice, not a wake word.** An always-on "Hey Drift" would keep your microphone open all day, so voice listens only after ⌥ V and stops on silence. For hands-free use, Siri works through a Shortcut and a `drift://` link.
@@ -164,7 +172,8 @@ To open in Xcode: `open Package.swift`. Note that notifications and the app sand
 **By hand:**
 
 - [ ] ⌥ Space in Chrome, VS Code and a full-screen app → type `25` → Return → the timer appears top-left
-- [ ] Try `90s`, `1:30`, `2h 15m`, `36h`, `45m writing`, `pomodoro`. Each preview should be correct.
+- [ ] Try `90s`, `1:30`, `2h 15m`, `36h`, `Write intro 45m`, `Write intro` (Tab), `pomodoro`. Each preview should be correct and the time highlighted.
+- [ ] Click **+ Add task** on an unnamed timer, type, Return. Click the time, drag the dial, scroll, press arrows, then Cancel (time restores) and Done.
 - [ ] Click the widget's pause while typing in another app. Keep typing: your keystrokes still land in that app.
 - [ ] Click the time → −5m / +5m / Edit (`10m`) / Cancel
 - [ ] Start 3 timers → `+2` badge → expand → click one to feature it
@@ -186,5 +195,5 @@ To open in Xcode: `open Package.swift`. Note that notifications and the app sand
 - **Voice needs on-device speech.** Drift has no network access, so if your Mac hasn't downloaded the on-device speech model, voice will ask you to turn on **Dictation** (System Settings → Keyboard) once. Voice is English (US) for now.
 - **macOS asks for permissions again after each rebuild** (microphone, notifications). Ad-hoc signatures change with every build. Signed releases would fix this.
 - **Global shortcut conflicts.** If another app (often Alfred or Raycast with ⌥ Space) already owns a combination, macOS gives it to whichever app registered first. Reassign it in Settings.
-- **Keyboard control of the widget itself** (space to pause, +/−, Return, Esc) works while the widget has focus, for example after Edit. From other apps, the launcher's commands (`pause`, `add 5 minutes`…) are the keyboard path. This is deliberate, so the widget never steals your typing.
+- **Keyboard control of the widget itself** (space to pause, +/−, Return, Esc) works while the widget has focus, for example after renaming or with the dial open. From other apps, the launcher's commands (`pause`, `add 5 minutes`…) are the keyboard path. This is deliberate, so the widget never steals your typing.
 - **No Siri / App Intents integration yet.** SwiftPM builds can't produce App Intents metadata. The `drift://` + Shortcuts route covers the same ground.

@@ -464,50 +464,36 @@ private struct FieldHighlight: View {
     let suggestion: String
 
     var body: some View {
-        HStack(spacing: 0) {
-            ForEach(Array(segments.enumerated()), id: \.offset) { item in
-                Text(visible(item.element.text))
-                    .foregroundStyle(Color.clear)
-                    .background(
-                        RoundedRectangle(cornerRadius: 5, style: .continuous)
-                            .fill(item.element.isTime ? Theme.accent.opacity(0.18) : Color.clear)
-                            .padding(.horizontal, -3)
-                            .padding(.vertical, 1)
-                    )
-            }
+        HStack(spacing: 8) {
+            // One Text, laid out exactly like the field's own text, so the
+            // highlight sits under the right characters.
+            (Text(highlighted) + ghost)
+                .font(ComposerView.fieldFont)
+                .lineLimit(1)
             if case .start(_, _, true) = plan {
-                Text(visible(text.hasSuffix(" ") ? suggestion : " " + suggestion))
-                    .foregroundStyle(Theme.tertiaryText)
                 KeyCaps(text: "tab")
-                    .padding(.leading, 8)
             }
         }
-        .font(ComposerView.fieldFont)
-        .lineLimit(1)
-        .padding(.leading, 2)
         .allowsHitTesting(false)
         .accessibilityHidden(true)
     }
 
-    private struct Segment { var text: String; var isTime: Bool }
-
-    private var segments: [Segment] {
-        guard !text.isEmpty else { return [] }
-        guard case .start(_, _, false) = plan else { return [Segment(text: text, isTime: false)] }
-        var out: [Segment] = []
-        var cursor = text.startIndex
-        for r in LauncherText.timeRanges(in: text) where r.lowerBound >= cursor {
-            if cursor < r.lowerBound { out.append(Segment(text: String(text[cursor..<r.lowerBound]), isTime: false)) }
-            out.append(Segment(text: String(text[r]), isTime: true))
-            cursor = r.upperBound
+    private var highlighted: AttributedString {
+        var a = AttributedString(text)
+        a.swiftUI.foregroundColor = Color.clear
+        guard case .start(_, _, false) = plan else { return a }
+        for r in LauncherText.timeRanges(in: text) {
+            guard let lower = AttributedString.Index(r.lowerBound, within: a),
+                  let upper = AttributedString.Index(r.upperBound, within: a) else { continue }
+            a[lower..<upper].swiftUI.backgroundColor = Theme.accent.opacity(0.22)
         }
-        if cursor < text.endIndex { out.append(Segment(text: String(text[cursor...]), isTime: false)) }
-        return out
+        return a
     }
 
-    /// Spaces at the ends of a Text can collapse; non-breaking ones keep width.
-    private func visible(_ s: String) -> String {
-        s.replacingOccurrences(of: " ", with: "\u{00A0}")
+    private var ghost: Text {
+        guard case .start(_, _, true) = plan else { return Text("") }
+        return Text(text.hasSuffix(" ") ? suggestion : " " + suggestion)
+            .foregroundColor(Theme.tertiaryText)
     }
 }
 
