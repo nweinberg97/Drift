@@ -1,0 +1,346 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		F42A1B9AFC107CD5858326A8 /* libDriftCore.a in Frameworks */ = {isa = PBXBuildFile; fileRef = 604E474C4D86A7143B14D714 /* libDriftCore.a */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		AEB9B774C45394D64A36EF28 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 63E7F166344BFFC5E31F73F9;
+			remoteInfo = DriftCore;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXFileReference section */
+		99006388588CE7D539A04F10 /* Drift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Drift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		604E474C4D86A7143B14D714 /* libDriftCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDriftCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
+		553964F95E0F5DFBBB4736F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		2AAF0FFB101CFE2B72D7FEC0 /* Drift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		1FBA5ABDACC3E06E44EE5D3C /* Drift */ = {isa = PBXFileSystemSynchronizedRootGroup; name = Drift; path = Sources/Drift; sourceTree = "<group>"; };
+		5BEF47AA344ACDFFD78FCD1E /* DriftCore */ = {isa = PBXFileSystemSynchronizedRootGroup; name = DriftCore; path = Sources/DriftCore; sourceTree = "<group>"; };
+		6ADDF44D20B693906789E6A5 /* Resources */ = {isa = PBXFileSystemSynchronizedRootGroup; name = Resources; path = packaging/AppStore/Resources; sourceTree = "<group>"; };
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		F4BF190A585A2F3C168DAF2D /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				F42A1B9AFC107CD5858326A8 /* libDriftCore.a in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		DAE7EEF3D4CDB0499BFDC70E /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		5928955287B8089ED2177128 = {
+			isa = PBXGroup;
+			children = (
+				1FBA5ABDACC3E06E44EE5D3C /* Drift */,
+				5BEF47AA344ACDFFD78FCD1E /* DriftCore */,
+				6ADDF44D20B693906789E6A5 /* Resources */,
+				6CC639B45892D4DB72603DD9 /* Config */,
+				BF7A2D27A78D590BDEF15AF2 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		6CC639B45892D4DB72603DD9 /* Config */ = {
+			isa = PBXGroup;
+			children = (
+				553964F95E0F5DFBBB4736F9 /* Info.plist */,
+				2AAF0FFB101CFE2B72D7FEC0 /* Drift.entitlements */,
+			);
+			name = Config;
+			path = packaging/AppStore/Config;
+			sourceTree = "<group>";
+		};
+		BF7A2D27A78D590BDEF15AF2 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				99006388588CE7D539A04F10 /* Drift.app */,
+				604E474C4D86A7143B14D714 /* libDriftCore.a */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		778130C49534A4D32801D13D /* Drift */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 75B97296A97E59D9AB2A9E6A /* Build configuration list for PBXNativeTarget "Drift" */;
+			buildPhases = (
+				0F2A33C9B352E389BDBCF3E8 /* Sources */,
+				F4BF190A585A2F3C168DAF2D /* Frameworks */,
+				291A891547850556A1912B92 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				F0427812501E32A9F5D13A31 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				1FBA5ABDACC3E06E44EE5D3C /* Drift */,
+				6ADDF44D20B693906789E6A5 /* Resources */,
+			);
+			name = Drift;
+			productName = Drift;
+			productReference = 99006388588CE7D539A04F10 /* Drift.app */;
+			productType = "com.apple.product-type.application";
+		};
+		63E7F166344BFFC5E31F73F9 /* DriftCore */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = B251841B0006FCDC71F2DED6 /* Build configuration list for PBXNativeTarget "DriftCore" */;
+			buildPhases = (
+				C703B07ACDD38EE9D0C0B0C1 /* Sources */,
+				DAE7EEF3D4CDB0499BFDC70E /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				5BEF47AA344ACDFFD78FCD1E /* DriftCore */,
+			);
+			name = DriftCore;
+			productName = DriftCore;
+			productReference = 604E474C4D86A7143B14D714 /* libDriftCore.a */;
+			productType = "com.apple.product-type.library.static";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		46F86FAA6BBF9AC94A7E4595 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 1600;
+				LastUpgradeCheck = 1600;
+				TargetAttributes = {
+					778130C49534A4D32801D13D = {
+						CreatedOnToolsVersion = 16.0;
+					};
+					63E7F166344BFFC5E31F73F9 = {
+						CreatedOnToolsVersion = 16.0;
+					};
+				};
+			};
+			buildConfigurationList = 2F8A4980BC1F366E262DC74B /* Build configuration list for PBXProject "Drift" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 5928955287B8089ED2177128;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = BF7A2D27A78D590BDEF15AF2 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				778130C49534A4D32801D13D /* Drift */,
+				63E7F166344BFFC5E31F73F9 /* DriftCore */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		291A891547850556A1912B92 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0F2A33C9B352E389BDBCF3E8 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		C703B07ACDD38EE9D0C0B0C1 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		F0427812501E32A9F5D13A31 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 63E7F166344BFFC5E31F73F9 /* DriftCore */;
+			targetProxy = AEB9B774C45394D64A36EF28 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		EC86DC4F4B4C60C3EC031655 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		7BF40F069D95C38DE60AA602 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_NO_COMMON_BLOCKS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		0F9FC8EE2C99E07A9753399D /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "packaging/AppStore/Config/Drift.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "packaging/AppStore/Config/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nweinberg.drift;
+				PRODUCT_NAME = Drift;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+			};
+			name = Debug;
+		};
+		1483FA26082F598A11F242FF /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_ENTITLEMENTS = "packaging/AppStore/Config/Drift.entitlements";
+				CODE_SIGN_STYLE = Automatic;
+				COMBINE_HIDPI_IMAGES = YES;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = "";
+				ENABLE_APP_SANDBOX = YES;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = "packaging/AppStore/Config/Info.plist";
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nweinberg.drift;
+				PRODUCT_NAME = Drift;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+			};
+			name = Release;
+		};
+		C7D10FD80664426936C6FC68 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				PRODUCT_NAME = DriftCore;
+				SKIP_INSTALL = YES;
+			};
+			name = Debug;
+		};
+		E8F264B6B80DF21BDFB72AF5 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				DEFINES_MODULE = YES;
+				PRODUCT_NAME = DriftCore;
+				SKIP_INSTALL = YES;
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		2F8A4980BC1F366E262DC74B /* Build configuration list for PBXProject "Drift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				EC86DC4F4B4C60C3EC031655 /* Debug */,
+				7BF40F069D95C38DE60AA602 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		75B97296A97E59D9AB2A9E6A /* Build configuration list for PBXNativeTarget "Drift" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0F9FC8EE2C99E07A9753399D /* Debug */,
+				1483FA26082F598A11F242FF /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+		B251841B0006FCDC71F2DED6 /* Build configuration list for PBXNativeTarget "DriftCore" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C7D10FD80664426936C6FC68 /* Debug */,
+				E8F264B6B80DF21BDFB72AF5 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 46F86FAA6BBF9AC94A7E4595 /* Project object */;
+}
