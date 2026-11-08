@@ -286,8 +286,8 @@ struct ComposerView: View {
                 SessionSteps(spec: session)
                     .padding(.horizontal, 16)
                     .padding(.bottom, 8)
-                startTimes(session)
             }
+            whenBar
             if showRecents { recentsList }
             if showCoach { coach.padding(.top, 10) }
             if showPresets { presetsRow }
@@ -437,7 +437,7 @@ struct ComposerView: View {
                             .lineLimit(1)
                     }
                     Spacer(minLength: 8)
-                    Text(spec.schedule == nil ? "Return to start" : "Return to schedule")
+                    Text(spec.schedule == nil ? "Return to start" : spec.schedule?.days == nil ? "Return to plan it" : "Return to add routine")
                         .foregroundStyle(Theme.tertiaryText)
                         .lineLimit(1)
                     KeyCaps(text: "↩")
@@ -461,7 +461,7 @@ struct ComposerView: View {
                 case let .schedule(spec):
                     MiniSchedule(spec: spec)
                     Spacer(minLength: 8)
-                    Text("Return to schedule")
+                    Text(spec.days == nil ? "Return to plan it" : "Return to add routine")
                         .foregroundStyle(Theme.tertiaryText)
                         .lineLimit(1)
                     KeyCaps(text: "↩")
@@ -529,45 +529,164 @@ struct ComposerView: View {
         .accessibilityElement(children: .combine)
     }
 
-    // MARK: Start time for a list
+    // MARK: When: Start now · Later today · Routine
 
-    /// "Starts: Now / 2:00 PM / 2:30 PM / 3:00 PM". Tapping rewrites the start
-    /// time at the end of the text, so what you see is what runs.
-    private func startTimes(_ spec: SessionSpec) -> some View {
-        let cal = Calendar.current
-        let now = Date()
-        let nowMinute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
-        let first = Int((Double(nowMinute + 10) / 30).rounded(.up)) * 30
-        let choices = [first, first + 30, first + 60].map { $0 % 1_440 }
-        let current = spec.schedule?.startMinute
-        return HStack(spacing: 5) {
-            Text("Starts").foregroundStyle(Theme.secondaryText)
-            Button("Now") { setStart(nil) }
-                .buttonStyle(StartTimeChipStyle(selected: spec.schedule == nil))
-            ForEach(choices, id: \.self) { m in
-                Button(Schedule.time(m)) { setStart(m) }
-                    .buttonStyle(StartTimeChipStyle(selected: current == m))
-            }
-            Text("or type “at 3pm”").foregroundStyle(Theme.tertiaryText)
-            Spacer(minLength: 0)
-        }
-        .font(.system(size: 11.5, weight: .medium))
-        .padding(.horizontal, 16)
-        .padding(.bottom, 10)
+    private enum When: Equatable { case now, today, routine }
+
+    /// What the text says about when, for the mode switch.
+    private struct WhenInfo {
+        var mode: When
+        var minute: Int?
+        var days: [Int]?
+        /// Where the "when" words are in the text.
+        var ranges: [Range<String.Index>]
+        var duration: TimeInterval
     }
 
-    private static let startPattern = try! NSRegularExpression(
-        pattern: "[,\\s]*(?:(?:starting|start|beginning|begin)\\s+)?(?:at|from|@)\\s*\\d{1,2}(?::\\d{2})?\\s*(?:am|pm|a\\.m\\.|p\\.m\\.)?(?:\\s+today)?\\s*$",
-        options: [.caseInsensitive])
-
-    private func setStart(_ minute: Int?) {
-        let ns = model.text as NSString
-        var text = Self.startPattern.stringByReplacingMatches(in: model.text, range: NSRange(location: 0, length: ns.length), withTemplate: "")
-        if let minute {
-            let h = minute / 60, m = minute % 60, h12 = h % 12 == 0 ? 12 : h % 12
-            let at = m == 0 ? "\(h12)\(h < 12 ? "am" : "pm")" : String(format: "%d:%02d%@", h12, m, h < 12 ? "am" : "pm")
-            text += ", starting at \(at) today"
+    private var whenInfo: WhenInfo? {
+        switch currentPlan {
+        case let .start(seconds, _, _):
+            return WhenInfo(mode: .now, minute: nil, days: nil, ranges: [], duration: seconds)
+        case let .session(s):
+            guard let p = s.schedule else { return WhenInfo(mode: .now, minute: nil, days: nil, ranges: [], duration: s.total) }
+            return WhenInfo(mode: p.days == nil ? .today : .routine, minute: p.startMinute, days: p.days, ranges: s.whenRanges, duration: s.total)
+        case let .schedule(spec):
+            return WhenInfo(mode: spec.days == nil ? .today : .routine, minute: spec.startMinute, days: spec.days, ranges: spec.whenRanges, duration: spec.duration)
+        default:
+            return nil
         }
+    }
+
+    /// Start now, later today, or every week. Picked from your words ("at 2pm",
+    /// "weekdays at 9"); tapping a mode rewrites the text, so the text always
+    /// says what will happen.
+    @ViewBuilder
+    private var whenBar: some View {
+        if let info = whenInfo, !voice.isListening {
+            VStack(alignment: .leading, spacing: 7) {
+                HStack(spacing: 2) {
+                    modeButton("Start now", .now, info)
+                    modeButton("Later today", .today, info)
+                    modeButton("Routine", .routine, info)
+                }
+                .padding(2)
+                .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
+                .fixedSize()
+                if info.mode != .now {
+                    HStack(spacing: 5) {
+                        Text("At").foregroundStyle(Theme.secondaryText).frame(width: 22, alignment: .leading)
+                        ForEach(timeChoices(info), id: \.self) { m in
+                            Button(Schedule.time(m)) { setWhen(days: info.days, minute: m, info) }
+                                .buttonStyle(StartTimeChipStyle(selected: info.minute == m))
+                        }
+                        Text("or type “at 3:15pm”").foregroundStyle(Theme.tertiaryText)
+                        Spacer(minLength: 0)
+                    }
+                }
+                if info.mode == .routine {
+                    let days = Set(info.days ?? [])
+                    HStack(spacing: 5) {
+                        Text("On").foregroundStyle(Theme.secondaryText).frame(width: 22, alignment: .leading)
+                        Button("Weekdays") { setWhen(days: [1, 2, 3, 4, 5], minute: info.minute, info) }
+                            .buttonStyle(StartTimeChipStyle(selected: days == Set(1...5)))
+                        Button("Every day") { setWhen(days: Array(0...6), minute: info.minute, info) }
+                            .buttonStyle(StartTimeChipStyle(selected: days == Set(0...6)))
+                        ForEach([1, 2, 3, 4, 5, 6, 0], id: \.self) { d in
+                            Button(String(Schedule.shortDayNames[d].prefix(1))) {
+                                var next = days
+                                if next.contains(d) { next.remove(d) } else { next.insert(d) }
+                                setWhen(days: next.isEmpty ? [d] : next.sorted(), minute: info.minute, info)
+                            }
+                            .buttonStyle(StartTimeChipStyle(selected: days.contains(d), square: true))
+                            .help(Schedule.shortDayNames[d])
+                        }
+                        Spacer(minLength: 0)
+                    }
+                }
+            }
+            .font(.system(size: 11.5, weight: .medium))
+            .padding(.horizontal, 16)
+            .padding(.bottom, 10)
+        }
+    }
+
+    private func modeButton(_ title: String, _ mode: When, _ info: WhenInfo) -> some View {
+        Button(title) {
+            switch mode {
+            case .now:
+                setWhen(days: nil, minute: nil, info)
+            case .today:
+                let keep = info.minute.flatMap { $0 > nowMinute ? $0 : nil }
+                setWhen(days: nil, minute: keep ?? laterToday().first, info)
+            case .routine:
+                setWhen(days: info.days ?? [1, 2, 3, 4, 5], minute: info.minute ?? 9 * 60, info)
+            }
+        }
+        .buttonStyle(ModeStyle(selected: info.mode == mode))
+        .help(mode == .now ? "Start it now" : mode == .today ? "Plan it for a time later today" : "Repeat it on set days")
+    }
+
+    private var nowMinute: Int {
+        let cal = Calendar.current
+        let now = Date()
+        return cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+    }
+
+    /// The next three half hours, at least ten minutes away.
+    private func laterToday() -> [Int] {
+        let first = Int((Double(nowMinute + 10) / 30).rounded(.up)) * 30
+        return [first, first + 30, first + 60].filter { $0 < 1_440 }
+    }
+
+    private func timeChoices(_ info: WhenInfo) -> [Int] {
+        var list = info.mode == .routine ? [8 * 60, 9 * 60, 13 * 60] : laterToday()
+        if let m = info.minute, !list.contains(m) { list.insert(m, at: 0) }
+        return Array(list.prefix(4))
+    }
+
+    private static let leftovers = try! NSRegularExpression(
+        pattern: "(?:,\\s*)?\\b(?:starting|start|beginning|begin|from)\\s*$|[,\\s]+$", options: [.caseInsensitive])
+
+    /// Rewrites the "when" part of the text: takes out the old words, keeps the
+    /// task and lengths, and adds the new time and days (or nothing, for now).
+    private func setWhen(days: [Int]?, minute: Int?, _ info: WhenInfo) {
+        let original = model.text
+        let text = NSMutableString(string: original)
+        let ranges = info.ranges.map { NSRange($0, in: original) }.sorted { $0.location > $1.location }
+        for r in ranges where r.location + r.length <= text.length {
+            text.replaceCharacters(in: r, with: "")
+        }
+        var out = text as String
+        for _ in 0..<3 {
+            out = Self.leftovers.stringByReplacingMatches(in: out, range: NSRange(location: 0, length: (out as NSString).length), withTemplate: "")
+        }
+        out = out.replacingOccurrences(of: "\\s{2,}", with: " ", options: .regularExpression)
+            .replacingOccurrences(of: "\\s+,", with: ",", options: .regularExpression)
+            .trimmingCharacters(in: .whitespaces)
+        // A range like 9–10:30 was the length too: keep it as a length.
+        if !ranges.isEmpty, !SessionParser.hasSeparator(out), DurationParser.parse(out) == nil {
+            out += " " + TimeFormatter.compact(info.duration)
+        }
+        if let minute {
+            out += days.map { " \(Self.daysText($0)) at \(Self.atText(minute))" } ?? " at \(Self.atText(minute)) today"
+        }
+        model.text = out
+        model.focusToken += 1
+    }
+
+    static func atText(_ minute: Int) -> String {
+        let h = minute / 60, m = minute % 60, h12 = h % 12 == 0 ? 12 : h % 12
+        let suffix = h < 12 ? "am" : "pm"
+        return m == 0 ? "\(h12)\(suffix)" : String(format: "%d:%02d", h12, m) + suffix
+    }
+
+    static func daysText(_ days: [Int]) -> String {
+        let set = Set(days)
+        if set == Set(0...6) { return "every day" }
+        if set == Set(1...5) { return "weekdays" }
+        if set == [0, 6] { return "weekends" }
+        return set.sorted { ($0 + 6) % 7 < ($1 + 6) % 7 }.map { Schedule.shortDayNames[$0].lowercased() }.joined(separator: " ")
+    }
         model.text = text
         model.focusToken += 1
     }
@@ -779,17 +898,40 @@ struct FlowLayout: Layout {
 
 private struct StartTimeChipStyle: ButtonStyle {
     let selected: Bool
+    var square = false
     @State private var hovering = false
 
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 11.5, weight: .semibold).monospacedDigit())
             .foregroundStyle(selected ? Color.white : Theme.primaryText)
-            .padding(.horizontal, 9)
+            .padding(.horizontal, square ? 0 : 9)
+            .frame(minWidth: square ? 22 : nil)
             .frame(height: 22)
             .background(
                 RoundedRectangle(cornerRadius: 6, style: .continuous)
                     .fill(selected ? Theme.accent : (configuration.isPressed || hovering ? Theme.controlHover : Theme.control))
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+    }
+}
+
+/// One part of the Start now · Later today · Routine switch.
+private struct ModeStyle: ButtonStyle {
+    let selected: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 12, weight: selected ? .semibold : .medium))
+            .foregroundStyle(selected ? Theme.primaryText : (hovering ? Theme.primaryText : Theme.secondaryText))
+            .padding(.horizontal, 11)
+            .frame(height: 24)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(selected ? Theme.surface : Color.clear)
+                    .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 1, y: 0.5)
             )
             .contentShape(Rectangle())
             .onHover { hovering = $0 }

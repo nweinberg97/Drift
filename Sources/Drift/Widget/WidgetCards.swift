@@ -419,7 +419,7 @@ struct ScheduledCard: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
                 Image(systemName: "calendar").font(.system(size: 10.5, weight: .semibold))
-                Text(updated ? "UPDATED" : "SCHEDULED")
+                Text(updated ? "UPDATED" : block.isRepeating ? "ROUTINE ADDED" : "PLANNED")
                     .font(.system(size: 11, weight: .semibold))
                     .kerning(0.4)
             }
@@ -474,6 +474,9 @@ struct ScheduledCard: View {
                         schedule.delete(block.id)
                     }
                     .buttonStyle(PillButtonStyle())
+                } else {
+                    Button(block.isRepeating ? "Delete routine" : "Delete") { ui.delete(block.id, schedule: schedule) }
+                        .buttonStyle(PillButtonStyle(destructive: true))
                 }
             }
             .padding(.top, 9)
@@ -483,7 +486,7 @@ struct ScheduledCard: View {
         .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.accent.opacity(0.13)))
         .padding(6)
         .accessibilityElement(children: .contain)
-        .accessibilityLabel("\(updated ? "Updated" : "Scheduled"): \(block.name), \(schedule.describeDays(block))")
+        .accessibilityLabel("\(updated ? "Updated" : block.isRepeating ? "Routine added" : "Planned"): \(block.name), \(schedule.describeDays(block))")
     }
 
     private func stepStarts(_ steps: [TimeBlock], from start: Int) -> [(start: Int, block: TimeBlock)] {
@@ -494,5 +497,117 @@ struct ScheduledCard: View {
             at += b.seconds / 60
         }
         return out
+    }
+}
+
+// MARK: - Undo
+
+/// "Deleted “Deep work” · Undo", for a few seconds after deleting.
+struct UndoBar: View {
+    let block: ScheduledBlock
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var schedule: ScheduleStore
+
+    var body: some View {
+        HStack(spacing: 8) {
+            Image(systemName: "trash")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.secondaryText)
+            Text("Deleted “\(block.name)”")
+                .font(.system(size: 12.5, weight: .medium))
+                .foregroundStyle(Theme.primaryText)
+                .lineLimit(1)
+            Spacer(minLength: 6)
+            Button("Undo") {
+                schedule.restore(block)
+                ui.deleted = nil
+            }
+            .buttonStyle(PillButtonStyle(prominent: true))
+        }
+        .padding(.leading, 12)
+        .padding(.trailing, 8)
+        .frame(height: 38)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Theme.control))
+        .padding(6)
+        .task(id: block.id) {
+            try? await Task.sleep(nanoseconds: 6_000_000_000)
+            if ui.deleted?.id == block.id { ui.deleted = nil }
+        }
+        .accessibilityElement(children: .contain)
+        .accessibilityLabel("Deleted \(block.name)")
+    }
+}
+
+// MARK: - Typing a time
+
+/// A time you can click and type: "2:50", "250", "2:50pm", "14:50".
+struct TimeEntry: View {
+    let minute: Int
+    let label: String
+    let set: (Int) -> Void
+    @State private var editing = false
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        if editing {
+            TextField("2:50 PM", text: $text)
+                .textFieldStyle(.plain)
+                .font(Theme.digits(19))
+                .foregroundStyle(Theme.primaryText)
+                .frame(width: 104)
+                .padding(.horizontal, 4)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent, lineWidth: 1))
+                .focused($focused)
+                .onSubmit(commit)
+                .onExitCommand { editing = false }
+                .onAppear {
+                    text = Schedule.time(minute)
+                    DispatchQueue.main.async { focused = true }
+                }
+                .onChange(of: focused) { isFocused in
+                    if !isFocused && editing { commit() }
+                }
+                .accessibilityLabel(label)
+        } else {
+            Button { editing = true } label: {
+                Text(Schedule.time(minute))
+                    .font(Theme.digits(19))
+                    .foregroundStyle(Theme.primaryText)
+            }
+            .buttonStyle(EditableTextStyle(active: false))
+            .help("Click to type an exact time")
+            .accessibilityLabel("\(label), \(Schedule.time(minute)). Change")
+        }
+    }
+
+    private func commit() {
+        if let m = Self.parse(text, near: minute) { set(m) }
+        editing = false
+    }
+
+    private static let pattern = try! NSRegularExpression(
+        pattern: "^\\s*(\\d{1,2})(?::?(\\d{2}))?\\s*(a|am|p|pm|a\\.m\\.|p\\.m\\.)?\\s*$", options: [.caseInsensitive])
+
+    /// Without am/pm, picks whichever of the two is closer to the current time.
+    static func parse(_ text: String, near: Int) -> Int? {
+        let ns = text as NSString
+        guard let m = pattern.firstMatch(in: text, range: NSRange(location: 0, length: ns.length)) else { return nil }
+        func group(_ i: Int) -> String? {
+            let r = m.range(at: i)
+            return r.location == NSNotFound ? nil : ns.substring(with: r)
+        }
+        guard var h = group(1).flatMap({ Int($0) }) else { return nil }
+        let minute = group(2).flatMap { Int($0) } ?? 0
+        guard h <= 23, minute <= 59 else { return nil }
+        if let suffix = group(3)?.lowercased().first {
+            guard h <= 12 else { return nil }
+            h = h % 12 + (suffix == "p" ? 12 : 0)
+        } else if h <= 12 {
+            let am = (h % 12) * 60 + minute, pm = am + 720
+            return abs(am - near) <= abs(pm - near) ? am : pm
+        }
+        return h * 60 + minute
     }
 }

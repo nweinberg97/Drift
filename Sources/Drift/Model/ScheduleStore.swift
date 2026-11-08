@@ -228,6 +228,13 @@ final class ScheduleStore: ObservableObject {
         save()
     }
 
+    /// Puts a deleted block back (Undo).
+    func restore(_ block: ScheduledBlock) {
+        guard self.block(block.id) == nil else { return }
+        blocks.append(block)
+        save()
+    }
+
     func delete(_ id: UUID) {
         blocks.removeAll { $0.id == id }
         if prompt?.blockID == id { prompt = nil }

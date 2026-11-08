@@ -191,11 +191,18 @@ final class WidgetController: NSObject, NSWindowDelegate {
         focus()
     }
 
-    /// Opens the block editor: an existing block, or a new one when `id` is nil.
-    func editBlock(_ id: UUID?) {
+    /// Opens the editor: an existing block, or a new one when `id` is nil
+    /// (later today, or a routine).
+    func editBlock(_ id: UUID?, routine: Bool = false) {
         show()
-        ui.editBlock(id, schedule: schedule)
+        ui.editBlock(id, schedule: schedule, routine: routine)
         focus()
+    }
+
+    /// Deletes a planned session or routine, with Undo in the widget.
+    func deleteBlock(_ id: UUID) {
+        show()
+        ui.delete(id, schedule: schedule)
     }
 
     /// Opens the dial for a timer.

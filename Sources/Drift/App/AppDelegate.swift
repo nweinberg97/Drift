@@ -118,6 +118,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
                 self?.widget.show()
             },
             showWidget: { [weak self] in self?.widget.show() },
+            planToday: { [weak self] in self?.widget.editBlock(nil, routine: false) },
+            newRoutine: { [weak self] in self?.widget.editBlock(nil, routine: true) },
+            deleteBlock: { [weak self] id in self?.widget.deleteBlock(id) },
             gettingStarted: { [weak self] in self?.welcome.show() }
         ))
 

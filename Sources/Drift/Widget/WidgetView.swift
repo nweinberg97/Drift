@@ -22,6 +22,8 @@ final class WidgetUIState: ObservableObject {
     @Published var shaking = false
     /// The "Scheduled" card at the top, after planning something.
     @Published var confirmation: Confirmation?
+    /// Just deleted: a bar with Undo shows for a few seconds.
+    @Published var deleted: ScheduledBlock?
     /// The dial's limit when a grace period (or a session) caps extra time.
     var dialMax: TimeInterval = WidgetUIState.dialMaximum
     var dialBaseExtra: TimeInterval = 0
@@ -36,8 +38,18 @@ final class WidgetUIState: ObservableObject {
 extension WidgetUIState {
     static let dialMaximum: TimeInterval = 12 * 3_600
 
-    /// Opens the editor on an existing block (as it runs today) or a new one.
-    func editBlock(_ id: UUID?, schedule: ScheduleStore) {
+    /// Deletes a planned session or routine, with Undo.
+    func delete(_ id: UUID, schedule: ScheduleStore) {
+        guard let block = schedule.block(id) else { return }
+        schedule.delete(id)
+        if confirmation?.blockID == id { confirmation = nil }
+        if blockDraft?.id == id { blockDraft = nil }
+        deleted = block
+    }
+
+    /// Opens the editor on an existing block (as it runs today) or a new one:
+    /// later today, or a routine.
+    func editBlock(_ id: UUID?, schedule: ScheduleStore, routine: Bool = false) {
         closeDial(commit: true, store: nil)
         renamingID = nil
         let now = schedule.now
@@ -52,11 +64,13 @@ extension WidgetUIState {
                                original: .init(name: name, startMinute: start, duration: dur, days: block.days),
                                windowStart: 0, steps: block.steps)
         } else {
-            let start = min(23 * 60, (nowMinute / 15 + 1) * 15 + 15)
-            draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: [1, 2, 3, 4, 5],
-                               date: schedule.dayKey, original: nil, windowStart: 0)
+            let start = routine ? 9 * 60 : min(23 * 60 + 30, (nowMinute / 15 + 1) * 15 + 15)
+            var date = schedule.dayKey
+            if !routine, start <= nowMinute, let t = cal.date(byAdding: .day, value: 1, to: now) { date = Schedule.dayKey(t) }
+            draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: routine ? [1, 2, 3, 4, 5] : nil,
+                               date: date, original: nil, windowStart: 0)
         }
-        draft.windowStart = max(0, min(1_440 - BlockTimeline.span, (draft.startMinute / 60) * 60 - 120))
+        draft.windowStart = BlockTimeline.window(around: draft.startMinute)
         blockDraft = draft
     }
 
@@ -132,7 +146,7 @@ struct WidgetView: View {
         if ui.blockDraft != nil { return max(editorWidth, cardWidth) }
         // The idle row, cards and sessions need room; a single timer hugs its content.
         if store.primary == nil || store.primary?.isFinished == true || store.primary?.isWaiting == true
-            || store.primary?.isSession == true || ui.confirmation != nil { return cardWidth }
+            || store.primary?.isSession == true || ui.confirmation != nil || ui.deleted != nil { return cardWidth }
         if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return expandedWidth }
         return nil
     }
@@ -141,6 +155,10 @@ struct WidgetView: View {
         VStack(alignment: .leading, spacing: 0) {
             if !ui.hideHint, let prompt = schedule.prompt, let occ = schedule.occurrenceToday(prompt.blockID) {
                 BlockPrompt(occurrence: occ, prompt: prompt, schedule: schedule, actions: actions)
+                    .transition(.opacity)
+            }
+            if !ui.hideHint, let gone = ui.deleted {
+                UndoBar(block: gone, ui: ui, schedule: schedule)
                     .transition(.opacity)
             }
             if !ui.hideHint, let c = ui.confirmation, let block = schedule.block(c.blockID) {
@@ -194,6 +212,7 @@ struct WidgetView: View {
         .animation(reduceMotion ? nil : Theme.quick, value: ui.blockDraft == nil)
         .animation(reduceMotion ? nil : Theme.quick, value: schedule.prompt)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.confirmation)
+        .animation(reduceMotion ? nil : Theme.quick, value: ui.deleted)
         .animation(reduceMotion ? nil : Theme.quick, value: store.primary?.isWaiting)
         .animation(reduceMotion ? nil : Theme.quick, value: store.timers.map(\.id))
         .fixedSize()
@@ -552,7 +571,7 @@ private struct ExpandedSection: View {
                         }
                     }
                     .buttonStyle(QuietButtonStyle())
-                    .help("Plan a session, like “Deep work 9–10:30 weekdays”")
+                    .help("Plan something for later today, or a routine")
                 }
                 Spacer()
                 Button { actions.hide() } label: {
@@ -1210,28 +1229,32 @@ private struct TodaySection: View {
                 } label: {
                     HStack(spacing: 4) {
                         Image(systemName: "plus").font(.system(size: 9, weight: .bold))
-                        Text("Schedule")
+                        Text("Plan")
                     }
                 }
                 .buttonStyle(QuietButtonStyle(prominent: true))
-                .help("Plan a session, like “Deep work 9–10:30 weekdays”")
+                .help("Plan something for later today. Or type “Deep work weekdays at 9” for a routine.")
             }
             .padding(.leading, 13 * scale)
             .padding(.trailing, 7 * scale)
             .padding(.top, 2)
 
             if entries.isEmpty {
-                Text(schedule.blocks.isEmpty ? "Plan a session from ⌥ Space: “Deep work 9–10:30 weekdays”" : "Nothing planned today")
+                Text(schedule.blocks.isEmpty ? "Plan from ⌥ Space: “Client call at 2pm for 30m”" : "Nothing planned today")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Theme.tertiaryText)
                     .padding(.horizontal, 13 * scale)
                     .padding(.bottom, 7)
             }
             ForEach(entries) { entry in
-                BlockRow(entry: entry) {
+                BlockRow(entry: entry, open: {
                     ui.editBlock(entry.block.id, schedule: schedule)
                     actions.focusPanel()
-                }
+                }, skip: {
+                    schedule.skipToday(entry.block.id, undo: entry.state == .skipped)
+                }, remove: {
+                    ui.delete(entry.block.id, schedule: schedule)
+                })
             }
         }
         .padding(.bottom, 3)
@@ -1241,6 +1264,8 @@ private struct TodaySection: View {
 private struct BlockRow: View {
     let entry: ScheduleStore.Entry
     let open: () -> Void
+    let skip: () -> Void
+    let remove: () -> Void
     @State private var hovering = false
 
     private var faded: Bool {
@@ -1277,16 +1302,29 @@ private struct BlockRow: View {
                 case .skipped: Tag(text: "Skipped", style: .plain)
                 case .upcoming, .passed: EmptyView()
                 }
+                // Easy to remove: hover and click ×. Undo shows at the top.
+                Button(action: remove) { Image(systemName: "xmark") }
+                    .buttonStyle(IconButtonStyle(size: 20))
+                    .opacity(hovering ? 1 : 0)
+                    .help(entry.block.isRepeating ? "Delete this routine" : "Delete")
+                    .accessibilityLabel("Delete \(entry.occurrence.name)")
             }
             .padding(.leading, 13)
-            .padding(.trailing, 9)
+            .padding(.trailing, 5)
             .frame(height: 26)
             .background(hovering ? Theme.control : Color.clear)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help("Click to change or skip")
+        .help("Click to change it")
+        .contextMenu {
+            Button("Edit…", action: open)
+            Button(entry.state == .skipped ? "Don’t Skip Today" : "Skip Today", action: skip)
+            Divider()
+            Button(entry.block.isRepeating ? "Delete Routine" : "Delete", action: remove)
+        }
+        .accessibilityAction(named: "Delete", remove)
         .accessibilityLabel("\(entry.occurrence.name), \(Schedule.range(startMinute: entry.occurrence.startMinute, duration: entry.occurrence.duration))")
     }
 }
@@ -1336,7 +1374,12 @@ private struct BlockEditor: View {
         let skipped = block?.status[key] == .skipped
         let twoWay = block?.isRepeating == true && todayOcc != nil && draft.changedTime && !draft.changedRepeat
         VStack(alignment: .leading, spacing: 0) {
-            TextField("What is this session for?", text: binding(\.name, ""))
+            Text(draft.id != nil ? (draft.days == nil ? "EDIT" : "EDIT ROUTINE") : (draft.days == nil ? "PLAN LATER TODAY" : "NEW ROUTINE"))
+                .font(.system(size: 10.5, weight: .semibold))
+                .kerning(0.4)
+                .foregroundStyle(Theme.accent)
+                .padding(.bottom, 6)
+            TextField("What is it for?", text: binding(\.name, ""))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13.5, weight: .semibold))
                 .focused($nameFocused)
@@ -1347,10 +1390,18 @@ private struct BlockEditor: View {
                 .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(nameFocused ? Theme.accent : Color.clear, lineWidth: 1))
                 .onAppear { if draft.name.isEmpty { DispatchQueue.main.async { nameFocused = true } } }
 
-            HStack(alignment: .firstTextBaseline) {
-                Text(Schedule.range(startMinute: draft.startMinute, duration: draft.duration))
-                    .font(Theme.digits(19))
-                    .foregroundStyle(Theme.primaryText)
+            // Click a time to type it exactly; drag on the timeline for rough moves.
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                TimeEntry(minute: draft.startMinute, label: "Start time") { m in
+                    ui.blockDraft?.startMinute = m
+                    ui.blockDraft?.windowStart = BlockTimeline.window(around: m)
+                }
+                Text("–").font(Theme.digits(19)).foregroundStyle(Theme.tertiaryText)
+                TimeEntry(minute: (draft.startMinute + Int(draft.duration / 60)) % 1_440, label: "End time") { m in
+                    var length = m - draft.startMinute
+                    if length <= 0 { length += 1_440 }
+                    ui.blockDraft?.duration = TimeInterval(max(5, min(16 * 60, length)) * 60)
+                }
                 Spacer()
                 Text(TimeFormatter.compact(draft.duration))
                     .font(.system(size: 11.5))
@@ -1362,9 +1413,11 @@ private struct BlockEditor: View {
             BlockTimeline(ui: ui, schedule: schedule)
 
             row("Start") {
-                ForEach([-15, -5, 5, 15], id: \.self) { (d: Int) in
+                ForEach([-5, -1, 1, 5], id: \.self) { (d: Int) in
                     Button(stepTitle(d)) {
-                        ui.blockDraft?.startMinute = max(0, min(1_435, draft.startMinute + d))
+                        let m = max(0, min(1_439, draft.startMinute + d))
+                        ui.blockDraft?.startMinute = m
+                        ui.blockDraft?.windowStart = BlockTimeline.window(around: m, current: draft.windowStart)
                     }
                     .buttonStyle(PillButtonStyle())
                 }
@@ -1414,9 +1467,9 @@ private struct BlockEditor: View {
 
             HStack(spacing: 6) {
                 if let id = draft.id {
-                    Button("Delete") {
-                        schedule.delete(id)
-                        close()
+                    Button(draft.days == nil ? "Delete" : "Delete routine") {
+                        ui.delete(id, schedule: schedule)
+                        actions.releaseFocus()
                     }
                     .buttonStyle(PillButtonStyle(destructive: true))
                 }
@@ -1437,7 +1490,7 @@ private struct BlockEditor: View {
                         .buttonStyle(PillButtonStyle(prominent: true))
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button(draft.id == nil ? "Schedule" : "Save") { save(todayOnly: false) }
+                    Button(draft.id != nil ? "Save" : draft.days == nil ? "Plan it" : "Add routine") { save(todayOnly: false) }
                         .buttonStyle(PillButtonStyle(prominent: true))
                         .keyboardShortcut(.defaultAction)
                 }
@@ -1521,13 +1574,16 @@ private struct BlockEditor: View {
     }
 
     private func onceTitle(_ draft: BlockDraft, _ key: String) -> String {
-        draft.days == nil && draft.date == key ? "Today only" : "Once"
+        guard draft.days == nil else { return "Today" }
+        if draft.date == key { return "Today" }
+        if let t = Calendar.current.date(byAdding: .day, value: 1, to: schedule.now), draft.date == Schedule.dayKey(t) { return "Tomorrow" }
+        return "Once"
     }
 
     private func stepTitle(_ d: Int) -> String { d > 0 ? "+\(d)" : "−\(-d)" }
 
     private func hint(twoWay: Bool, block: ScheduledBlock?) -> String {
-        guard twoWay, let block else { return "Drag the block to move it, its right edge to change the length." }
+        guard twoWay, let block else { return "Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it." }
         let all = allLabel(block)
         return "Save this change for today only, or for " + all.prefix(1).lowercased() + all.dropFirst() + "."
     }
@@ -1589,7 +1645,14 @@ private struct BlockEditor: View {
 /// Eight hours around the block. Drag it to move; drag its right edge to resize.
 /// Other blocks today show as grey shapes so you can see the gaps.
 struct BlockTimeline: View {
-    static let span = 480
+    /// Four hours: wide enough to see what's around, close enough to aim.
+    static let span = 240
+
+    /// The window that shows `minute` comfortably, keeping `current` if it already does.
+    static func window(around minute: Int, current: Int? = nil) -> Int {
+        if let current, minute >= current + 15, minute <= current + span - 45 { return current }
+        return max(0, min(1_440 - span, (minute - 60) / 30 * 30))
+    }
     @ObservedObject var ui: WidgetUIState
     @ObservedObject var schedule: ScheduleStore
     @State private var dragOrigin: (start: Int, duration: TimeInterval)?
@@ -1669,15 +1732,26 @@ struct BlockTimeline: View {
                 guard let draft = ui.blockDraft else { return }
                 if dragOrigin == nil { dragOrigin = (draft.startMinute, draft.duration) }
                 guard let origin = dragOrigin else { return }
-                let minutes = Int((g.translation.width / width * CGFloat(Self.span) / 5).rounded()) * 5
+                // Snaps to 5 minutes; hold ⌥ for single minutes.
+                let step = NSEvent.modifierFlags.contains(.option) ? 1 : 5
+                let raw = Double(g.translation.width / width * CGFloat(Self.span))
                 if resizing {
-                    let m = max(15, min(8 * 60, Int(origin.duration / 60) + minutes))
-                    ui.blockDraft?.duration = TimeInterval(m * 60)
+                    let end = Int(origin.duration / 60) + Int(raw.rounded())
+                    let snapped = step == 1 ? end : Int((Double(end) / 5).rounded()) * 5
+                    ui.blockDraft?.duration = TimeInterval(max(5, min(8 * 60, snapped)) * 60)
                 } else {
-                    ui.blockDraft?.startMinute = max(0, min(1_440 - 15, origin.start + minutes))
+                    let start = origin.start + Int(raw.rounded())
+                    let snapped = step == 1 ? start : Int((Double(start) / 5).rounded()) * 5
+                    ui.blockDraft?.startMinute = max(0, min(1_440 - 5, snapped))
                 }
             }
-            .onEnded { _ in dragOrigin = nil }
+            .onEnded { _ in
+                dragOrigin = nil
+                // Keep the block in view after a long drag.
+                if let d = ui.blockDraft {
+                    ui.blockDraft?.windowStart = BlockTimeline.window(around: d.startMinute, current: d.windowStart)
+                }
+            }
     }
 }
 

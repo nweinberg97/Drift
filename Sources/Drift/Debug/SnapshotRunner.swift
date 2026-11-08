@@ -61,6 +61,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         /// Show the "Scheduled" card for this block.
         var confirmFor: Int?
         var shaking = false
+        var routine = false
+        /// Show the Undo bar for this block.
+        var deletedFor: Int?
     }
 
     private func running(_ name: String?, total: TimeInterval, left: TimeInterval, pomodoro: PomodoroCycle? = nil) -> DriftTimer {
@@ -145,7 +148,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "34-plan-editor-just-today", timers: [writing], primary: writing.id, blocks: plan(), editBlock: 0,
                      editChange: { $0.startMinute += 30 }),
             Scenario(name: "35-plan-dark-expanded", timers: [], expanded: true, blocks: plan(), dark: true),
+            Scenario(name: "33b-plan-editor-routine", timers: [], blocks: plan(), editBlock: -1, routine: true),
             Scenario(name: "36-plan-scheduled-card", timers: [], blocks: plan(), confirmFor: 0),
+            Scenario(name: "39-plan-undo-delete", timers: [], expanded: true, blocks: plan(), deletedFor: 1),
             Scenario(name: "37-plan-scheduled-session", timers: [writing], primary: writing.id, blocks: plan(), confirmFor: 3),
             Scenario(name: "38-plan-scheduled-dark", timers: [], blocks: plan(), dark: true, confirmFor: 3),
         ]
@@ -197,11 +202,12 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                 prompt = .init(blockID: s.blocks[i].id, deadline: Date().addingTimeInterval(42))
             }
             schedule.replaceAll(s.blocks, prompt: prompt)
+            if let i = s.deletedFor, i < s.blocks.count { ui.deleted = s.blocks[i] }
             if let i = s.confirmFor, i < s.blocks.count {
                 ui.confirmation = .init(blockID: s.blocks[i].id, updated: false, until: Date().addingTimeInterval(15))
             }
             if let i = s.editBlock {
-                ui.editBlock(i >= 0 && i < s.blocks.count ? s.blocks[i].id : nil, schedule: schedule)
+                ui.editBlock(i >= 0 && i < s.blocks.count ? s.blocks[i].id : nil, schedule: schedule, routine: s.routine)
                 if i < 0 { ui.blockDraft?.name = "Weekly planning" }
                 if let change = s.editChange, var d = ui.blockDraft {
                     change(&d)
@@ -230,6 +236,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             ("28-launcher-session", "Morning startup: inbox 10m, plan the day 10m, review calendar 5m", true, false),
             ("29-launcher-session-later", "10m writing, 20m editing, 30m reading, 15m email triage, starting at 11:30pm today", true, false),
             ("29b-launcher-session-dark", "10m writing, 20m editing, 30m reading", true, true),
+            ("29c-launcher-routine", "Weekly planning 30m fri at 4pm", true, false),
+            ("29d-launcher-routine-session", "Morning startup: inbox 10m, plan the day 10m, weekdays at 8:30am", true, false),
         ]
         for (name, text, returning, dark) in launcher {
             settings.forgetRecents()

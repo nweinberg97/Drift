@@ -20,6 +20,9 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var editBlock: (UUID?) -> Void
         var startSession: (AppSettings.SavedSession) -> Void
         var showWidget: () -> Void
+        var planToday: () -> Void
+        var newRoutine: () -> Void
+        var deleteBlock: (UUID) -> Void
         var gettingStarted: () -> Void
     }
 
@@ -155,9 +158,23 @@ final class StatusItemController: NSObject, NSMenuDelegate {
                 case .skipped: prefix = "Skipped · "
                 default: prefix = ""
                 }
-                let row = action("\(occ.name)   \(prefix)\(Schedule.range(startMinute: occ.startMinute, duration: occ.duration))", #selector(editBlock(_:)))
-                row.representedObject = entry.block.id
+                let row = NSMenuItem(title: "\(occ.name)   \(prefix)\(Schedule.range(startMinute: occ.startMinute, duration: occ.duration))", action: nil, keyEquivalent: "")
                 row.indentationLevel = 1
+                // Edit, skip, or delete, right from the menu.
+                let sub = NSMenu()
+                sub.autoenablesItems = false
+                let edit = action("Edit…", #selector(editBlock(_:)))
+                edit.representedObject = entry.block.id
+                sub.addItem(edit)
+                let skip = action(entry.state == .skipped ? "Don’t Skip Today" : "Skip Today", #selector(skipBlock(_:)))
+                skip.representedObject = entry.block.id
+                skip.tag = entry.state == .skipped ? 1 : 0
+                sub.addItem(skip)
+                sub.addItem(.separator())
+                let delete = action(entry.block.isRepeating ? "Delete Routine" : "Delete", #selector(deleteBlock(_:)))
+                delete.representedObject = entry.block.id
+                sub.addItem(delete)
+                row.submenu = sub
                 let faded: Bool
                 switch entry.state {
                 case .done, .passed, .skipped: faded = true
@@ -194,7 +211,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             more.addItem(voiceItem)
         }
         if settings.featurePlan {
-            more.addItem(action("Schedule a Session…", #selector(newBlock)))
+            more.addItem(action("Plan Later Today…", #selector(newBlock)))
+            more.addItem(action("New Routine…", #selector(newRoutine)))
         }
         if more.numberOfItems > 0 {
             let moreItem = NSMenuItem(title: settings.savedSessions.isEmpty ? "More Ways to Start" : "Sessions and More", action: nil, keyEquivalent: "")
@@ -384,7 +402,16 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func newTimer() { actions.newTimer() }
-    @objc private func newBlock() { actions.editBlock(nil) }
+    @objc private func newBlock() { actions.planToday() }
+    @objc private func newRoutine() { actions.newRoutine() }
+    @objc private func skipBlock(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? UUID else { return }
+        schedule.skipToday(id, undo: sender.tag == 1)
+    }
+    @objc private func deleteBlock(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? UUID else { return }
+        actions.deleteBlock(id)
+    }
     @objc private func gettingStarted() { actions.gettingStarted() }
     @objc private func openSupport() { NSWorkspace.shared.open(AppInfo.supportURL) }
     @objc private func editBlock(_ sender: NSMenuItem) {
