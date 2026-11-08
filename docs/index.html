@@ -733,7 +733,7 @@
             <div class="mchips"><span>5m</span><span>10m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span></div>
             <div class="ind" id="m-more">More Ways to Start<b class="k">›</b></div>
             <div class="sep"></div>
-            <div id="m-focus"><span class="chk"></span>Focus Sound<b class="k" id="m-fs">Off ›</b></div>
+            <div id="m-focus"><span class="chk"></span>Focus Sound: <span id="m-fs">Off</span><b class="k">›</b></div>
             <div class="sep"></div>
             <div><span class="chk"></span>Hide Widget<b class="k">⌥T</b></div>
             <div><span class="chk"></span>Settings…<b class="k">⌘,</b></div>
@@ -1298,7 +1298,7 @@
     swName.textContent = ''; swName.classList.remove('add', 'editing'); chip('down'); swTray.innerHTML = '';
     sc.classList.remove('on', 'listening', 'long'); scText.textContent = ''; scGhost.textContent = ''; scSteps.hidden = scWhen.hidden = true; scChips.hidden = false;
     menu.classList.remove('on'); sub.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
-    menu.querySelectorAll('.hot').forEach(e => e.classList.remove('hot')); $('m-fs').textContent = 'Off ›';
+    menu.querySelectorAll('.hot').forEach(e => e.classList.remove('hot')); $('m-fs').textContent = 'Off';
     note.classList.remove('on'); waves.classList.remove('on');
     keys.innerHTML = '';
     cursor.style.opacity = 0; cursor.style.left = '600px'; cursor.style.top = '380px';
@@ -1628,7 +1628,7 @@
       await click(play, id);
       play.querySelector('.chk').textContent = '✓';
       await wait(450, id);
-      sub.classList.remove('on'); focus.classList.remove('hot'); $('m-fs').textContent = 'Rain ›';
+      sub.classList.remove('on'); focus.classList.remove('hot'); $('m-fs').textContent = 'Rain';
       menu.classList.remove('on'); mb.classList.remove('open');
       cursor.style.opacity = 0;
       waves.classList.add('on');

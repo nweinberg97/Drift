@@ -3,7 +3,7 @@
 <h1 align="center">Drift</h1>
 <p align="center"><em>Stay with it.</em></p>
 
-Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, write what you're working on and for how long (`Write intro 45m`), press Return. A small timer appears in the top-left corner of your screen, and you get back to work.
+Drift is a quiet focus timer for macOS. Press **⌥ Space** from any app, write what you're working on and for how long (`Reply to emails 25m`), press Return. A small timer appears in the top-left corner of your screen, and you get back to work. List a few time blocks (`Morning startup: inbox 10m, plan the day 10m, review calendar 5m`) and they run back to back as one session, now or at a time you pick.
 
 It needs no account and never touches the network.
 
@@ -42,40 +42,52 @@ Requirements: macOS 13 Ventura or newer. If the build fails on an older Mac, upd
 
 | Do this | How |
 |---|---|
-| Start a timer | **⌥ Space**, write the task and the time (`Write intro 45m`) → Return. The time is highlighted as you type, and a preview shows the timer you're about to start. |
-| Task, no time | Type just `Write intro`. Drift suggests your default length in grey; **Tab** or Return takes it. |
+| Start a timer | **⌥ Space**, write the task and the time (`Reply to emails 25m`) → Return. The time is highlighted as you type, and a preview shows the timer you're about to start. The box wraps onto more lines for long lists. **⌥ Space** always brings the launcher to the front; **Esc**, a click outside or **×** closes it. |
+| Nothing running | The widget asks "What are you working on?" and offers **▶ Start 25m** (your default), one-tap **10m 15m 45m 1h**, and **⋯** for any length on the dial. |
+| Task, no time | Type just `Draft proposal`. Drift suggests your default length in grey; **Tab** or Return takes it. |
 | Time, no task | Type `25` → Return. The timer shows **+ Add task** so you can name it later. |
-| Quick lengths | Chips for **5, 10, 15, 20, 25, 30, 45 min, 1 h, 2 h** (**⌘1–⌘9**). If you've written a task, a chip starts that task for that long. |
-| Repeat a task | Recent tasks appear under the empty launcher with their usual length. One click starts one. |
-| Speak | **⌥ V**, or **⌥ Space** twice, then say "twenty five minutes for reading". Drift stops listening when you pause. |
+| Quick lengths | While the launcher is empty: **5m 10m 15m 25m 45m 1h** (**⌘1–⌘9** for your quick starts). If you've written a task, a length starts that task for that long. The menu bar has the same quick lengths. |
+| Repeat a task | Recent tasks (and saved sessions) appear under the empty launcher with their usual length. One click starts one. |
+| Sessions | Several time blocks as one timer: `Morning startup: inbox 10m, plan the day 10m, review calendar 5m`, or just `Code review 30m, then reply to emails 15m` (commas, "then", or one per line). Each block starts when the one before ends; the launcher shows each block's clock time and when it all ends. Named sessions are saved for one-click reuse. |
+| Start a session later | The **Starts: Now / 2:00 PM / 2:30 PM / 3:00 PM** row adds "starting at 2pm today" to what you wrote. Typing `at 3pm` works too. |
+| Between blocks | A hand-off card: "✓ Inbox done · Next: Plan the day, 10m · starts in 10s", with **Start now** / **Pause**. Settings → **Next time block starts**: right away, 5s, 10s, 30s or when I press Start. |
+| Extra time | Time blocks don't stretch unless Settings → **Extra time in sessions** is on. **Grace period** (Off / 5 / 10 / 15 min) caps extra time per timer or time block. |
+| Speak | **⌥ V**, or **⌥ Space** twice, then say "twenty five minutes to reply to emails", or a whole session: "Morning startup, ten minutes of inbox, then ten minutes to plan the day, starting at 8". Drift stops listening when you pause. |
 | Show / hide the widget | **⌥ T**. While hidden, the time shows in the menu bar and timers keep running. |
 | Pause / resume | Click ⏸ on the widget, or type `pause` / `resume` in the launcher. |
 | Name or rename | Click a timer's name (or **+ Add task**) and type, right in the widget. Return saves. |
 | Change the time | Click the time to open the dial. Drag around it (a minute per notch, a full turn is an hour), scroll, or use the arrow keys (⇧ for 5 min). Or tap −5/−1/+1/+5 or a preset. Cancel puts the old time back. |
 | Multiple timers | Click the ⌄ button on the widget to expand it, then **+ New timer**. With several running, the button shows `+2`; click it to see them all. Each one's name and time are clickable too. |
 | Pomodoro | Type `pomodoro` or `50/10`, or press **⌘P** in the launcher. Focus and break alternate until you cancel. |
-| Plan your day | Type when instead of (or as well as) how long: `Deep work 9-10:30 weekdays`, `Gym 6-7pm mon wed fri`, `Email at 1pm for 30m`. When it happens is highlighted in blue. The block joins **Today** in the expanded widget and the menu bar. |
-| When a block comes up | A soft chime, a banner and a card in the widget: **Start**, **In 5 min** or **Skip today**. Ignore it and it starts by itself after a minute. Its timer ends when the block ends, so starting late keeps the time box. |
-| Change a block | Click it in **Today** (or the menu bar). Drag it on the timeline to move it, drag its right edge to change the length, or nudge the start, pick a length and the days it repeats. For a repeating block, choose **Just today** or every day it repeats. |
+| Schedule | Type when instead of (or as well as) how long: `Deep work 9-10:30 weekdays`, `Client call at 2pm for 30m`. When it happens is highlighted in blue. A **Scheduled** card at the top of the widget confirms what, when, each block's time and "Tomorrow at 9:00 AM, Drift checks in and starts it for you", with **Got it** / **Edit** / **Undo**. It joins **Today** in the expanded widget and the menu bar. Menu bar → More Ways to Start → **Schedule a Session…** opens the editor. |
+| When it's time | A soft chime, a banner and a card in the widget: **Start**, **In 5 min** or **Skip today**. Ignore it and it starts by itself after a minute. Its timer ends when it's scheduled to end, so starting late keeps the time box. |
+| Change a scheduled session | Click it in **Today** (or the menu bar). Drag it on the timeline to move it, drag its right edge to change the length, or nudge the start, pick a length and the days it repeats. For a repeating one, choose **Just today** or every day it repeats. |
+| Time's up | The widget shakes (Settings → **Shake the widget when time's up**, on by default; it stops the moment you touch the widget) and shows **TIME'S UP · Reply to emails · 25 minutes complete** with a big **Done**, **+5m** and **Restart**. Sessions end with **SESSION COMPLETE** and **Run again**. The notification reads "Time's up: Reply to emails". |
+| Less clutter | The launcher, widget and menu show only what fits the moment. The menu bar menu is short: timers, Today, New Timer… with quick lengths (5m 10m 15m 25m 45m 1h), **More Ways to Start** (saved sessions, Pomodoro, voice, scheduling), focus sound. Settings → **Features** has switches for Plan my day, Focus sounds, Pomodoro and Voice; turning one off removes it everywhere, nothing deleted. |
 | Move it | Drag the widget anywhere. It remembers the position and display. |
 
 ### What you can type (or say)
 
 ```
-Write intro 45m   → "Write intro", 45 minutes
-Write intro       → "Write intro", your default length (Tab to accept)
-check email 25m   → "Check email" (a task can start with any verb)
-25                25 minutes, no name yet (a bare number means minutes)
-Deep work 9-10:30 weekdays   → a block every weekday, 9:00–10:30
-Email at 1pm for 30m         → a block today (or tomorrow, if 1pm has passed)
-standup tomorrow at 9:15am   → once, with your default length
+Reply to emails 25m   → "Reply to emails", 25 minutes
+Draft proposal        → "Draft proposal", your default length (Tab to accept)
+code review 30m       → "Code review" (a task can start with any verb)
+25                    25 minutes, no name yet (a bare number means minutes)
+Morning startup: inbox 10m, plan the day 10m, review calendar 5m
+                      → a session: 3 time blocks, back to back
+Code review 30m, then reply to emails 15m
+                      → a session without a name
+… starting at 2pm today · … at 3pm      → the same, scheduled
+Deep work 9-10:30 weekdays   → every weekday, 9:00–10:30
+Client call at 2pm for 30m   → once, today (or tomorrow, if 2pm has passed)
+prep for standup tomorrow at 9:15am   → once, with your default length
 1:30              1 hour 30 minutes
 90s · 2h 15m · 36h · 3d · 1.5h
 an hour and a half · half an hour · twenty five minutes
 pomodoro · 50/10
-pause · resume · pause laundry
+pause · resume · pause code review
 add 5 minutes · take 5 minutes off focus
-cancel the laundry timer · show my timers · hide
+cancel the code review timer · show my timers · hide
 ```
 
 The launcher previews what Return will do as you type, so there are no surprises.
@@ -85,8 +97,8 @@ The launcher previews what Return will do as you type, so there are no surprises
 Drift handles `drift://` links:
 
 ```bash
-open "drift://start?duration=25m&name=Writing"
-open "drift://run?q=45%20minutes%20reading"
+open "drift://start?duration=25m&name=Reply%20to%20emails"
+open "drift://run?q=45%20minutes%20draft%20proposal"
 open "drift://new"     # launcher
 open "drift://voice"   # start listening
 open "drift://show"    # drift://hide, drift://toggle
@@ -102,15 +114,17 @@ Any website can try to open a custom link, so links can only start, show, pause,
 
 Drift is a menu-bar utility with one floating widget. It does one job: it gets a timer running in under two seconds from anywhere, then stays out of the way.
 
-- **Floating widget** (top-left by default). It's a single line showing the state dot, the task, the time and pause. Click the task to rename it in place, click the time for the dial, click the ⌄ to expand. You can drag it, it remembers its position, and it shows above full-screen apps on every Space.
-- **Launcher** (⌥ Space). A task-first, Spotlight-style field: "What are you working on?" It highlights the time it found, previews the timer, suggests your default length when you leave it out, lists recent tasks, and has preset chips and a mic button.
-- **Scheduled blocks**. Plan time boxes in words (`Deep work 9-10:30 weekdays`). When one comes up Drift asks, then starts it on its own; it ends on schedule. Edit on a timeline, for every day or just today. Stored in `~/Library/Application Support/Drift/schedule.json`.
+- **Floating widget** (top-left by default). With nothing running it asks "What are you working on?" and offers ▶ Start 25m, four one-tap lengths and ⋯ for any length. While a timer runs it's a single line showing the state dot, the task, the time and pause. Click the task to rename it in place, click the time for the dial, click the ⌄ to expand. You can drag it, it remembers its position, and it shows above full-screen apps on every Space.
+- **Launcher** (⌥ Space). A task-first, Spotlight-style field: "What are you working on?" It wraps onto more lines for long lists, highlights the time it found, previews the timer (or each time block with its clock time), suggests your default length when you leave it out, and, while empty, lists quick lengths and recent tasks. It has a mic button, a × close button and a Starts row for sessions.
+- **Sessions**. One timer made of time blocks that run back to back (`Morning startup: inbox 10m, plan the day 10m, review calendar 5m`). A hand-off card between blocks; named sessions are saved. Blocks don't stretch unless Settings allows it; an optional grace period caps extra time.
+- **Scheduling**. Plan sessions in words (`Deep work 9-10:30 weekdays`, `Client call at 2pm for 30m`). A Scheduled card confirms each one. When one comes up Drift asks, then starts it on its own; it ends on schedule. Edit on a timeline, for every day or just today. Stored in `~/Library/Application Support/Drift/schedule.json`.
 - **Voice** (⌥ V). Push-to-talk, recognised on-device, using the same command grammar as typing.
 - **Multiple timers**. One featured timer plus an expandable tray, never a wall of widgets.
-- **Menu bar**. A tiny ring that empties as time passes, every timer with a full submenu (pause, ±5m, change time, rename, duplicate, cancel), presets, Pomodoro, focus sound, settings.
+- **Menu bar**. A tiny ring that empties as time passes. A short menu: every timer with a submenu (pause, ±5m, change time, rename, duplicate, cancel), Today, New Timer… with quick lengths (5m 10m 15m 25m 45m 1h), More Ways to Start (saved sessions, Pomodoro, voice, Schedule a Session…), focus sound, settings.
 - **Sound**. A soft synthesised start tick and a three-note completion bell that keeps chiming until you dismiss it (or once, if you prefer). **Focus sound** is off by default and offers nine sounds in three sets, all generated live and offline: Nature (Rain, Ocean, Fireplace), Chill (Lo-fi, Ambient, Soft Pad) and Focus (Hush, Binaural Focus, Binaural Calm).
 - **Notifications** are scheduled with macOS at start, so they arrive on time even if Drift is asleep or quit.
-- **Settings** are one short page: default length, presets, finished-timer behavior, theme, widget size and opacity, sounds, shortcuts and launch at login.
+- **Time's up**. The widget shakes until you touch it (optional) and shows a Time's up card with a big Done, +5m and Restart.
+- **Settings** are one short page: Features switches (Plan my day, Focus sounds, Pomodoro, Voice), default length, presets, shake, finished-timer behavior, sessions and extra time, theme, widget size and opacity, sounds, shortcuts and launch at login.
 
 ## 2. Architecture
 
@@ -120,7 +134,7 @@ Drift is a menu-bar utility with one floating widget. It does one job: it gets a
 Sources/
   DriftCore/            Pure logic, no UI, fully unit-tested
     DriftTimer.swift      state machine: idle → running(endDate) ⇄ paused(remaining) → finished
-    DurationParser.swift  "1h 30m", "45m writing", "an hour and a half" → seconds + name
+    DurationParser.swift  "1h 30m", "45m code review", "an hour and a half" → seconds + name
     CommandParser.swift   typed/spoken commands → DriftCommand
     TimeFormatter.swift   7:32 · 1:42:18 · 27h 14m · 3d 6h
   Drift/                The app (SwiftUI views hosted in AppKit windows)
@@ -147,15 +161,16 @@ Key decisions:
 - **One key, then type.** The fastest way to start a timer from anywhere is a launcher, not a button. ⌥ Space + `25` + Return takes about a second. Return on an empty field starts your default, so it's two keystrokes in total.
 - **Task first.** The launcher asks what you're working on, because a named timer is easier to come back to. The time can go anywhere in the sentence, and if you leave it out you get your default.
 - **Edit where it is.** Names and times are edited in place: click the name to type, click the time for a dial. No separate edit screens.
-- **A bare number means minutes**, and `1:30` means hours:minutes, because that's what people mean. Leftover words become the name (`45m writing` → *Writing*), so you never have to fill in a name field.
-- **A live preview under the field** shows exactly what Return will do ("Start 45:00 · Writing", "Pause · Laundry"). That removes the guesswork from parsing.
+- **A bare number means minutes**, and `1:30` means hours:minutes, because that's what people mean. Leftover words become the name (`45m code review` → *Code review*), so you never have to fill in a name field.
+- **A live preview under the field** shows exactly what Return will do ("Start 45:00 · Code review", "Pause · Reply to emails"). That removes the guesswork from parsing.
 - **Push-to-talk voice, not a wake word.** An always-on "Hey Drift" would keep your microphone open all day, so voice listens only after ⌥ V and stops on silence. For hands-free use, Siri works through a Shortcut and a `drift://` link.
 - **One featured timer.** Several timers collapse into a `+N` badge, and expanding shows a compact tray sorted by what ends soonest. Click any timer to feature it.
 - **The accent color means "something is happening."** A warm ember accent marks only running timers, the last minute and completion. Everything else is warm neutral, so the widget is calm enough to leave on screen all day.
 - **Tabular digits in a stable box.** The width changes only when the format does (10:00 → 9:59), never every second.
 - **Hiding is safe.** The time moves into the menu bar, timers keep running, and ⌥ T brings the widget back.
-- **Completion is quiet.** A soft bell and one notification, the widget shows *Done*, and +5m snoozes. Drift never auto-starts another timer unless you chose Pomodoro.
-- **No onboarding screens.** On first launch the widget shows your default timer with ▶ and a one-line hint (`⌥ Space  new timer from anywhere`). The hint disappears once you've used the shortcut.
+- **Completion is hard to miss, then gets out of the way.** A soft bell, one notification ("Time's up: Reply to emails"), a shake that stops when you touch the widget, and a card with one big Done. +5m snoozes. Drift never auto-starts another timer unless you chose Pomodoro, a session (its next block) or a scheduled session.
+- **No frozen 25:00.** With nothing running, the widget asks what you're working on and starts with one tap, instead of showing a timer that isn't running.
+- **Show only what fits the moment.** Quick lengths and recents show only while the launcher is empty; features you switch off in Settings disappear from every menu.
 
 ## 4. How to run it
 
@@ -183,8 +198,11 @@ To open in Xcode: `open Package.swift`. Note that notifications and the app sand
 **By hand:**
 
 - [ ] ⌥ Space in Chrome, VS Code and a full-screen app → type `25` → Return → the timer appears top-left
-- [ ] Try `90s`, `1:30`, `2h 15m`, `36h`, `Write intro 45m`, `Write intro` (Tab), `pomodoro`. Each preview should be correct and the time highlighted.
-- [ ] Type `Standup at <two minutes from now> for 15m`. When it comes up: chime, banner, the card; leave it and it starts itself after a minute and ends at the block's end.
+- [ ] Try `90s`, `1:30`, `2h 15m`, `36h`, `Draft proposal 45m`, `Draft proposal` (Tab), `pomodoro`. Each preview should be correct and the time highlighted.
+- [ ] Type `Morning startup: inbox 1m, plan the day 1m, review calendar 1m`: each block shows its clock time; tap a time in Starts and the text gains "starting at … today". Start it now: the hand-off card appears between blocks; the session ends with Session complete.
+- [ ] Type `Prep for standup at <two minutes from now> for 15m`. The Scheduled card confirms it. When it comes up: chime, banner, the card; leave it and it starts itself after a minute and ends on schedule.
+- [ ] With nothing running: the widget shows "What are you working on?", ▶ Start 25m, 10m 15m 45m 1h and ⋯.
+- [ ] Settings → Features: turn off Pomodoro and Voice; they disappear from the launcher, widget and menu. Turn them back on.
 - [ ] Edit a repeating block: move it 30 minutes and choose **Just today**; tomorrow's time is unchanged.
 - [ ] Click **+ Add task** on an unnamed timer, type, Return. Click the time, drag the dial, scroll, press arrows, then Cancel (time restores) and Done.
 - [ ] Click the widget's pause while typing in another app. Keep typing: your keystrokes still land in that app.
@@ -192,14 +210,14 @@ To open in Xcode: `open Package.swift`. Note that notifications and the app sand
 - [ ] Start 3 timers → `+2` badge → expand → click one to feature it
 - [ ] Drag the widget, quit Drift, reopen → same place, timers still running
 - [ ] ⌥ T hides it → time shows in the menu bar → ⌥ T brings it back
-- [ ] Start a `5s` timer → bell + notification → *Done* → +5m snoozes
+- [ ] Start a `5s` timer → bell + notification ("Time's up: …") + shake → touching the widget stops the shake → +5m snoozes, Done clears it
 - [ ] Start a 2m timer, sleep the Mac for 5 minutes, wake → timer shows Done, with no late chime
 - [ ] Unplug the external display the widget is on → it moves back to the main display
 - [ ] Menu bar → Focus Sound on → start a timer → sound fades in. Pause → it fades out. Try each soundscape and the volume slider.
-- [ ] ⌥ V → "start a 10 minute timer called break". Then try "pause", "add 5 minutes", "cancel the break timer" and "show my timers". Saying nonsense should give a friendly hint.
+- [ ] ⌥ V → "start a 10 minute timer called code review". Then try "pause", "add 5 minutes", "cancel the code review timer" and "show my timers". Saying nonsense should give a friendly hint.
 - [ ] Settings → re-record a shortcut → it works from other apps
 - [ ] Turn on Reduce Motion and Increase Contrast. Use VoiceOver on the widget and menu.
-- [ ] `open "drift://start?duration=3m&name=Tea"`
+- [ ] `open "drift://start?duration=3m&name=Prep%20for%20standup"`
 
 ## 6. Known limitations
 
