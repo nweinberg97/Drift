@@ -89,19 +89,20 @@ jobs:
           /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Contents/Info.plist"
           lipo -info "$APP"/Contents/MacOS/*
 
-  # Older toolchain: Command Line Tools / Xcode 15.x ship Swift 5.10, which is
-  # stricter about some concurrency patterns. Users building from source with
-  # older tools must not hit compile errors.
-  build-swift-5-10:
-    runs-on: macos-14
+  # Oldest toolchain GitHub still offers (macos-14 and Xcode 15 are retired):
+  # catches code that only builds with the newest compiler.
+  build-oldest-xcode:
+    runs-on: macos-15
     timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
-      - name: Select Xcode 15.4 (Swift 5.10)
+      - name: Select the oldest installed Xcode
         run: |
-          sudo xcode-select -s /Applications/Xcode_15.4.app
+          XC=$(ls -d /Applications/Xcode_*.app | sort -V | head -1)
+          echo "Using $XC"
+          sudo xcode-select -s "$XC"
           swift --version
       - name: Compile
         run: scripts/ci-run.sh swift build -c release

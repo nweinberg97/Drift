@@ -63,7 +63,7 @@ extension WidgetUIState {
     func beginRename(_ t: DriftTimer) {
         guard t.pomodoro == nil else { return }
         closeDial(commit: true, store: nil)
-        draft = t.name ?? ""
+        draft = (t.isSession ? t.currentBlock?.name : t.name) ?? ""
         renamingID = t.id
     }
 
@@ -812,6 +812,9 @@ private struct TaskLabel: View {
 
     @FocusState private var focused: Bool
 
+    /// In a session, the label is the time block you're on.
+    private var label: String? { timer.isSession ? timer.currentBlock?.name : timer.name }
+
     var body: some View {
         if ui.renamingID == timer.id {
             TextField("What is it for?", text: $ui.draft)
@@ -843,7 +846,7 @@ private struct TaskLabel: View {
                 ui.beginRename(timer)
                 actions.focusPanel()
             } label: {
-                if let name = timer.name {
+                if let name = label {
                     Text(name)
                         .font(.system(size: size, weight: .medium))
                         .foregroundStyle(Theme.secondaryText)
@@ -859,9 +862,9 @@ private struct TaskLabel: View {
             }
             .buttonStyle(EditableTextStyle(active: false))
             .frame(maxWidth: maxWidth, alignment: .leading)
-            .fixedSize(horizontal: timer.name == nil, vertical: false)
-            .help(timer.name == nil ? "Add what this timer is for" : "Click to rename")
-            .accessibilityLabel(timer.name.map { "Task: \($0). Rename" } ?? "Add task")
+            .fixedSize(horizontal: label == nil, vertical: false)
+            .help(label == nil ? "Add what this timer is for" : (timer.isSession ? "\(timer.name ?? "Session"): block \(timer.step + 1) of \(timer.steps?.count ?? 0). Click to rename" : "Click to rename"))
+            .accessibilityLabel(label.map { "Task: \($0). Rename" } ?? "Add task")
         }
     }
 
