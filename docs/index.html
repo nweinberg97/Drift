@@ -277,7 +277,7 @@
 
   /* Composer inside the stage */
   .s-composer {
-    position: absolute; left: 50%; top: 110px; width: 500px; margin-left: -250px; z-index: 5;
+    position: absolute; left: 50%; top: 96px; width: 540px; margin-left: -270px; z-index: 5;
     background: rgba(44,40,37,0.94); backdrop-filter: blur(24px);
     border: 0.5px solid rgba(255,255,255,0.13); border-radius: 16px;
     box-shadow: 0 30px 70px -20px rgba(0,0,0,0.8);
@@ -285,13 +285,26 @@
     transition: opacity .18s, transform .22s cubic-bezier(.2,.8,.2,1);
   }
   .s-composer.on { opacity: 1; transform: none; }
-  .sc-in { display: flex; align-items: center; gap: 12px; height: 60px; padding: 0 16px; font: 400 21px var(--display); }
-  .sc-in .ed { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); margin: 0 7px; flex: none; transition: transform .1s; }
+  .sc-in { display: flex; align-items: flex-start; gap: 12px; min-height: 60px; padding: 15px 14px 13px 16px; font: 400 21px/30px var(--display); }
+  .sc-in .ed { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); margin: 11px 7px 0; flex: none; transition: transform .1s; }
+  .sc-tx { flex: 1; min-width: 0; white-space: pre-wrap; overflow-wrap: break-word; }
+  .s-composer.long .sc-in { font-size: 18px; line-height: 26px; }
+  .s-composer.long .sc-in .ed { margin-top: 9px; }
+  .s-composer [hidden] { display: none !important; }
+  .sc-x { color: var(--muted); width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; margin-top: 4px; flex: none; }
+  .sc-x svg { width: 9px; height: 9px; fill: currentColor; }
+  .sc-steps { display: flex; flex-wrap: wrap; gap: 4px 5px; padding: 0 16px 10px; }
+  .sc-steps span, .launcher .l-steps span { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 11.5px; white-space: nowrap; }
+  .sc-steps em, .launcher .l-steps em { font-style: normal; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .sc-steps i, .launcher .l-steps i { font-style: normal; color: var(--faint); font-size: 11px; align-self: center; }
+  .sc-when { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; padding: 0 16px 12px; font-size: 11.5px; color: var(--muted); }
+  .sc-when span.b, .launcher .l-when button { height: 22px; padding: 0 9px; border-radius: 6px; background: rgba(255,255,255,0.08); font: 600 11.5px/22px var(--sans); color: var(--cream); font-variant-numeric: tabular-nums; transition: background .15s, filter .15s; }
+  .sc-when span.b.on, .launcher .l-when button.on { background: var(--ember-deep); color: #fff; }
+  .sc-when span.b.hot { background: rgba(255,255,255,0.2); }
+  .sc-when .q, .launcher .l-when .q { color: var(--faint); margin-left: 4px; }
   .s-composer.listening .sc-in .ed { animation: listen .5s ease-in-out infinite alternate; }
   @keyframes listen { to { transform: scale(2.1); box-shadow: 0 0 14px rgba(242,163,110,0.8); } }
   .sc-text:empty::before { content: attr(data-ph); color: var(--faint); }
-  .sc-text { white-space: pre; }
-  .sc-ghost { margin-left: -12px; white-space: pre; }
   .sc-text .pill, .launcher .pill { color: var(--ember); background: rgba(242,163,110,0.16); box-shadow: 0 0 0 3px rgba(242,163,110,0.16); border-radius: 5px; }
   .sc-text .ghost, .launcher .ghost { color: var(--faint); }
   .ghost kbd { font: 500 10px var(--sans); color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 4px; vertical-align: 4px; margin-left: 6px; }
@@ -301,16 +314,85 @@
   .mini .num { font-variant-numeric: tabular-nums; }
   .sc-pre .h, .pre .h { color: var(--faint); font-weight: 400; margin-left: auto; white-space: nowrap; }
   .sc-pre .h + kbd, .pre .h + kbd { margin-left: 0; }
-  .sc-caret { width: 2px; height: 24px; background: var(--ember); margin-left: -10px; animation: blink 1s steps(1) infinite; }
+  .sc-caret { display: inline-block; width: 2px; height: 24px; background: var(--ember); margin-left: 1px; vertical-align: -5px; animation: blink 1s steps(1) infinite; }
+  .s-composer.long .sc-caret { height: 21px; }
   .s-composer.listening .sc-caret { display: none; }
-  .sc-mic { margin-left: auto; color: var(--muted); }
+  .sc-mic { margin-left: auto; color: var(--muted); margin-top: 3px; flex: none; }
   .s-composer.listening .sc-mic { color: var(--ember); }
   .sc-mic svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; }
   .sc-pre { display: flex; align-items: center; gap: 8px; height: 34px; padding: 0 16px; border-top: 0.5px solid rgba(255,255,255,0.1); font-size: 12.5px; font-weight: 500; }
   .sc-pre .m { color: var(--muted); }
   .sc-pre kbd { margin-left: auto; font-size: 10.5px; color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 6px; border-radius: 4px; }
-  .sc-chips { display: flex; gap: 5px; padding: 2px 12px 12px; }
+  .sc-chips { display: flex; align-items: center; gap: 5px; padding: 2px 12px 12px; }
   .sc-chips span { font-size: 11px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,0.07); border-radius: 7px; padding: 5px 8px; }
+  .sc-chips em { margin-left: auto; font-style: normal; font-size: 10.5px; color: var(--faint); white-space: nowrap; }
+  .mini.sess svg { width: 11px; height: 11px; fill: none; stroke: var(--ember); stroke-width: 1.5; }
+  .mini.sess i { display: none; }
+  .mini.sess .num { color: var(--muted); font-weight: 500; }
+
+  /* Widget: nothing running */
+  .sw-idle { display: none; width: 276px; }
+  .s-widget.idle .sw-idle { display: block; }
+  .s-widget.idle .sw-row, .s-widget.idle .sw-seg, .s-widget.idle .sw-exp { display: none; }
+  .sw-idle .top { display: flex; align-items: center; gap: 8px; padding: 10px 8px 4px 13px; font-size: 12.5px; font-weight: 600; }
+  .sw-idle .top .q { flex: 1; }
+  .sw-idle .top kbd { font-size: 10px; font-weight: 500; color: var(--muted); background: rgba(255,255,255,0.08); padding: 2px 5px; border-radius: 4px; }
+  .sw-idle .go { display: flex; gap: 4px; padding: 4px 8px 9px; }
+  .sw-idle .go span { flex: 1 1 auto; height: 26px; display: grid; place-items: center; padding: 0 5px; border-radius: 7px; background: rgba(255,255,255,0.08); font-size: 11.5px; font-weight: 600; font-variant-numeric: tabular-nums; white-space: nowrap; transition: background .15s, filter .15s; }
+  .sw-idle .go span.hot { background: rgba(255,255,255,0.2); }
+  .sw-idle .go .st { flex: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 11px; background: var(--ember-deep); color: #fff; }
+  .sw-idle .go .st.hot { background: var(--ember-deep); filter: brightness(1.2); }
+  .sw-idle .go .st svg { width: 8px; height: 8px; fill: currentColor; }
+  .sw-idle .go .more { flex: none; width: 28px; color: var(--muted); }
+  .s-widget.idle.has-next .sw-next { display: flex; padding-left: 13px; margin-top: -2px; }
+  .sw-next { white-space: nowrap; }
+
+  /* Widget: a session's time blocks */
+  .sw-seg { display: flex; gap: 2px; height: 3px; margin: -5px 13px 8px 29px; }
+  .sw-seg:empty, .s-widget.open .sw-seg { display: none; }
+  .sw-seg i { position: relative; flex: var(--f) 1 0; border-radius: 2px; background: rgba(255,255,255,0.13); overflow: hidden; }
+  .sw-seg i.done { background: rgba(242,163,110,0.45); }
+  .sw-seg i.now::after { content: ""; position: absolute; inset: 0 auto 0 0; width: var(--p, 0%); background: var(--ember); }
+  .sw-sess { padding: 0 0 6px; min-width: 262px; }
+  .sw-sess:empty { display: none; }
+  .sw-sess .sh { padding: 2px 13px 5px; font-size: 10.5px; color: var(--faint); white-space: nowrap; }
+  .sw-sess .sh b { color: var(--cream); font-size: 11.5px; font-weight: 650; margin-right: 3px; }
+  .sw-sess .r { display: flex; align-items: center; gap: 8px; height: 24px; padding: 0 13px; font-size: 11.5px; }
+  .sw-sess .r .ck { width: 10px; color: var(--ember); font-size: 10px; }
+  .sw-sess .r .t { width: 36px; color: var(--faint); font-size: 10.5px; font-variant-numeric: tabular-nums; }
+  .sw-sess .r b { flex: 1; font-weight: 500; color: var(--muted); white-space: nowrap; }
+  .sw-sess .r .l { color: var(--faint); font-variant-numeric: tabular-nums; }
+  .sw-sess .r.now { background: rgba(242,163,110,0.12); }
+  .sw-sess .r.now b { color: var(--cream); font-weight: 600; }
+  .sw-sess .r.now .l { color: var(--ember); font-weight: 600; }
+  .sw-sess .r.done b { color: var(--faint); text-decoration: line-through; }
+
+  /* Cards on the widget: scheduled, hand-off, time's up. Shared with the Try it widget. */
+  .sw-card { width: 276px; }
+  .sw-card:empty { display: none; }
+  .cd { margin: 6px; padding: 10px 11px; border-radius: 10px; background: rgba(242,163,110,0.14); }
+  .cd .lb { display: flex; align-items: center; gap: 6px; font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; color: var(--ember); }
+  .cd .lb svg { width: 11px; height: 11px; fill: none; stroke: currentColor; stroke-width: 1.5; stroke-linecap: round; stroke-linejoin: round; }
+  .cd .lb .at { margin-left: auto; color: var(--faint); text-transform: none; letter-spacing: 0; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .cd .pt { font-size: 12.5px; font-weight: 650; }
+  .cd .pt i { font-style: normal; color: var(--ember); margin-right: 6px; }
+  .cd .nm { margin-top: 4px; font: 600 15px/1.25 var(--display); }
+  .cd .sb { margin-top: 2px; font-size: 11px; color: var(--muted); font-variant-numeric: tabular-nums; }
+  .cd .sb b { color: var(--cream); font-weight: 600; }
+  .cd .bl { margin-top: 7px; display: grid; gap: 2px; font-size: 11px; }
+  .cd .bl div { display: flex; gap: 8px; }
+  .cd .bl em { width: 32px; font-style: normal; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .cd .bl span { margin-left: auto; color: var(--faint); font-variant-numeric: tabular-nums; }
+  .cd .ex { margin-top: 7px; font-size: 10.5px; line-height: 1.45; color: var(--muted); }
+  .cd .bt { display: flex; gap: 5px; margin-top: 9px; }
+  .cd .bt > * { padding: 5px 10px; border: 0; border-radius: 7px; background: rgba(255,255,255,0.1); color: var(--cream); font: 600 11.5px/1.2 var(--sans); white-space: nowrap; transition: filter .15s, background .15s; }
+  .cd .bt .pri { background: var(--ember-deep); color: #fff; }
+  .cd .bt .big { flex: 1; text-align: center; }
+  .cd .bt .hot { filter: brightness(1.35); }
+  .cd.plain { background: transparent; margin: 0; padding: 11px 10px 10px 13px; }
+  .s-widget.tup .sw-row, .s-widget.tup .sw-next, .s-widget.tup .sw-seg, .s-widget.tup .sw-idle, .s-widget.tup .sw-exp { display: none; }
+  .s-widget.shake, .float.shake { animation: shake 2.6s ease-in-out infinite; }
+  @keyframes shake { 0%, 26%, 100% { transform: none; } 3% { transform: translateX(-7px) rotate(-1deg); } 6% { transform: translateX(7px) rotate(1deg); } 9% { transform: translateX(-6px) rotate(-0.8deg); } 12% { transform: translateX(6px) rotate(0.8deg); } 15% { transform: translateX(-4px); } 18% { transform: translateX(4px); } 21% { transform: translateX(-2px); } 24% { transform: translateX(1px); } }
 
   /* Menu dropdown */
   .s-menu {
@@ -328,6 +410,14 @@
   .s-menu div.ind { padding-left: 26px; color: var(--muted); }
   .s-menu .chk { width: 10px; color: var(--ember); }
   .s-menu b { margin-left: auto; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .s-menu b.k { font-weight: 400; color: var(--muted); }
+  .s-menu div.hot b.k { color: #fff; }
+  .s-menu div.mchips { display: grid; grid-template-columns: repeat(6, 1fr); gap: 4px; height: auto; padding: 3px 8px 6px 26px; }
+  .s-menu div.mchips span { height: 21px; display: grid; place-items: center; border-radius: 5px; background: rgba(255,255,255,0.08); font-size: 11px; font-weight: 500; font-variant-numeric: tabular-nums; }
+  .s-sub { right: 316px; width: 292px; }
+  .s-sub div { white-space: nowrap; }
+  .s-menu div.ind.hot { color: #fff; }
+  .sc-pre .mini.sess + .h { display: none; }
   .waves { position: absolute; left: 16px; top: 92px; display: flex; gap: 3px; align-items: flex-end; height: 18px; padding-left: 14px; opacity: 0; transition: opacity .6s; z-index: 4; }
   .waves.on { opacity: 1; }
   .waves i { width: 3px; border-radius: 2px; background: var(--ember); animation: wave 1.2s ease-in-out infinite alternate; }
@@ -379,7 +469,7 @@
   .features span { display: block; font-size: 14px; color: var(--faint); margin-top: 3px; max-height: 0; opacity: 0; overflow: hidden; transition: max-height .35s, opacity .3s; }
   .features .active { background: rgba(244,238,230,0.05); }
   .features .active b { color: var(--cream); }
-  .features .active span { max-height: 60px; opacity: 1; color: var(--muted); }
+  .features .active span { max-height: 84px; opacity: 1; color: var(--muted); }
   .features i { position: absolute; left: 16px; right: 16px; bottom: 6px; height: 2px; border-radius: 2px; background: rgba(244,238,230,0.08); opacity: 0; }
   .features .active i { opacity: 1; }
   .features i::after { content: ""; position: absolute; inset: 0; width: var(--p, 0%); background: var(--ember); border-radius: 2px; }
@@ -393,14 +483,28 @@
     box-shadow: 0 0 0 6px rgba(242,163,110,0.05), 0 40px 80px -30px rgba(0,0,0,0.8);
     overflow: hidden;
   }
-  .launcher label { display: flex; align-items: center; gap: 12px; height: 70px; padding: 0 20px; cursor: text; }
-  .launcher .ed { width: 9px; height: 9px; border-radius: 50%; background: var(--ember); flex: none; margin: 0 6px; box-shadow: 0 0 12px rgba(242,163,110,0.7); }
-  .launcher .field { position: relative; flex: 1; min-width: 0; height: 32px; }
-  .launcher input, .launcher .mirror { position: absolute; inset: 0; width: 100%; font: 400 24px/32px var(--display); padding: 0; margin: 0; border: 0; letter-spacing: 0; white-space: pre; }
-  .launcher input { color: transparent; caret-color: var(--ember); background: transparent; outline: none; }
-  .launcher .mirror { pointer-events: none; color: var(--cream); overflow: hidden; }
-  .launcher input::placeholder { color: var(--faint); }
-  .launcher .pre { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 20px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 500; }
+  .launcher label { display: flex; align-items: flex-start; gap: 12px; min-height: 70px; padding: 0 20px; cursor: text; }
+  .launcher .ed { width: 9px; height: 9px; border-radius: 50%; background: var(--ember); flex: none; margin: 30px 6px 0; box-shadow: 0 0 12px rgba(242,163,110,0.7); }
+  .launcher .field { position: relative; flex: 1; min-width: 0; margin: 19px 0; }
+  .launcher textarea, .launcher .mirror { display: block; width: 100%; font: 400 24px/32px var(--display); padding: 0; margin: 0; border: 0; letter-spacing: 0; white-space: pre-wrap; overflow-wrap: break-word; word-break: normal; }
+  .launcher textarea { position: absolute; inset: 0; height: 100%; color: transparent; caret-color: var(--ember); background: transparent; outline: none; resize: none; overflow: hidden; }
+  .launcher .mirror { pointer-events: none; color: var(--cream); min-height: 32px; }
+  .launcher.long textarea, .launcher.long .mirror { font-size: 20px; line-height: 28px; }
+  .launcher.long .ed { margin-top: 28px; }
+  .launcher textarea::placeholder { color: var(--faint); }
+  .launcher .lx { flex: none; width: 28px; height: 28px; margin-top: 21px; border: 0; border-radius: 50%; background: transparent; color: var(--muted); display: grid; place-items: center; cursor: pointer; }
+  .launcher .lx:hover { background: rgba(255,255,255,0.08); color: var(--cream); }
+  .launcher .lx svg { width: 10px; height: 10px; fill: currentColor; }
+  .launcher .lx[hidden] { display: none; }
+  .launcher .l-steps, .launcher .l-when { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 0 20px 12px; font-size: 12.5px; color: var(--muted); }
+  .launcher .l-steps[hidden], .launcher .l-when[hidden], .launcher .chips[hidden] { display: none; }
+  .launcher .l-steps span { font-size: 12.5px; height: 26px; color: var(--cream); }
+  .launcher .l-when button { cursor: pointer; border: 0; height: 28px; padding: 0 11px; font-size: 13px; line-height: 28px; }
+  .launcher .l-when button:hover { background: rgba(255,255,255,0.14); }
+  .launcher .l-when button.on:hover { background: var(--ember-deep); }
+  .launcher .chips .hint { margin-left: auto; align-self: center; font-size: 12.5px; color: var(--faint); }
+  .launcher .pre { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; min-height: 42px; padding: 8px 20px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 500; }
+  .launcher .mini { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
   .pre .what { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
   .pre .what.bad { color: var(--faint); font-weight: 400; }
   .pre .nm { color: var(--muted); }
@@ -411,21 +515,39 @@
   .try-note { margin-top: 14px; font-size: 14px; color: var(--faint); }
   .phrasebook { margin-top: 32px; display: grid; }
   .phrase { display: flex; justify-content: space-between; gap: 16px; padding: 11px 0; border-bottom: 1px solid var(--line); font-size: 15px; }
-  .phrase code { font: 400 15px var(--mono); color: var(--cream); }
+  .phrase code { font: 400 15px var(--mono); color: var(--cream); overflow-wrap: anywhere; }
   .phrase span { color: var(--muted); text-align: right; }
   .phrase span b { color: var(--ember); font-weight: 600; font-variant-numeric: tabular-nums; }
 
   /* The real floating widget, summoned by "Try it" */
   .float {
     position: fixed; left: 16px; top: 16px; z-index: 50;
-    display: flex; align-items: center; gap: 10px;
-    padding: 7px 7px 7px 14px;
-    background: rgba(42,38,35,0.9); backdrop-filter: blur(24px) saturate(1.2);
+    max-width: calc(100vw - 32px);
+    background: rgba(42,38,35,0.94); backdrop-filter: blur(24px) saturate(1.2);
     border: 0.5px solid rgba(255,255,255,0.14); border-radius: 13px;
     box-shadow: 0 18px 40px -12px rgba(0,0,0,0.8);
-    transform: translateY(-80px); opacity: 0; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .3s;
+    transform: translateY(-80px); opacity: 0; visibility: hidden; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .3s, visibility 0s .3s;
   }
-  .float.on { transform: none; opacity: 1; }
+  .float.on { transform: none; opacity: 1; visibility: visible; transition: transform .45s cubic-bezier(.2,.9,.3,1.2), opacity .3s; }
+  .float.on.shake { animation: shake 2.6s ease-in-out infinite; }
+  .f-row { display: flex; align-items: center; gap: 10px; padding: 7px 7px 7px 14px; }
+  .f-row[hidden], .f-card[hidden], .f-seg[hidden] { display: none; }
+  .f-card { width: 300px; max-width: 100%; }
+  .f-card .cd { font-size: 13px; }
+  .f-card .cd .nm { font-size: 17px; }
+  .f-card .cd .sb, .f-card .cd .bl { font-size: 12.5px; }
+  .f-card .cd .ex { font-size: 12px; }
+  .f-card .cd .bt button { font-size: 13px; padding: 7px 12px; cursor: pointer; }
+  .float .f-card .cd .bt button { display: block; width: auto; height: auto; border-radius: 7px; background: rgba(255,255,255,0.1); color: var(--cream); }
+  .float .f-card .cd .bt button.pri { background: var(--ember-deep); color: #fff; }
+  .float .f-card .cd .bt button:hover { filter: brightness(1.2); }
+  .f-card .cd .bl em { width: 40px; }
+  .f-name { font-size: 13px; font-weight: 500; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 170px; }
+  .f-name:empty { display: none; }
+  .f-seg { display: flex; gap: 2px; height: 3px; margin: -3px 14px 9px 31px; }
+  .f-seg i { position: relative; flex: var(--f) 1 0; border-radius: 2px; background: rgba(255,255,255,0.13); overflow: hidden; }
+  .f-seg i.done { background: rgba(242,163,110,0.45); }
+  .f-seg i.now { background: var(--ember); }
   .float .sw-dot { background: var(--ember); border-color: var(--ember); box-shadow: 0 0 10px rgba(242,163,110,0.6); }
   .float.paused .sw-dot { background: transparent; border-color: var(--faint); box-shadow: none; }
   .float.done .f-time { color: var(--ember); }
@@ -469,7 +591,15 @@
     body { font-size: 16px; }
     nav ul li:not(:last-child) { display: none; }
     section { padding-top: 88px; }
-    @media (prefers-reduced-motion: reduce) {
+    .launcher label { padding: 0 14px; gap: 8px; }
+    .launcher .pre, .launcher .l-steps, .launcher .l-when { padding-left: 14px; padding-right: 14px; }
+    .pre .h { display: none; }
+    .launcher .mini { white-space: normal; flex-wrap: wrap; }
+    .launcher .chips .hint, .launcher .pre kbd { display: none; }
+    .phrase { flex-direction: column; gap: 2px; }
+    .phrase span { text-align: left; }
+  }
+  @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
   }
 </style>
@@ -499,7 +629,7 @@
         <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
       </div>
     </div>
-    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Or plan your day, and each block starts on time.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Line up a few blocks to run back to back, or schedule them and Drift starts each one on time.</p>
     <div class="actions">
       <a class="btn btn-ember" href="#install">Get Drift</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
@@ -511,7 +641,7 @@
 
   <section id="features">
     <h2>Name it, time it, get back to work.</h2>
-    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long, or when. A small timer stays in the corner of your screen while you work. Click it to rename, change the time, add another or see today's plan.</p>
+    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long, or when. A small timer stays in the corner of your screen while you work. With nothing running, it asks what you're working on and starts with one tap.</p>
 
     <div class="demo">
       <div class="stage-wrap" id="stage-wrap">
@@ -523,7 +653,7 @@
                 <svg viewBox="0 0 16 16"><circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" stroke-width="1.6" opacity=".4"/><path id="s-wedge" fill="currentColor" d="M8 8 L8 2 A6 6 0 1 1 2.6 10.6 Z"/></svg>
                 <span class="s-mb-time" id="s-mb-time">19:58</span>
               </span>
-              <span>Fri 9:41 AM</span>
+              <span id="s-clock">Fri 9:41 AM</span>
             </div>
           </div>
 
@@ -539,11 +669,16 @@
           </div>
 
           <div class="s-widget hidden" id="sw" data-run="1">
+            <div class="sw-card" id="sw-card"></div>
             <div class="sw-prompt"><div><div class="in">
               <div class="pt"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg><span><span id="pr-name">Deep work</span> starts now</span></div>
               <div class="ps" id="pr-sub">9:00–10:30 AM · starts by itself in 0:58</div>
               <div class="pb"><span class="pri" id="pr-start">Start</span><span>In 5 min</span><span>Skip today</span></div>
             </div></div></div>
+            <div class="sw-idle">
+              <div class="top"><span class="sw-dot"></span><span class="q">What are you working on?</span><kbd>⌥ Space</kbd></div>
+              <div class="go" id="sw-go"><span class="st"><svg viewBox="0 0 10 10"><path d="M2 1l7 4-7 4z"/></svg>Start 25m</span><span>10m</span><span>15m</span><span>45m</span><span>1h</span><span class="more">⋯</span></div>
+            </div>
             <div class="sw-row">
               <span class="sw-dot"></span>
               <span class="sw-name" id="sw-name"></span>
@@ -553,16 +688,18 @@
               </span>
               <span class="sw-btn"><svg viewBox="0 0 10 10"><path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/></svg></span>
             </div>
-            <div class="sw-next" id="sw-next"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>Next <b id="nx-name">Deep work</b> at <span id="nx-time">9:00 AM</span></div>
+            <div class="sw-seg" id="sw-seg"></div>
+            <div class="sw-next" id="sw-next"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>Next <b id="nx-name">Deep work</b> <span id="nx-time">at 9:00 AM</span></div>
             <div class="sw-exp"><div>
               <div class="sw-progress"><i id="sw-prog"></i></div>
-              <div class="sw-controls"><span id="c-minus">−5 min</span><span id="c-plus">+5 min</span><span class="acc">Set time…</span><span class="sp"></span></div>
+              <div class="sw-sess" id="sw-sess"></div>
+              <div class="sw-controls" id="sw-ctrls"><span id="c-minus">−5 min</span><span id="c-plus">+5 min</span><span class="acc">Set time…</span><span class="sp"></span></div>
               <div class="sw-tray" id="sw-tray"></div>
               <div class="sw-today" id="sw-today"></div>
               <div class="sw-foot"><span class="add" id="c-add">+ New timer</span><kbd>⌥ Space</kbd></div>
             </div></div>
             <div class="sw-dialbox"><div><div class="in">
-              <div class="hd"><b id="dl-name">Write intro</b><span>drag, scroll or arrows</span></div>
+              <div class="hd"><b id="dl-name">Draft proposal</b><span>drag, scroll or arrows</span></div>
               <div class="sw-ring" id="sw-ring"><svg viewBox="0 0 200 200" id="dl-svg"></svg><div class="v"><b id="dl-val">20:00</b><span>Turn to adjust</span></div></div>
               <div class="sw-presets" id="dl-presets"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span></div>
             </div></div></div>
@@ -579,44 +716,52 @@
           <div class="s-composer" id="sc">
             <div class="sc-in">
               <span class="ed"></span>
-              <span class="sc-text" id="sc-text" data-ph="What are you working on?"></span><span class="sc-caret"></span><span class="ghost sc-ghost" id="sc-ghost"></span>
+              <span class="sc-tx"><span class="sc-text" id="sc-text" data-ph="What are you working on?"></span><span class="sc-caret"></span><span class="ghost sc-ghost" id="sc-ghost"></span></span>
               <span class="sc-mic"><svg viewBox="0 0 16 16"><rect x="5.5" y="1.5" width="5" height="8.5" rx="2.5"/><path d="M3 7.5a5 5 0 0 0 10 0M8 12.5v2.5"/></svg></span>
+              <span class="sc-x"><svg viewBox="0 0 10 10"><path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/></svg></span>
             </div>
             <div class="sc-pre" id="sc-pre"></div>
-            <div class="sc-chips"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span><span>Pomodoro</span></div>
+            <div class="sc-steps" id="sc-steps" hidden></div>
+            <div class="sc-when" id="sc-when" hidden></div>
+            <div class="sc-chips" id="sc-chips"><span>5m</span><span>10m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span><span>Pomodoro</span><em>esc or click outside to close</em></div>
           </div>
 
           <div class="s-menu" id="s-menu">
-            <div><span class="chk"></span>Write intro<b>19:42</b></div>
+            <div><span class="chk"></span><span id="m-name">Code review</span><b>19:50</b></div>
             <div class="sep"></div>
-            <div><span class="chk"></span>New Timer…</div>
-            <div class="ind">Start 25m</div>
+            <div><span class="chk"></span>New Timer…<b class="k">⌥Space</b></div>
+            <div class="mchips"><span>5m</span><span>10m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span></div>
+            <div class="ind" id="m-more">More Ways to Start<b class="k">›</b></div>
             <div class="sep"></div>
-            <div id="m-focus"><span class="chk" id="m-check"></span>Focus Sound</div>
-            <div class="ind">Soundscape</div>
+            <div id="m-focus"><span class="chk"></span>Focus Sound<b class="k" id="m-fs">Off ›</b></div>
             <div class="sep"></div>
-            <div><span class="chk"></span>Settings…</div>
+            <div><span class="chk"></span>Hide Widget<b class="k">⌥T</b></div>
+            <div><span class="chk"></span>Settings…<b class="k">⌘,</b></div>
           </div>
+          <div class="s-menu s-sub" id="s-sub"></div>
 
-          <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Focus is done</b><span id="note-b">25 minutes complete. Break for 5 minutes.</span></div></div>
+          <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Time’s up: Reply to emails</b><span id="note-b">25 minutes complete.</span></div></div>
           <div class="s-keys" id="s-keys"></div>
           <div class="s-cursor" id="cursor"><svg width="20" height="26" viewBox="0 0 20 26"><path d="M2 2v19l5-4.5 3.5 7.5 3-1.4-3.4-7.3H17z" fill="#fff" stroke="#111" stroke-width="1.3" stroke-linejoin="round"/></svg></div>
         </div>
       </div>
 
       <ol class="features" id="features-list">
-        <li><button data-scene="0"><b>Write the task, then the time</b><span>⌥ Space, type Write intro 45m, press Return. Leave out the time and it offers your default.</span><i></i></button></li>
-        <li><button data-scene="1"><b>Or just say it</b><span>⌥ V, or ⌥ Space twice, then talk: “twenty five minutes for reading”.</span><i></i></button></li>
-        <li><button data-scene="2"><b>Name it in place</b><span>In a hurry, type 25. Click “+ Add task” on the timer later and type the name.</span><i></i></button></li>
+        <li><button data-scene="0"><b>Write the task, then the time</b><span>⌥ Space, type Reply to emails 25m, press Return. Leave out the time and it offers your default.</span><i></i></button></li>
+        <li><button data-scene="1"><b>Nothing running? One tap</b><span>The widget asks what you're working on. Start 25m, tap 10m, 15m, 45m or 1h, or ⋯ for any length.</span><i></i></button></li>
+        <li><button data-scene="2"><b>Or just say it</b><span>Press ⌥ Space twice and talk. Sessions work too: “ten minutes of inbox, then ten minutes to plan the day, starting at 8”.</span><i></i></button></li>
         <li><button data-scene="3"><b>Turn the dial</b><span>Click the time. Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h.</span><i></i></button></li>
-        <li><button data-scene="4"><b>Plan your day</b><span>Type when, not just how long: “Deep work 9–10:30 weekdays”. It joins today's plan.</span><i></i></button></li>
-        <li><button data-scene="5"><b>Starts on time</b><span>When a block comes up, Drift asks. Ignore it and it starts by itself, ending on schedule.</span><i></i></button></li>
-        <li><button data-scene="6"><b>Move it, just for today</b><span>Drag a block on its timeline. Change today only, or every day it repeats.</span><i></i></button></li>
-        <li><button data-scene="7"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
-        <li><button data-scene="8"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
-        <li><button data-scene="9"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
-        <li><button data-scene="10"><b>Hard to miss the end</b><span>A soft chime that repeats until you look, and a nudge if you want five more minutes.</span><i></i></button></li>
-        <li><button data-scene="11"><b>Soft focus sound</b><span>Nature, chill or focus sounds: rain, lo-fi, binaural beats and more, made on your Mac.</span><i></i></button></li>
+        <li><button data-scene="4"><b>Line up a session</b><span>Several time blocks in one timer. Each starts when the one before ends, and you see the clock time of each as you type.</span><i></i></button></li>
+        <li><button data-scene="5"><b>Start it later</b><span>Tap a start time, or type “at 3pm”. A card confirms what's scheduled and when.</span><i></i></button></li>
+        <li><button data-scene="6"><b>One block to the next</b><span>A card says what's next and starts it in 10 seconds. Blocks don't stretch unless you allow it.</span><i></i></button></li>
+        <li><button data-scene="7"><b>Schedule your day</b><span>“Deep work 9–10:30 weekdays”, “Client call at 2pm for 30m”. Each one is confirmed at the top of the widget.</span><i></i></button></li>
+        <li><button data-scene="8"><b>Starts on time</b><span>When it's time, Drift asks. Ignore it and it starts by itself after a minute.</span><i></i></button></li>
+        <li><button data-scene="9"><b>Move it, just for today</b><span>Drag a block on its timeline. Change today only, or every day it repeats.</span><i></i></button></li>
+        <li><button data-scene="10"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
+        <li><button data-scene="11"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
+        <li><button data-scene="12"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
+        <li><button data-scene="13"><b>Time's up, hard to miss</b><span>The widget shakes until you touch it, with a big Done button. Handy when your sound is off.</span><i></i></button></li>
+        <li><button data-scene="14"><b>A short menu</b><span>Quick lengths up top. Pomodoro, voice and scheduling under More Ways to Start. Focus sounds made on your Mac.</span><i></i></button></li>
       </ol>
     </div>
   </section>
@@ -625,15 +770,17 @@
     <div class="try">
       <div>
         <h2>Write it the way you'd say it.</h2>
-        <p class="sub">What you're working on, then how long or when. How long lights up in orange and when in blue, so you can see Drift understood.</p>
+        <p class="sub">What you're working on, then how long or when. List a few and they run back to back. How long lights up in orange and when in blue, so you can see Drift understood.</p>
         <div class="phrasebook">
-          <div class="phrase"><code>Write intro 45m</code><span>Write intro <b>45:00</b></span></div>
-          <div class="phrase"><code>Write intro</code><span>Write intro <b>25:00</b>, your default</span></div>
-          <div class="phrase"><code>Reading for an hour and a half</code><span>Reading <b>1:30:00</b></span></div>
-          <div class="phrase"><code>25</code><span><b>25:00</b>, name it later</span></div>
-          <div class="phrase"><code>pomodoro</code><span><b>25:00</b> focus, then a break</span></div>
+          <div class="phrase"><code>Reply to emails 25m</code><span>Reply to emails <b>25:00</b></span></div>
+          <div class="phrase"><code>Draft proposal</code><span>Draft proposal <b>25:00</b>, your default</span></div>
+          <div class="phrase"><code>Code review for half an hour</code><span>Code review <b>30:00</b></span></div>
+          <div class="phrase"><code>10</code><span><b>10:00</b>, name it later</span></div>
+          <div class="phrase"><code>Morning startup: inbox 10m, plan the day 10m, review calendar 5m</code><span>3 time blocks, <b>25:00</b> in all</span></div>
+          <div class="phrase"><code>Code review 30m, then reply to emails 15m at 2pm</code><span>2 time blocks from <b>2:00 PM</b></span></div>
           <div class="phrase"><code>Deep work 9-10:30 weekdays</code><span>Every weekday, <b>9:00–10:30</b></span></div>
-          <div class="phrase"><code>Email at 1pm for 30m</code><span>Once, <b>1:00–1:30 PM</b></span></div>
+          <div class="phrase"><code>Client call at 2pm for 30m</code><span>Once, <b>2:00–2:30 PM</b></span></div>
+          <div class="phrase"><code>pomodoro</code><span><b>25:00</b> focus, then a break</span></div>
           <div class="phrase"><code>add 5 minutes</code><span>to the timer that's running</span></div>
         </div>
       </div>
@@ -641,23 +788,24 @@
         <form class="launcher" id="launcher" autocomplete="off">
           <label>
             <span class="ed" aria-hidden="true"></span>
-            <span class="field"><span class="mirror" id="q-mirror" aria-hidden="true"></span><input id="q" type="text" placeholder="What are you working on?" aria-label="What are you working on, and for how long? Starts a demo timer" spellcheck="false"></span>
+            <span class="field"><span class="mirror" id="q-mirror" aria-hidden="true"></span><textarea id="q" rows="1" placeholder="What are you working on?" aria-label="What are you working on, and for how long? Starts a demo timer" spellcheck="false"></textarea></span>
+            <button type="button" class="lx" id="q-clear" aria-label="Clear" hidden><svg viewBox="0 0 10 10"><path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/></svg></button>
           </label>
           <div class="pre" aria-live="polite" id="what"></div>
-          <div class="chips">
+          <div class="l-steps" id="q-steps" hidden></div>
+          <div class="l-when" id="q-when" role="group" aria-label="Start time" hidden></div>
+          <div class="chips" id="q-chips">
             <button type="button" data-q="10s">10s</button>
             <button type="button" data-q="5m">5m</button>
             <button type="button" data-q="10m">10m</button>
             <button type="button" data-q="15m">15m</button>
-            <button type="button" data-q="20m">20m</button>
             <button type="button" data-q="25m">25m</button>
-            <button type="button" data-q="30m">30m</button>
             <button type="button" data-q="45m">45m</button>
             <button type="button" data-q="1h">1h</button>
-            <button type="button" data-q="2h">2h</button>
+            <span class="hint">esc to clear</span>
           </div>
         </form>
-        <p class="try-note">Press Return and watch the top-left corner of this page. Tab takes the suggested time; a chip starts your task for that long.</p>
+        <p class="try-note">Press Return and watch the top-left corner of this page. Tab takes the suggested time. The 10s chip shows what happens when time's up.</p>
       </div>
     </div>
   </section>
@@ -672,7 +820,7 @@
       <div>
         <svg viewBox="0 0 24 24"><path d="M4 9.5a12 12 0 0 1 16 0M7 13a7.5 7.5 0 0 1 10 0M10.2 16.4a3 3 0 0 1 3.6 0M3 3l18 18"/></svg>
         <h3>Offline, always</h3>
-        <p>The app has no network access at all. Timers and settings stay on your Mac.</p>
+        <p>The app has no network access at all. Timers, sessions and settings stay on your Mac.</p>
       </div>
       <div>
         <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5.5 11a6.5 6.5 0 0 0 13 0M12 17.5V21"/></svg>
@@ -681,8 +829,8 @@
       </div>
       <div>
         <svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="14" rx="2"/><path d="M3 8h18M14 13h4"/></svg>
-        <h3>Out of your way</h3>
-        <p>No Dock icon and no windows to manage. It lives in the menu bar and one small corner of your screen.</p>
+        <h3>Only what you use</h3>
+        <p>No Dock icon and no windows to manage. Don't plan your day or use Pomodoro, focus sounds or voice? Switch them off in Settings and they're gone from every menu. Nothing is deleted.</p>
       </div>
     </div>
   </section>
@@ -711,11 +859,15 @@
 <footer><img src="icon.png" alt="">Drift. Stay with it.<span class="foot-links"><a href="guide.html">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
 
 <div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
-  <span class="sw-dot"></span>
-  <span class="sw-name" id="f-name"></span>
-  <span class="f-time num" id="f-time">25:00</span>
-  <button id="f-toggle" aria-label="Pause"><svg viewBox="0 0 10 10" id="f-icon"></svg></button>
-  <button id="f-close" aria-label="Dismiss demo timer"><svg viewBox="0 0 10 10"><path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/></svg></button>
+  <div class="f-card" id="f-card" aria-live="polite" hidden></div>
+  <div class="f-row" id="f-row">
+    <span class="sw-dot"></span>
+    <span class="f-name" id="f-name"></span>
+    <span class="f-time num" id="f-time">25:00</span>
+    <button id="f-toggle" aria-label="Pause"><svg viewBox="0 0 10 10" id="f-icon"></svg></button>
+    <button id="f-close" aria-label="Dismiss demo timer"><svg viewBox="0 0 10 10"><path d="M1.5 2.6L2.6 1.5 5 3.9l2.4-2.4 1.1 1.1L6.1 5l2.4 2.4-1.1 1.1L5 6.1 2.6 8.5 1.5 7.4 3.9 5z"/></svg></button>
+  </div>
+  <div class="f-seg" id="f-seg" hidden></div>
 </div>
 
 <script>
@@ -731,6 +883,19 @@
     if (s < 86400) return `${h}:${p(m)}:${p(r)}`;
     if (s < 3 * 86400) return `${h}h ${m}m`;
     return `${Math.floor(s / 86400)}d ${h % 24}h`;
+  }
+  // 25m, 1h 30m
+  function compact(sec) {
+    const s = Math.round(sec), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60, o = [];
+    if (h) o.push(h + 'h'); if (m) o.push(m + 'm'); if (r) o.push(r + 's');
+    return o.join(' ') || '0s';
+  }
+  // 25 minutes, 1 hour 30 minutes
+  function spoken(sec) {
+    const s = Math.round(sec), h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60), r = s % 60, o = [];
+    const pl = (n, u) => n === 1 ? `1 ${u}` : `${n} ${u}s`;
+    if (h) o.push(pl(h, 'hour')); if (m) o.push(pl(m, 'minute')); if (r) o.push(pl(r, 'second'));
+    return o.join(' ') || '0 seconds';
   }
 
   /* ---------------- Hero dial: a real countdown ---------------- */
@@ -755,6 +920,217 @@
     }));
   }
 
+  /* ---------------- What the launcher understands (shared by the demo and Try it) ---------------- */
+  const esc = t => String(t).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const DEFAULT = 1500;
+  const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60, h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
+  const WORDS = { a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, fifteen:15, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, ninety:90 };
+  const FILL = new Set(['a','an','the','for','on','timer','called','named','start','set','my','of','and','to','about']);
+  // "Reply to emails 25m", "Code review for an hour and a half", "25". null if there's no time in it.
+  function parse(input) {
+    let t = input.toLowerCase().trim();
+    if (!t) return null;
+    if (/\bhalf an hour\b/.test(t)) t = t.replace(/\bhalf an hour\b/, '30 m');
+    let total = 0, found = false, rest = [], bare = null;
+    const c = t.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
+    if (c) { total += +c[2] * 3600 + +c[3] * 60 + +(c[4] || 0); found = true; t = t.replace(c[0], ' '); }
+    const tk = t.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
+    for (let i = 0; i < tk.length; i++) {
+      let n = /^\d+(\.\d+)?$/.test(tk[i]) ? parseFloat(tk[i]) : WORDS[tk[i]], j = i + 1;
+      if (n >= 20 && n % 10 === 0 && WORDS[tk[j]] < 10 && UNITS[tk[j + 1]]) { n += WORDS[tk[j]]; j++; }
+      if (n !== undefined && UNITS[tk[j]]) {
+        const u = UNITS[tk[j]]; total += n * u; found = true; i = j;
+        if (tk[i + 1] === 'and' && tk[i + 2] === 'a' && tk[i + 3] === 'half') { total += u / 2; i += 3; }
+        continue;
+      }
+      if (n !== undefined && bare === null && /^\d/.test(tk[i])) { bare = n; continue; }
+      rest.push(tk[i]);
+    }
+    if (!found && bare !== null) { total = bare * 60; found = true; } else if (bare !== null) rest.unshift(String(bare));
+    if (!found || total < 1 || total > 366 * 86400) return null;
+    while (rest.length && FILL.has(rest[0])) rest.shift();
+    while (rest.length && FILL.has(rest.at(-1))) rest.pop();
+    const name = rest.join(' ').replace(/[<>&"]/g, '').slice(0, 40);
+    return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
+  }
+
+  const TIME_RE = /\b\d{1,3}:\d{2}(?::\d{2})?\b|\bhalf an hour\b|\b(?:an?|one|\d+(?:\.\d+)?|(?:twenty|thirty|forty|fifty|sixty)(?:[\s-](?:one|two|three|four|five|six|seven|eight|nine))?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|ninety)\s*(?:h|hrs?|hours?|m|mins?|minutes?|s|secs?|seconds?|d|days?)\b(?:\s+and a half)?/gi;
+  function timeSpans(text) {
+    const out = []; let m; TIME_RE.lastIndex = 0;
+    while ((m = TIME_RE.exec(text))) out.push([m.index, m.index + m[0].length]);
+    if (!out.length) { const b = text.match(/^\s*\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*$/); if (b && parse(text)) out.push([b.index, b.index + b[0].length]); }
+    return out;
+  }
+  const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+  const DAYL = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  const DAYW = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5, sat: 6, saturday: 6 };
+  const fmtT = (min, suf = true) => { min = Math.round(((min % 1440) + 1440) % 1440); const h = Math.floor(min / 60), m = min % 60; return `${h % 12 || 12}:${String(m).padStart(2, '0')}${suf ? (h < 12 ? ' AM' : ' PM') : ''}`; };
+  const fmtR = (s0, dur) => { const e = s0 + Math.round(dur / 60), same = (s0 % 1440 < 720) === (e % 1440 < 720); return `${fmtT(s0, !same)}–${fmtT(e)}`; };
+  function fmtDays(days) {
+    const k = days.slice().sort().join('');
+    if (k === '0123456') return 'Every day'; if (k === '12345') return 'Weekdays'; if (k === '06') return 'Weekends';
+    return days.slice().sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => DAYN[d]).join(', ');
+  }
+  // The clock a preview is worked out against: the real one, or the demo's.
+  const realCtx = () => { const d = new Date(); return { now: d.getHours() * 60 + d.getMinutes(), dow: d.getDay() }; };
+  // "Today", "Tomorrow" or a weekday: the next time something scheduled comes up.
+  function nextOcc(start, days, dayOff, ctx) {
+    if (!days) return dayOff === 1 ? 'Tomorrow' : dayOff === 0 ? 'Today' : start > ctx.now ? 'Today' : 'Tomorrow';
+    for (let k = 0; k < 8; k++) {
+      const d = (ctx.dow + k) % 7;
+      if (!days.includes(d) || (k === 0 && start <= ctx.now)) continue;
+      return k === 0 ? 'Today' : k === 1 ? 'Tomorrow' : DAYL[d];
+    }
+    return 'Next week';
+  }
+  const dayWord = (start, days, dayOff, ctx) => days ? fmtDays(days) : nextOcc(start, null, dayOff, ctx);
+
+  // "Deep work 9-10:30 weekdays", "Client call at 2pm for 30m". Needs a time of day.
+  function parseSchedule(raw) {
+    const lower = raw.replace(/[–—]/g, '-').toLowerCase(), spans = [], cut = [];
+    const TM = '(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?';
+    const toMin = (h, m, s) => { h = +h; m = +(m || 0); if (h > 23 || m > 59) return null; if (s) { if (h > 12) return null; if (s[0] === 'p' && h < 12) h += 12; if (s[0] === 'a' && h === 12) h = 0; } return { min: h * 60 + m, s: s ? s[0] : null, h24: !s && (h > 12 || h === 0) }; };
+    const guess = t => (!t.s && !t.h24 && t.min >= 60 && t.min < 480) ? t.min + 720 : t.min;
+    let start = null, end = null, m;
+    if ((m = lower.match(new RegExp(`(?:\\bfrom\\s+)?\\b${TM}\\s*(?:-|to|until)\\s*${TM}(?![\\d:])`)))) {
+      const a = toMin(m[1], m[2], m[3]), b = toMin(m[4], m[5], m[6]);
+      if (a && b) {
+        let s0 = a.min, e0 = b.min;
+        if (a.s && !b.s && !b.h24) { e0 = b.min + (a.s === 'p' && b.min < 720 ? 720 : 0); if (e0 <= s0) e0 += 720; }
+        else if (!a.s && b.s && !a.h24) { s0 = a.min + (b.s === 'p' && a.min < 720 ? 720 : 0); if (s0 >= e0) s0 -= 720; }
+        else if (!a.s && !b.s) { s0 = guess(a); e0 = guess(b); if (e0 <= s0) e0 += 720; }
+        if (e0 <= s0) e0 += 1440;
+        start = s0; end = e0; spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]);
+      }
+    }
+    if (start === null && (m = lower.match(new RegExp(`(?:\\bat\\s+)${TM}(?![\\d:])`)))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = guess(a); spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]); } }
+    if (start === null && (m = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)/))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = a.min; spans.push([m.index, m.index + m[0].length, 'when']); cut.push(m[0]); } }
+    if (start === null) return null;
+    let days = null, dayOff;
+    const dre = /\b(every\s*day|daily|weekdays|weekends?|(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?(?:\s*(?:,|\/|and|&|\s)\s*(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?)*)\b/g;
+    let dm;
+    while ((dm = dre.exec(lower))) {
+      const w = dm[0];
+      if (/every\s*day|daily/.test(w)) days = [0, 1, 2, 3, 4, 5, 6];
+      else if (/weekday/.test(w)) days = [1, 2, 3, 4, 5];
+      else if (/weekend/.test(w)) days = [0, 6];
+      else { const l = w.split(/[\s,\/&]+/).map(x => DAYW[x.replace(/s$/, '')]).filter(x => x !== undefined); if (l.length) days = l; }
+      spans.push([dm.index, dm.index + w.length, 'when']); cut.push(w);
+    }
+    if (!days && (m = lower.match(/\b(today|tomorrow)\b/))) { dayOff = m[1] === 'tomorrow' ? 1 : 0; spans.push([m.index, m.index + m[0].length, 'when']); cut.push(m[0]); }
+    let rest = lower; cut.forEach(c => { rest = rest.replace(c, ' '); });
+    let dur = end !== null ? (end - start) * 60 : null, name = null;
+    const d = parse(rest);
+    if (dur === null && d) {
+      dur = d.seconds; name = d.name;
+      const t = timeSpans(raw).filter(([a, b]) => !spans.some(([x, y]) => a < y && b > x)); spans.push(...t);
+    }
+    if (!name) { const w = rest.split(/\s+/).filter(x => x && !['for', 'from', 'to', 'at', 'every', 'on', 'starting', 'start'].includes(x)).join(' '); name = w ? w[0].toUpperCase() + w.slice(1) : 'Focus'; }
+    dur = dur || DEFAULT;
+    spans.sort((a, b) => a[0] - b[0]);
+    return { name, start: start % 1440, dur, days, dayOff, spans };
+  }
+
+  // A session: one timer made of time blocks that run back to back.
+  // "Morning startup: inbox 10m, plan the day 10m, review calendar 5m", "Code review 30m, then reply to emails 15m".
+  const SEP_RE = /\s*(?:,|;|\n|\band then\b|\bthen\b|\bfollowed by\b|\bafter that\b)\s*/gi;
+  function pieces(text, from = 0) {
+    const out = []; let i = 0, m; SEP_RE.lastIndex = 0;
+    while ((m = SEP_RE.exec(text))) { if (m.index > i) out.push([from + i, from + m.index]); i = m.index + m[0].length; if (!m[0].length) SEP_RE.lastIndex++; }
+    if (i < text.length) out.push([from + i, from + text.length]);
+    return out;
+  }
+  function parseSession(raw) {
+    const text = raw.replace(/[–—]/g, '-');
+    if (!/[,;\n]|\bthen\b/i.test(text)) return null;
+    const sc = parseSchedule(text), when = sc ? sc.spans.filter(x => x[2] === 'when') : [];
+    let masked = text;
+    for (const [a, b] of when) masked = masked.slice(0, a) + ' '.repeat(b - a) + masked.slice(b);
+    masked = masked.replace(/\b(start(?:ing)?|begin(?:ning)?)\b(?=\s*$|\s{2,})/gi, w => ' '.repeat(w.length));
+    let title = '', from = 0;
+    const colon = masked.search(/:(?!\d)/);
+    if (colon > 0) { title = masked.slice(0, colon).trim(); from = colon + 1; }
+    let ps = pieces(masked.slice(from), from).filter(([a, b]) => masked.slice(a, b).trim());
+    let parsed = ps.map(([a, b]) => parse(masked.slice(a, b)));
+    // "Morning startup, ten minutes of inbox, then …": a first piece with no length names the session.
+    if (!title && parsed.length > 2 && !parsed[0] && parsed.slice(1).every(Boolean)) { title = masked.slice(ps[0][0], ps[0][1]).trim(); ps = ps.slice(1); parsed = parsed.slice(1); }
+    const keep = ps.filter((_, i) => parsed[i]);
+    const steps = parsed.filter(Boolean).map((p, i) => ({ name: p.name || `Time block ${i + 1}`, secs: p.seconds }));
+    if (steps.length < 2) return null;
+    const spans = [...when];
+    for (const [a, b] of keep) for (const [x, y] of timeSpans(masked.slice(a, b))) spans.push([a + x, a + y]);
+    spans.sort((x, y) => x[0] - y[0]);
+    if (title) title = title[0].toUpperCase() + title.slice(1);
+    const names = steps.map(x => x.name);
+    const name = title || (names.length <= 3 ? names.join(', ') : `${names.slice(0, 2).join(', ')} +${names.length - 2} more`);
+    const total = steps.reduce((s, x) => s + x.secs, 0);
+    return { name, steps, total, spans, sched: when.length ? { start: sc.start, days: sc.days, dayOff: sc.dayOff } : null };
+  }
+
+  function model(text) {
+    const v = text.trim();
+    if (!v) return { kind: 'empty' };
+    const ss = parseSession(text);
+    if (ss) return { kind: 'session', ss, spans: ss.spans };
+    const sc = parseSchedule(text);
+    if (sc) return { kind: 'sched', spec: sc, spans: sc.spans };
+    if (/^(pomodoro|pomo)\b/i.test(v)) return { kind: 'pomo' };
+    if (/^(add|plus|extend)\b/i.test(v)) { const p = parse(v.replace(/^\w+\s*/, '')); return p ? { kind: 'add', secs: p.seconds } : { kind: 'bad' }; }
+    const p = parse(v);
+    if (p) return { kind: 'start', secs: p.seconds, name: p.name, spans: timeSpans(text) };
+    if (/[a-z]/i.test(v)) return { kind: 'start', secs: DEFAULT, name: (v[0].toUpperCase() + v.slice(1)).slice(0, 40), spans: [], ghost: true };
+    return { kind: 'bad' };
+  }
+  function markedText(text, m) {
+    let h = '', i = 0;
+    for (const [a, b, k] of (m.spans || [])) { if (a < i) continue; h += esc(text.slice(i, a)) + `<span class="pill ${k || ''}">${esc(text.slice(a, b))}</span>`; i = b; }
+    return h + esc(text.slice(i));
+  }
+  const ghostHTML = (text, m) => m.ghost ? `${/\s$/.test(text) ? '' : ' '}25m<kbd>tab</kbd>` : '';
+  const CAL = '<svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>';
+  const BLOCKS = '<svg viewBox="0 0 12 12"><rect x="1" y="3.5" width="3" height="5" rx="1"/><rect x="5" y="3.5" width="2.5" height="5" rx="1"/><rect x="8.5" y="3.5" width="2.5" height="5" rx="1"/></svg>';
+  const OK = '<svg viewBox="0 0 12 12"><path d="M2 6.4l2.6 2.6L10 3.4"/></svg>';
+  function preHTML(m, ctx) {
+    const mini = (name, secs) => `<span class="mini"><i></i>${name ? esc(name) : '<em>+ Add task</em>'} <span class="num">${clockText(secs)}</span></span>`;
+    switch (m.kind) {
+      case 'empty': return `<span class="h" style="margin-left:0">Write the task and how long, like “Reply to emails 25m”</span>`;
+      case 'start': return `${mini(m.name, m.secs)}<span class="h">${m.ghost ? 'Tab for 25m, or type a time' : m.name ? 'Return to start' : 'Return to start, name it later'}</span><kbd>return</kbd>`;
+      case 'session': {
+        const s = m.ss, when = s.sched ? `${dayWord(s.sched.start, s.sched.days, s.sched.dayOff, ctx)} · ${fmtR(s.sched.start, s.total)}` : `${s.steps.length} time blocks · ${compact(s.total)} · ends ${fmtT(ctx.now + s.total / 60)}`;
+        return `<span class="mini sess">${BLOCKS}${esc(s.name)} <span class="num">${when}</span></span><span class="h">${s.sched ? 'Return to schedule' : 'Return to start'}</span><kbd>return</kbd>`;
+      }
+      case 'sched': return `<span class="mini sched">${CAL}${esc(m.spec.name)} <span class="num">${dayWord(m.spec.start, m.spec.days, m.spec.dayOff, ctx)} · ${fmtR(m.spec.start, m.spec.dur)}</span></span><span class="h">Return to schedule</span><kbd>return</kbd>`;
+      case 'pomo': return `<span>Pomodoro</span><span class="h" style="margin-left:6px">25m focus, then a 5m break</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
+      case 'add': return `<span>Add ${clockText(m.secs)}</span><span class="h" style="margin-left:6px">to the running timer</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
+      default: return `<span class="h" style="margin-left:0">Write a task and a time, like “Draft proposal 25m”</span>`;
+    }
+  }
+  // Each block with its clock time, from the start time or from now.
+  function stepsHTML(ss, ctx) {
+    let at = ss.sched ? ss.sched.start : ctx.now;
+    return ss.steps.map((x, i) => { const tm = i === 0 && !ss.sched ? 'now' : fmtT(at, false); at += x.secs / 60; return `${i ? '<i>›</i>' : ''}<span><em>${tm}</em>${esc(x.name)} <em>${compact(x.secs)}</em></span>`; }).join('');
+  }
+  // "Starts: Now / 2:00 PM / 2:30 PM / 3:00 PM"
+  const startChoices = now => { const a = Math.ceil((now + 10) / 30) * 30; return [a, a + 30, a + 60].map(m => m % 1440); };
+  const atText = m => fmtT(m).toLowerCase().replace(' ', '').replace(':00', '');
+  const START_RE = /[,\s]*(?:(?:starting|start|beginning|begin)\s+)?(?:at|from|@)\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?:\s+today)?\s*$/i;
+  function whenHTML(ss, ctx, tag) {
+    const cur = ss.sched && !ss.sched.days ? ss.sched.start : null;
+    const b = (label, val, on) => tag === 'button' ? `<button type="button" data-at="${val}" class="${on ? 'on' : ''}" aria-pressed="${on}">${label}</button>` : `<span class="b ${on ? 'on' : ''}">${label}</span>`;
+    return `<span>Starts</span>${b('Now', '', !ss.sched)}${startChoices(ctx.now).map(m => b(fmtT(m), atText(m), cur === m)).join('')}<span class="q">or type “at 3pm”</span>`;
+  }
+  // The "Scheduled" card at the top of the widget.
+  function schedCardHTML(m, ctx, tag) {
+    const s = m.kind === 'session' ? { name: m.ss.name, start: m.ss.sched.start, dur: m.ss.total, days: m.ss.sched.days, dayOff: m.ss.sched.dayOff, steps: m.ss.steps } : { ...m.spec, steps: null };
+    const nx = nextOcc(s.start, s.days, s.dayOff, ctx);
+    let bl = '';
+    if (s.steps) { let at = s.start; bl = `<div class="bl">${s.steps.map(x => { const r = `<div><em>${fmtT(at, false)}</em>${esc(x.name)}<span>${compact(x.secs)}</span></div>`; at += x.secs / 60; return r; }).join('')}</div>`; }
+    const B = (cls, a, label) => `<${tag} class="${cls}" data-a="${a}"${tag === 'button' ? ' type="button"' : ''}>${label}</${tag}>`;
+    return `<div class="cd" role="status"><div class="lb">${CAL}Scheduled</div><div class="nm">${esc(s.name)}</div><div class="sb">${esc(dayWord(s.start, s.days, s.dayOff, ctx))} · ${fmtR(s.start, s.dur)}</div>${bl}
+      <div class="ex">${nx} at ${fmtT(s.start)}, Drift checks in and starts it for you.${s.steps ? ' Each block starts when the one before it ends.' : ''}</div>
+      <div class="bt">${B('pri', 'ok', 'Got it')}${B('', 'edit', 'Edit')}${B('', 'undo', 'Undo')}</div></div>`;
+  }
+
   /* ---------------- Stage scaling ---------------- */
   const wrap = $('stage-wrap'), screen = $('screen');
   let scale = 1;
@@ -763,10 +1139,14 @@
 
   /* ---------------- Demo engine ---------------- */
   const sw = $('sw'), swName = $('sw-name'), swTime = $('sw-time'), swChip = $('sw-chip'), swTray = $('sw-tray'), swProg = $('sw-prog');
-  const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scGhost = $('sc-ghost');
-  const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
+  const swCard = $('sw-card'), swSeg = $('sw-seg'), swSess = $('sw-sess'), swCtrls = $('sw-ctrls'), CTRL_DEFAULT = swCtrls.innerHTML;
+  const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scGhost = $('sc-ghost'), scSteps = $('sc-steps'), scWhen = $('sc-when'), scChips = $('sc-chips');
+  const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), sub = $('s-sub'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
   const CANCEL = Symbol('cancel');
   let run = 0;
+  // The demo's own clock (minutes since midnight, weekday), shown in its menu bar.
+  let stage = { now: 581, dow: 5 };
+  function setClock(dow, now) { stage = { now, dow }; $('s-clock').textContent = `${DAYN[dow]} ${fmtT(now)}`; }
 
   // Widget model, counts down in real seconds (or faster when asked).
   const W = { remaining: 2700, total: 2700, speed: 1, timer: 0 };
@@ -775,6 +1155,8 @@
     swTime.textContent = clockText(sec);
     mbTime.textContent = clockText(sec);
     swProg.style.width = (100 * (1 - sec / W.total)).toFixed(1) + '%';
+    const n = $('ss-now'); if (n) n.textContent = clockText(sec);
+    const seg = swSeg.querySelector('i.now'); if (seg) seg.style.setProperty('--p', (100 * (1 - sec / W.total)).toFixed(1) + '%');
     if (bump) { swTime.classList.remove('bump'); void swTime.offsetWidth; swTime.classList.add('bump'); }
   }
   function startClock(total, remaining = total, speed = 1) {
@@ -820,109 +1202,21 @@
       ? `+${mode}`
       : `<svg width="9" height="9" viewBox="0 0 10 10"><path d="${mode === 'up' ? 'M1.5 6.5L5 3l3.5 3.5' : 'M1.5 3.5L5 7l3.5-3.5'}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>`;
   }
-  /* What the launcher understands, shared by the demo and the Try it box. */
-  const esc = t => t.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
-  const DEFAULT = 1500;
-  const TIME_RE = /\b\d{1,3}:\d{2}(?::\d{2})?\b|\bhalf an hour\b|\b(?:an?|one|\d+(?:\.\d+)?|(?:twenty|thirty|forty|fifty|sixty)(?:[\s-](?:one|two|three|four|five|six|seven|eight|nine))?|two|three|four|five|six|seven|eight|nine|ten|eleven|twelve|fifteen|ninety)\s*(?:h|hrs?|hours?|m|mins?|minutes?|s|secs?|seconds?|d|days?)\b(?:\s+and a half)?/gi;
-  function timeSpans(text) {
-    const out = []; let m; TIME_RE.lastIndex = 0;
-    while ((m = TIME_RE.exec(text))) out.push([m.index, m.index + m[0].length]);
-    if (!out.length) { const b = text.match(/^\s*\d+(?:\.\d+)?\b|\b\d+(?:\.\d+)?\s*$/); if (b && parse(text)) out.push([b.index, b.index + b[0].length]); }
-    return out;
-  }
-  const DAYN = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-  const DAYW = { sun: 0, sunday: 0, mon: 1, monday: 1, tue: 2, tues: 2, tuesday: 2, wed: 3, wednesday: 3, thu: 4, thur: 4, thurs: 4, thursday: 4, fri: 5, friday: 5, sat: 6, saturday: 6 };
-  const fmtT = (min, suf = true) => { min = ((min % 1440) + 1440) % 1440; const h = Math.floor(min / 60), m = min % 60; return `${h % 12 || 12}:${String(m).padStart(2, '0')}${suf ? (h < 12 ? ' AM' : ' PM') : ''}`; };
-  const fmtR = (s0, dur) => { const e = s0 + Math.round(dur / 60), same = (s0 % 1440 < 720) === (e % 1440 < 720); return `${fmtT(s0, !same)}–${fmtT(e)}`; };
-  function fmtDays(days) {
-    if (!days) return 'Once';
-    const k = days.slice().sort().join('');
-    if (k === '0123456') return 'Every day'; if (k === '12345') return 'Weekdays'; if (k === '06') return 'Weekends';
-    return days.slice().sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => DAYN[d]).join(', ');
-  }
-  // "Deep work 9-10:30 weekdays", "Email at 1pm for 30m". Needs a time of day.
-  function parseSchedule(raw) {
-    const lower = raw.replace(/[–—]/g, '-').toLowerCase(), spans = [], cut = [];
-    const TM = '(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm)?';
-    const toMin = (h, m, s) => { h = +h; m = +(m || 0); if (h > 23 || m > 59) return null; if (s) { if (h > 12) return null; if (s[0] === 'p' && h < 12) h += 12; if (s[0] === 'a' && h === 12) h = 0; } return { min: h * 60 + m, s: s ? s[0] : null, h24: !s && (h > 12 || h === 0) }; };
-    const guess = t => (!t.s && !t.h24 && t.min >= 60 && t.min < 480) ? t.min + 720 : t.min;
-    let start = null, end = null, m;
-    if ((m = lower.match(new RegExp(`(?:\\bfrom\\s+)?\\b${TM}\\s*(?:-|to|until)\\s*${TM}(?![\\d:])`)))) {
-      const a = toMin(m[1], m[2], m[3]), b = toMin(m[4], m[5], m[6]);
-      if (a && b) {
-        let s0 = a.min, e0 = b.min;
-        if (a.s && !b.s && !b.h24) { e0 = b.min + (a.s === 'p' && b.min < 720 ? 720 : 0); if (e0 <= s0) e0 += 720; }
-        else if (!a.s && b.s && !a.h24) { s0 = a.min + (b.s === 'p' && a.min < 720 ? 720 : 0); if (s0 >= e0) s0 -= 720; }
-        else if (!a.s && !b.s) { s0 = guess(a); e0 = guess(b); if (e0 <= s0) e0 += 720; }
-        if (e0 <= s0) e0 += 1440;
-        start = s0; end = e0; spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]);
-      }
-    }
-    if (start === null && (m = lower.match(new RegExp(`(?:\\bat\\s+)${TM}(?![\\d:])`)))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = guess(a); spans.push([m.index, m.index + m[0].trimEnd().length, 'when']); cut.push(m[0]); } }
-    if (start === null && (m = lower.match(/\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)/))) { const a = toMin(m[1], m[2], m[3]); if (a) { start = a.min; spans.push([m.index, m.index + m[0].length, 'when']); cut.push(m[0]); } }
-    if (start === null) return null;
-    let days = null;
-    const dre = /\b(every\s*day|daily|weekdays|weekends?|(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?(?:\s*(?:,|\/|and|&|\s)\s*(?:sun|mon|tue|tues|wed|thu|thur|thurs|fri|sat)(?:day)?s?)*)\b/g;
-    let dm;
-    while ((dm = dre.exec(lower))) {
-      const w = dm[0];
-      if (/every\s*day|daily/.test(w)) days = [0, 1, 2, 3, 4, 5, 6];
-      else if (/weekday/.test(w)) days = [1, 2, 3, 4, 5];
-      else if (/weekend/.test(w)) days = [0, 6];
-      else { const l = w.split(/[\s,\/&]+/).map(x => DAYW[x.replace(/s$/, '')]).filter(x => x !== undefined); if (l.length) days = l; }
-      spans.push([dm.index, dm.index + w.length, 'when']); cut.push(w);
-    }
-    let rest = lower; cut.forEach(c => { rest = rest.replace(c, ' '); });
-    let dur = end !== null ? (end - start) * 60 : null, name = null;
-    const d = parse(rest);
-    if (dur === null && d) {
-      dur = d.seconds; name = d.name;
-      const t = timeSpans(raw).filter(([a, b]) => !spans.some(([x, y]) => a < y && b > x)); spans.push(...t);
-    }
-    if (!name) { const w = rest.split(/\s+/).filter(x => x && !['for', 'from', 'to', 'at', 'every', 'on'].includes(x)).join(' '); name = w ? w[0].toUpperCase() + w.slice(1) : 'Focus'; }
-    dur = dur || DEFAULT;
-    spans.sort((a, b) => a[0] - b[0]);
-    return { name, start: start % 1440, dur, days, spans };
-  }
-  function model(text) {
-    const v = text.trim();
-    if (!v) return { kind: 'empty' };
-    const sc = parseSchedule(text);
-    if (sc) return { kind: 'sched', spec: sc, spans: sc.spans };
-    if (/^(pomodoro|pomo)\b/i.test(v)) return { kind: 'pomo' };
-    if (/^(add|plus|extend)\b/i.test(v)) { const p = parse(v.replace(/^\w+\s*/, '')); return p ? { kind: 'add', secs: p.seconds } : { kind: 'bad' }; }
-    const p = parse(v);
-    if (p) return { kind: 'start', secs: p.seconds, name: p.name, spans: timeSpans(text) };
-    if (/[a-z]/i.test(v)) return { kind: 'start', secs: DEFAULT, name: (v[0].toUpperCase() + v.slice(1)).slice(0, 40), spans: [], ghost: true };
-    return { kind: 'bad' };
-  }
-  function markedText(text, m) {
-    let h = '', i = 0;
-    for (const [a, b, k] of (m.kind === 'start' || m.kind === 'sched' ? m.spans : [])) { if (a < i) continue; h += esc(text.slice(i, a)) + `<span class="pill ${k || ''}">${esc(text.slice(a, b))}</span>`; i = b; }
-    return h + esc(text.slice(i));
-  }
-  const ghostHTML = (text, m) => m.ghost ? `${/\s$/.test(text) ? '' : ' '}25m<kbd>tab</kbd>` : '';
-  function preHTML(m) {
-    const mini = (name, secs) => `<span class="mini"><i></i>${name ? esc(name) : '<em>+ Add task</em>'} <span class="num">${clockText(secs)}</span></span>`;
-    switch (m.kind) {
-      case 'empty': return `<span class="h" style="margin-left:0">Write the task, then how long. Return starts 25m.</span>`;
-      case 'start': return `${mini(m.name, m.secs)}<span class="h">${m.ghost ? 'Tab for 25m, or type a time' : m.name ? 'Return to start' : 'Return to start, name it later'}</span><kbd>return</kbd>`;
-      case 'sched': return `<span class="mini sched"><svg viewBox="0 0 12 12"><rect x="1.5" y="2.3" width="9" height="8.2" rx="1.6"/><path d="M1.5 5h9M4 1v2.4M8 1v2.4"/></svg>${esc(m.spec.name)} <span class="num">${fmtDays(m.spec.days)} · ${fmtR(m.spec.start, m.spec.dur)}</span></span><span class="h">Return to schedule</span><kbd>return</kbd>`;
-      case 'pomo': return `<span>Pomodoro</span><span class="h" style="margin-left:6px">25m focus, then a 5m break</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
-      case 'add': return `<span>Add ${clockText(m.secs)}</span><span class="h" style="margin-left:6px">to the running timer</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
-      default: return `<span class="h" style="margin-left:0">Write a task and a time, like “Write intro 25m”</span>`;
-    }
-  }
 
   function renderSc(text) {
     const m = model(text);
     scText.innerHTML = markedText(text, m);
     scGhost.innerHTML = ghostHTML(text, m);
-    scPre.innerHTML = preHTML(m);
+    scPre.innerHTML = preHTML(m, stage);
+    sc.classList.toggle('long', text.length > 40);
+    scSteps.hidden = scWhen.hidden = m.kind !== 'session';
+    if (m.kind === 'session') { scSteps.innerHTML = stepsHTML(m.ss, stage); scWhen.innerHTML = whenHTML(m.ss, stage, 'span'); }
+    scChips.hidden = !(m.kind === 'empty' || m.ghost);
+    return m;
   }
-  async function typeSc(text, id, from = '') {
+  async function typeSc(text, id, from = '', speed = 70) {
     let t = from;
-    for (const ch of text) { t += ch; renderSc(t); await wait(70 + Math.random() * 40, id); }
+    for (const ch of text) { t += ch; renderSc(t); await wait(speed + Math.random() * 40, id); }
     return t;
   }
   async function openSc(id) {
@@ -942,6 +1236,8 @@
     if (name) swName.textContent = name;
     else { swName.textContent = 'Add task'; swName.classList.add('add'); }
   }
+  const showCard = html => { swCard.innerHTML = html; };
+  function setNext(name, when) { $('nx-name').textContent = name; $('nx-time').textContent = when; sw.classList.add('has-next'); }
 
   /* The dial, drawn into the widget */
   const dlSvg = $('dl-svg'), dlVal = $('dl-val'), ring = $('sw-ring');
@@ -971,78 +1267,116 @@
     const tl = $('be-tl'), W = 232, span = 480, x = m => (m - win) / span * W;
     let h = '';
     for (let hr = Math.ceil(win / 60); hr * 60 <= win + span; hr++) h += `<div class="h" style="left:${x(hr * 60)}px"><span>${fmtT(hr * 60).replace(':00', '').replace(' ', '')}</span></div>`;
-    h += `<div class="o" style="left:${x(780)}px;width:${30 / span * W}px"></div>`;
+    h += `<div class="o" style="left:${x(840)}px;width:${30 / span * W}px"></div>`;
     h += `<div class="b" id="be-b" style="left:${x(startMin)}px;width:${90 / span * W}px">Deep work</div>`;
     tl.innerHTML = h;
   }
 
+  // A session in the demo widget: its time blocks, the one it's on, when it started.
+  let SS = null;
+  const MORNING = [{ name: 'Inbox', secs: 600 }, { name: 'Plan the day', secs: 600 }, { name: 'Review calendar', secs: 300 }];
+  function renderSession() {
+    if (!SS) { swSeg.innerHTML = ''; swSess.innerHTML = ''; swCtrls.innerHTML = CTRL_DEFAULT; return; }
+    swSeg.innerHTML = SS.steps.map((x, i) => `<i style="--f:${x.secs}" class="${i < SS.idx ? 'done' : i === SS.idx ? 'now' : ''}"></i>`).join('');
+    let at = SS.start; const end = SS.start + SS.steps.reduce((a, x) => a + x.secs, 0) / 60;
+    swSess.innerHTML = `<div class="sh"><b>${esc(SS.title)}</b>· time block ${SS.idx + 1} of ${SS.steps.length} · ends ${fmtT(end)}</div>` + SS.steps.map((x, i) => {
+      const t = fmtT(at, false); at += x.secs / 60;
+      return `<div class="r ${i < SS.idx ? 'done' : i === SS.idx ? 'now' : ''}"><span class="ck">${i < SS.idx ? '✓' : ''}</span><span class="t">${t}</span><b>${esc(x.name)}</b><span class="l"${i === SS.idx ? ' id="ss-now"' : ''}>${i === SS.idx ? clockText(W.remaining) : compact(x.secs)}</span></div>`;
+    }).join('');
+    swCtrls.innerHTML = `<span class="acc">${SS.idx < SS.steps.length - 1 ? `Next: ${esc(SS.steps[SS.idx + 1].name)}` : 'Finish'}</span><span>Set time…</span><span class="sp"></span>`;
+  }
+  function startSession(title, steps, idx, remaining, start) {
+    showWidget(steps[idx].name, steps[idx].secs, remaining);
+    SS = { title, steps, idx, start }; renderSession(); setTime(remaining);
+  }
+
   function reset() {
     stopClock();
-    sw.classList.add('hidden'); sw.classList.remove('open', 'done', 'dialing', 'prompting', 'editing', 'has-next', 'pulse');
-    renderToday(null);
+    sw.classList.add('hidden'); sw.classList.remove('open', 'done', 'dialing', 'prompting', 'editing', 'has-next', 'pulse', 'idle', 'tup', 'shake');
+    renderToday(null); showCard(''); SS = null; renderSession();
     sw.dataset.run = '1';
     swName.textContent = ''; swName.classList.remove('add', 'editing'); chip('down'); swTray.innerHTML = '';
-    sc.classList.remove('on', 'listening'); scText.textContent = ''; scGhost.textContent = '';
-    menu.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
-    note.classList.remove('on'); waves.classList.remove('on'); $('m-check').textContent = '';
-    $('note-t').textContent = 'Focus is done'; $('note-b').textContent = '25 minutes complete. Break for 5 minutes.';
+    sc.classList.remove('on', 'listening', 'long'); scText.textContent = ''; scGhost.textContent = ''; scSteps.hidden = scWhen.hidden = true; scChips.hidden = false;
+    menu.classList.remove('on'); sub.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
+    menu.querySelectorAll('.hot').forEach(e => e.classList.remove('hot')); $('m-fs').textContent = 'Off ›';
+    note.classList.remove('on'); waves.classList.remove('on');
     keys.innerHTML = '';
     cursor.style.opacity = 0; cursor.style.left = '600px'; cursor.style.top = '380px';
+    setClock(5, 581);
     setTime(2700);
   }
+  function showIdle() {
+    stopClock(); SS = null; renderSession();
+    sw.classList.remove('hidden', 'open', 'tup', 'shake', 'has-next'); sw.classList.add('idle'); sw.dataset.run = '0';
+  }
   function showWidget(name, total, remaining = total) {
+    SS = null; renderSession();
+    sw.classList.remove('idle', 'tup', 'shake'); sw.dataset.run = '1';
     setName(name); startClock(total, remaining);
     sw.classList.remove('hidden');
+  }
+  function openSub(row, html) {
+    const s = screen.getBoundingClientRect(), r = row.getBoundingClientRect();
+    sub.innerHTML = html; sub.style.top = ((r.top - s.top) / scale - 5) + 'px'; sub.classList.add('on');
+  }
+  async function pressCard(a, id) {
+    const b = swCard.querySelector(`[data-a="${a}"]`);
+    await cursorTo(b, id, 2, 4); await click(b, id);
   }
 
   const scenes = [
     // Write the task, then the time
     async id => {
-      await wait(400, id);
+      showIdle();
+      await wait(700, id);
       await openSc(id);
-      let t = await typeSc('Write intro', id);
+      let t = await typeSc('Reply to emails', id);
       await wait(1500, id);
-      t = await typeSc(' 45m', id, t);
+      t = await typeSc(' 25m', id, t);
       await wait(1100, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
       await wait(120, id);
-      showWidget('Write intro', 2700);
+      showWidget('Reply to emails', 1500);
       await wait(2200, id);
     },
-    // Voice
+    // Nothing running? One tap
     async id => {
-      showWidget('Write intro', 2700, 2694);
-      await wait(700, id);
-      await pressKeys(['⌥', 'V'], id, 380);
-      sc.classList.add('on', 'listening'); renderSc(''); scPre.innerHTML = '<span class="h" style="margin-left:0">Listening…</span>';
-      await wait(600, id);
-      let t = '';
-      for (const w of 'twenty five minutes for reading'.split(' ')) { t += (t ? ' ' : '') + w; renderSc(t); await wait(240, id); }
+      showIdle();
       await wait(1000, id);
-      sc.classList.remove('on', 'listening');
-      showWidget('Reading', 1500); chip(1);
-      await wait(2200, id);
-    },
-    // Name it in place
-    async id => {
-      await wait(300, id);
-      await launch('25', id);
-      showWidget('', 1500);
+      const ten = [...$('sw-go').children].find(e => e.textContent === '10m');
+      await cursorTo(ten, id, 2, 4);
+      await click(ten, id);
+      showWidget('', 600);
       await wait(900, id);
       await cursorTo(swName, id, 4, 6);
       await click(swName, id);
       swName.classList.remove('add'); swName.classList.add('editing'); swName.textContent = '';
       await wait(300, id);
-      await typeInto(swName, 'Email', id, 90);
+      await typeInto(swName, 'Prep for standup', id, 60);
       await wait(400, id);
       await pressKeys(['return'], id, 300);
-      setName('Email');
-      await wait(1600, id);
+      setName('Prep for standup'); cursor.style.opacity = 0;
+      await wait(1800, id);
+    },
+    // Voice: ⌥ Space twice, then talk
+    async id => {
+      setClock(4, 1001); showIdle();
+      await wait(600, id);
+      await pressKeys(['⌥', 'Space'], id, 260);
+      await pressKeys(['⌥', 'Space'], id, 260);
+      sc.classList.add('on', 'listening'); renderSc(''); scChips.hidden = true; scPre.innerHTML = '<span class="h" style="margin-left:0">Listening…</span>';
+      await wait(600, id);
+      let t = '';
+      for (const w of 'Morning startup, ten minutes of inbox, then ten minutes to plan the day, starting at 8'.split(' ')) { t += (t ? ' ' : '') + w; renderSc(t); scChips.hidden = scWhen.hidden = true; await wait(210, id); }
+      await wait(1400, id);
+      sc.classList.remove('on', 'listening');
+      showCard(schedCardHTML(model(t), stage, 'span'));
+      await wait(3600, id);
     },
     // Turn the dial
     async id => {
-      showWidget('Write intro', 2700, 1196);
+      showWidget('Draft proposal', 2700, 1196);
       await wait(600, id);
       await cursorTo(swTime, id, 6, 4);
       await click(swTime, id);
@@ -1070,32 +1404,92 @@
       startClock(2700, 1800);
       await wait(1400, id);
     },
-    // Plan your day
+    // Line up a session
     async id => {
-      showWidget('Write intro', 2700, 1500);
-      await wait(500, id);
+      setClock(5, 531); showIdle();
+      await wait(600, id);
       await openSc(id);
-      await typeSc('Deep work 9-10:30 weekdays', id);
-      await wait(1500, id);
+      await typeSc('Morning startup: inbox 10m, plan the day 10m, review calendar 5m', id, '', 38);
+      await wait(2400, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
-      renderToday([[540, 5400, 'Deep work', 'Next', true]]);
-      sw.classList.add('open'); chip('up');
-      await wait(1300, id);
+      await wait(120, id);
+      startSession('Morning startup', MORNING, 0, 600, 531);
+      await wait(1500, id);
+      await cursorTo(swChip, id, 3, 4);
+      await click(swChip, id);
+      sw.classList.add('open'); chip('up'); cursor.style.opacity = 0;
+      await wait(2800, id);
+    },
+    // Start it later
+    async id => {
+      setClock(5, 821); showIdle();
+      await wait(500, id);
       await openSc(id);
-      await typeSc('Email at 1pm for 30m', id);
+      let t = await typeSc('Code review 30m, then reply to emails 15m', id, '', 45);
+      await wait(1300, id);
+      const two = [...scWhen.querySelectorAll('.b')].find(e => e.textContent === '2:00 PM');
+      await cursorTo(two, id, 2, 4);
+      await click(two, id);
+      t = t.replace(START_RE, '') + ', starting at 2pm today'; renderSc(t);
+      cursor.style.opacity = 0;
+      await wait(2200, id);
+      await pressKeys(['return'], id, 300);
+      sc.classList.remove('on');
+      showCard(schedCardHTML(model(t), stage, 'span'));
+      await wait(2800, id);
+      await pressCard('ok', id);
+      showCard(''); setNext('Code review, Reply to emails', 'at 2:00 PM'); cursor.style.opacity = 0;
+      await wait(1600, id);
+    },
+    // From one block to the next
+    async id => {
+      setClock(5, 540);
+      startSession('Morning startup', MORNING, 0, 4, 531);
+      await wait(4200, id);
+      stopClock(); setClock(5, 541);
+      SS.idx = 1; setName('Plan the day'); W.total = 600; renderSession(); setTime(600); sw.dataset.run = '0';
+      for (let s = 10; s >= 7; s--) {
+        showCard(`<div class="cd" role="status"><div class="pt"><i>✓</i>Inbox done</div><div class="sb">Next: <b>Plan the day</b>, 10m · starts in ${s}s</div><div class="bt"><span class="pri" data-a="go">Start now</span><span>Pause</span></div></div>`);
+        await wait(750, id);
+      }
+      await pressCard('go', id);
+      showCard(''); cursor.style.opacity = 0; sw.dataset.run = '1';
+      startClock(600, 600); renderSession();
+      await wait(1200, id);
+      sw.classList.add('open'); chip('up');
+      await wait(2600, id);
+    },
+    // Schedule your day
+    async id => {
+      setClock(4, 701); showIdle();
+      await wait(500, id);
+      await openSc(id);
+      let t = await typeSc('Deep work 9-10:30 weekdays', id);
+      await wait(1300, id);
+      await pressKeys(['return'], id, 300);
+      sc.classList.remove('on');
+      showCard(schedCardHTML(model(t), stage, 'span'));
+      await wait(2600, id);
+      await pressCard('ok', id);
+      showCard(''); setNext('Deep work', 'tomorrow at 9:00 AM'); cursor.style.opacity = 0;
+      await wait(800, id);
+      await openSc(id);
+      t = await typeSc('Client call at 2pm for 30m', id);
       await wait(1100, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
-      renderToday([[540, 5400, 'Deep work', 'Next', true], [780, 1800, 'Email', '', false]]);
-      await wait(2200, id);
+      setNext('Client call', 'at 2:00 PM');
+      showCard(schedCardHTML(model(t), stage, 'span'));
+      await wait(2800, id);
     },
     // Starts on time
     async id => {
-      showWidget('Email', 1500, 1100);
-      $('nx-name').textContent = 'Deep work'; $('nx-time').textContent = '9:00 AM'; sw.classList.add('has-next');
+      setClock(5, 539);
+      showWidget('Reply to emails', 1500, 1100);
+      setNext('Deep work', 'at 9:00 AM');
       await wait(1800, id);
-      sw.classList.remove('has-next');
+      sw.classList.remove('has-next'); setClock(5, 540);
       $('pr-name').textContent = 'Deep work';
       sw.classList.add('prompting');
       $('note-t').textContent = 'Deep work starts now'; $('note-b').textContent = '9:00–10:30 AM. Starts by itself in a minute.'; note.classList.add('on');
@@ -1107,14 +1501,15 @@
       showWidget('Deep work', 5400, 5397);
       await wait(900, id);
       sw.classList.add('open'); chip('up');
-      renderToday([[540, 5400, 'Deep work', 'Now', true], [780, 1800, 'Email', 'Next', false]]);
+      renderToday([[540, 5400, 'Deep work', 'Now', true], [840, 1800, 'Client call', 'Next', false]]);
       await wait(2200, id);
     },
     // Move it, just for today
     async id => {
-      showWidget('Write intro', 2700, 1500);
+      setClock(5, 500);
+      showWidget('Reply to emails', 1500, 1500);
       sw.classList.add('open'); chip('up');
-      renderToday([[540, 5400, 'Deep work', 'Next', true], [780, 1800, 'Email', '', false]]);
+      renderToday([[540, 5400, 'Deep work', 'Next', true], [840, 1800, 'Client call', '', false]]);
       await wait(800, id);
       const row = swToday.querySelector('.r');
       await cursorTo(row, id, 30, 4);
@@ -1140,16 +1535,16 @@
       await cursorTo(jt, id, 2, 4);
       await click(jt, id);
       sw.classList.remove('editing'); sw.classList.add('open'); cursor.style.opacity = 0;
-      renderToday([[570, 5400, 'Deep work', 'Next', true, true], [780, 1800, 'Email', '', false]]);
+      renderToday([[570, 5400, 'Deep work', 'Next', true, true], [840, 1800, 'Client call', '', false]]);
       await wait(2400, id);
     },
     // Several timers
     async id => {
-      showWidget('Write intro', 2700, 1620); chip(2);
+      showWidget('Draft proposal', 2700, 1620); chip(2);
       await wait(800, id);
       await cursorTo(swChip, id, 3, 4);
       await click(swChip, id);
-      swTray.innerHTML = '<div><span class="sw-dot run"></span>Tea<b>3:12</b></div><div><span class="sw-dot run"></span><em>+ Add task</em><b>41:02</b></div>';
+      swTray.innerHTML = '<div><span class="sw-dot run"></span>Prep for standup<b>3:12</b></div><div><span class="sw-dot run"></span><em>+ Add task</em><b>41:02</b></div>';
       sw.classList.add('open'); chip('up');
       await wait(1100, id);
       const add = $('c-add');
@@ -1158,15 +1553,15 @@
       cursor.style.opacity = 0;
       sc.classList.add('on'); renderSc('');
       await wait(350, id);
-      await typeSc('Call 20m', id);
+      await typeSc('Code review 30m', id);
       await wait(600, id);
       sc.classList.remove('on');
-      swTray.insertAdjacentHTML('beforeend', '<div><span class="sw-dot run"></span>Call<b>20:00</b></div>');
+      swTray.insertAdjacentHTML('beforeend', '<div><span class="sw-dot run"></span>Code review<b>30:00</b></div>');
       await wait(1800, id);
     },
     // Hide
     async id => {
-      showWidget('Write intro', 2700, 1198);
+      showWidget('Draft proposal', 2700, 1198);
       await wait(1100, id);
       await pressKeys(['⌥', 'T'], id, 380);
       sw.classList.add('hidden'); mbTime.classList.add('on');
@@ -1177,14 +1572,15 @@
     },
     // Pomodoro
     async id => {
+      showIdle();
       await wait(400, id);
       await launch('pomodoro', id);
-      swName.textContent = 'Focus'; sw.classList.remove('hidden');
-      startClock(1500, 1500, 1);
+      showWidget('Focus', 1500);
       await wait(900, id);
       startClock(1500, W.remaining, 4200);
       await wait(1300, id);
       stopClock(); setTime(0); sw.classList.add('done');
+      $('note-t').textContent = 'Focus 1 of 4 done'; $('note-b').textContent = 'Break for 5 minutes. It’s started; step away.';
       note.classList.add('on');
       await wait(1500, id);
       sw.classList.remove('done'); swName.textContent = 'Break'; startClock(300, 300);
@@ -1192,40 +1588,57 @@
       note.classList.remove('on');
       await wait(500, id);
     },
-    // Hard to miss the end
+    // Time's up
     async id => {
-      showWidget('Email', 1500, 4);
+      showWidget('Reply to emails', 1500, 4);
       await wait(4200, id);
-      stopClock(); swTime.textContent = 'Done'; sw.classList.add('done', 'pulse', 'open'); chip('up');
-      $('note-t').textContent = 'Email is done'; $('note-b').textContent = '25 minutes complete.'; note.classList.add('on');
+      stopClock(); sw.classList.add('tup'); if (!reduce) sw.classList.add('shake');
+      showCard(`<div class="cd plain" role="alert"><div class="lb">${OK}Time’s up<span class="at">${fmtT(stage.now)}</span></div><div class="nm">Reply to emails</div><div class="sb">25 minutes complete</div><div class="bt"><span class="pri big" data-a="done">Done</span><span>+5m</span><span>Restart</span></div></div>`);
+      $('note-t').textContent = 'Time’s up: Reply to emails'; $('note-b').textContent = '25 minutes complete.'; note.classList.add('on');
+      await wait(2800, id);
+      const done = swCard.querySelector('[data-a="done"]');
+      await cursorTo(done, id, 2, 4);
+      sw.classList.remove('shake');
+      await wait(500, id);
+      await click(done, id);
+      note.classList.remove('on'); showCard(''); showIdle(); cursor.style.opacity = 0;
       await wait(1800, id);
-      const plus = $('c-plus');
-      await cursorTo(plus, id, 2, 4);
-      await click(plus, id);
-      sw.classList.remove('done', 'pulse'); note.classList.remove('on');
-      startClock(300, 300);
-      await wait(1600, id);
     },
-    // Focus sound
+    // The menu bar menu, and focus sound
     async id => {
-      showWidget('Write intro', 2700, 1190);
+      showWidget('Code review', 1800, 1190);
+      $('m-name').textContent = 'Code review';
       await wait(600, id);
       await cursorTo(mb, id, 2, 4);
       mb.classList.add('open'); menu.classList.add('on');
-      await wait(600, id);
+      await wait(700, id);
+      const more = $('m-more');
+      await cursorTo(more, id, -40, 2);
+      more.classList.add('hot');
+      openSub(more, '<div><span class="chk"></span>Pomodoro (25 min focus, 5 min break)</div><div><span class="chk"></span>Voice Command…<b class="k">⌥V</b></div><div><span class="chk"></span>Schedule a Session…</div>');
+      await wait(1900, id);
+      more.classList.remove('hot'); sub.classList.remove('on');
       const focus = $('m-focus');
-      await cursorTo(focus, id, -60, 2);
-      await click(focus, id);
-      $('m-check').textContent = '✓';
-      await wait(500, id);
+      await cursorTo(focus, id, -40, 2);
+      focus.classList.add('hot');
+      openSub(focus, '<div id="sub-play"><span class="chk"></span>Play While Timers Run</div><div class="sep"></div><div><span class="chk">✓</span>Rain</div><div><span class="chk"></span>Lo-fi</div><div><span class="chk"></span>Hush</div>');
+      await wait(600, id);
+      const play = $('sub-play');
+      await cursorTo(play, id, -40, 2);
+      await click(play, id);
+      play.querySelector('.chk').textContent = '✓';
+      await wait(450, id);
+      sub.classList.remove('on'); focus.classList.remove('hot'); $('m-fs').textContent = 'Rain ›';
       menu.classList.remove('on'); mb.classList.remove('open');
       cursor.style.opacity = 0;
       waves.classList.add('on');
-      await wait(2800, id);
+      await wait(2600, id);
     },
   ];
 
   const items = [...document.querySelectorAll('#features-list button')];
+  // Roughly how long each scene runs, for its progress bar.
+  const EST = [8800, 8600, 16200, 8400, 13600, 15200, 13200, 16400, 8400, 9600, 7600, 5800, 7400, 11600, 11400];
   let current = 0, progressAnim;
   async function play(i, auto = true) {
     const id = ++run;
@@ -1238,7 +1651,7 @@
     items.forEach(b => b.querySelector('i').style.setProperty('--p', '0%'));
     const started = performance.now();
     cancelAnimationFrame(progressAnim);
-    const est = [8600, 7000, 8200, 8400, 9800, 8200, 9400, 7600, 5800, 7600, 8800, 6200][i];
+    const est = EST[i];
     const step = () => {
       bar.style.setProperty('--p', Math.min(100, (performance.now() - started) / est * 100) + '%');
       if (id === run) progressAnim = requestAnimationFrame(step);
@@ -1261,102 +1674,141 @@
   if (reduce) { reset(); }
 
   /* ---------------- Try it: a real floating widget ---------------- */
-  const UNITS = { s:1, sec:1, secs:1, second:1, seconds:1, m:60, min:60, mins:60, minute:60, minutes:60, h:3600, hr:3600, hrs:3600, hour:3600, hours:3600, d:86400, day:86400, days:86400 };
-  const WORDS = { a:1, an:1, one:1, two:2, three:3, four:4, five:5, six:6, seven:7, eight:8, nine:9, ten:10, eleven:11, twelve:12, fifteen:15, twenty:20, thirty:30, forty:40, fifty:50, sixty:60, ninety:90 };
-  const FILL = new Set(['a','an','the','for','on','timer','called','named','start','set','my','of','and','to','about']);
-  // "Write intro 45m", "Reading for an hour and a half", "25". null if there's no time in it.
-  function parse(input) {
-    let t = input.toLowerCase().trim();
-    if (!t) return null;
-    if (t === 'half an hour' || /\bhalf an hour\b/.test(t)) t = t.replace(/\bhalf an hour\b/, '30 m');
-    let total = 0, found = false, rest = [], bare = null;
-    const c = t.match(/(^|\s)(\d{1,3}):(\d{2})(?::(\d{2}))?(?=\s|$)/);
-    if (c) { total += +c[2] * 3600 + +c[3] * 60 + +(c[4] || 0); found = true; t = t.replace(c[0], ' '); }
-    const tk = t.replace(/(\d)([a-z])/g, '$1 $2').replace(/([a-z])(\d)/g, '$1 $2').split(/[\s,-]+/).filter(Boolean);
-    for (let i = 0; i < tk.length; i++) {
-      let n = /^\d+(\.\d+)?$/.test(tk[i]) ? parseFloat(tk[i]) : WORDS[tk[i]], j = i + 1;
-      if (n >= 20 && n % 10 === 0 && WORDS[tk[j]] < 10 && UNITS[tk[j + 1]]) { n += WORDS[tk[j]]; j++; }
-      if (n !== undefined && UNITS[tk[j]]) {
-        const u = UNITS[tk[j]]; total += n * u; found = true; i = j;
-        if (tk[i + 1] === 'and' && tk[i + 2] === 'a' && tk[i + 3] === 'half') { total += u / 2; i += 3; }
-        continue;
-      }
-      if (n !== undefined && bare === null && /^\d/.test(tk[i])) { bare = n; continue; }
-      rest.push(tk[i]);
-    }
-    if (!found && bare !== null) { total = bare * 60; found = true; } else if (bare !== null) rest.unshift(String(bare));
-    if (!found || total < 1 || total > 366 * 86400) return null;
-    while (rest.length && FILL.has(rest[0])) rest.shift();
-    while (rest.length && FILL.has(rest.at(-1))) rest.pop();
-    const name = rest.join(' ').replace(/[<>&"]/g, '').slice(0, 40);
-    return { seconds: Math.round(total), name: name ? name[0].toUpperCase() + name.slice(1) : '' };
-  }
-
-  const fl = $('float'), fTime = $('f-time'), fName = $('f-name'), fIcon = $('f-icon'), fToggle = $('f-toggle');
+  const fl = $('float'), fRow = $('f-row'), fCard = $('f-card'), fSeg = $('f-seg');
+  const fTime = $('f-time'), fName = $('f-name'), fIcon = $('f-icon'), fToggle = $('f-toggle');
   const PAUSE = '<path d="M1.5 1h2.5v8H1.5zM6 1h2.5v8H6z"/>', PLAY = '<path d="M2 1l7 4-7 4z"/>';
-  const F = { end: 0, left: 0, state: 'off', t: 0 };
+  // state: off, run, pause, wait (between time blocks), done
+  const F = { state: 'off', end: 0, left: 0, dur: 0, name: '', steps: null, idx: 0, title: '', prev: '', wait: 0, sched: null, at: '', shakeUntil: 0, key: '', t: 0 };
+  function fShow(on) {
+    fl.classList.toggle('on', on); fl.setAttribute('aria-hidden', on ? 'false' : 'true');
+    if (!on) { fl.classList.remove('shake'); clearTimeout(F.t); }
+  }
+  function fRun(secs) { F.left = secs; F.end = Date.now() + secs * 1000; F.state = 'run'; }
+  function fStart(sec, name) { F.steps = null; F.name = name || ''; F.dur = sec; fRun(sec); fl.classList.remove('shake'); fShow(true); fRender(); }
+  function fStartSession(ss) { F.steps = ss.steps.map(x => ({ ...x })); F.title = ss.name; F.idx = 0; F.dur = F.steps[0].secs; fRun(F.dur); fl.classList.remove('shake'); fShow(true); fRender(); }
+  function fBlockDone() {
+    if (F.steps && F.idx < F.steps.length - 1) {
+      F.prev = F.steps[F.idx].name; F.idx++; F.dur = F.left = F.steps[F.idx].secs; F.state = 'wait'; F.wait = Date.now() + 10000;
+    } else {
+      F.state = 'done'; F.at = fmtT(realCtx().now);
+      if (!reduce) { fl.classList.add('shake'); F.shakeUntil = Date.now() + 60000; }
+    }
+  }
+  function fCardHTML() {
+    if (F.state === 'done') {
+      const sess = !!F.steps, total = sess ? F.steps.reduce((a, x) => a + x.secs, 0) : F.dur;
+      const name = sess ? F.title : F.name || `${compact(F.dur)} timer`;
+      return [`done${sess}`, `<div class="cd plain" role="alert"><div class="lb">${OK}${sess ? 'Session complete' : 'Time’s up'}<span class="at">${F.at}</span></div><div class="nm">${esc(name)}</div><div class="sb">${sess ? `${F.steps.length} time blocks · ${spoken(total)}` : `${spoken(F.dur)} complete`}</div>
+        <div class="bt"><button type="button" class="pri big" data-a="done">Done</button>${sess ? '' : '<button type="button" data-a="plus">+5m</button>'}<button type="button" data-a="again">${sess ? 'Run again' : 'Restart'}</button></div></div>`];
+    }
+    if (F.state === 'wait') {
+      const held = F.wait === Infinity, nx = F.steps[F.idx];
+      return [`wait${F.idx}${held}`, `<div class="cd" role="status"><div class="pt"><i>✓</i>${esc(F.prev)} done</div><div class="sb">Next: <b>${esc(nx.name)}</b>, ${compact(nx.secs)}${held ? '' : ' · <span id="f-wait"></span>'}</div>
+        <div class="bt"><button type="button" class="pri" data-a="go">Start now</button>${held ? '' : '<button type="button" data-a="hold">Pause</button>'}</div></div>`];
+    }
+    if (F.sched) return [`sched${F.sched.n}`, F.sched.html];
+    return ['', ''];
+  }
   function fRender() {
     clearTimeout(F.t);
-    if (F.state === 'run') {
-      F.left = (F.end - Date.now()) / 1000;
-      if (F.left <= 0) { F.left = 0; F.state = 'done'; }
-    }
-    fl.classList.toggle('paused', F.state === 'pause');
-    fl.classList.toggle('done', F.state === 'done');
-    fTime.textContent = F.state === 'done' ? 'Done' : clockText(F.left);
+    const now = Date.now();
+    if (F.state === 'run') { F.left = (F.end - now) / 1000; if (F.left <= 0) { F.left = 0; fBlockDone(); } }
+    if (F.state === 'wait' && now >= F.wait) fRun(F.left);
+    if (fl.classList.contains('shake') && now > F.shakeUntil) fl.classList.remove('shake');
+    const [key, html] = fCardHTML();
+    if (key !== F.key) { F.key = key; fCard.innerHTML = html; fCard.hidden = !html; }
+    const w = $('f-wait'); if (w) w.textContent = `starts in ${Math.max(1, Math.ceil((F.wait - now) / 1000))}s`;
+    fRow.hidden = F.state === 'done' || F.state === 'off';
+    fl.classList.toggle('paused', F.state === 'pause' || F.state === 'wait');
+    fName.textContent = F.steps ? F.steps[F.idx].name : F.name;
+    fTime.textContent = clockText(F.left);
     fIcon.innerHTML = F.state === 'run' ? PAUSE : PLAY;
-    fToggle.style.display = F.state === 'done' ? 'none' : '';
+    fToggle.style.display = F.state === 'run' || F.state === 'pause' ? '' : 'none';
     fToggle.setAttribute('aria-label', F.state === 'run' ? 'Pause' : 'Resume');
+    fSeg.hidden = !F.steps || F.state === 'done' || F.state === 'off';
+    if (!fSeg.hidden) fSeg.innerHTML = F.steps.map((x, i) => `<i style="--f:${x.secs}" class="${i < F.idx ? 'done' : i === F.idx ? 'now' : ''}"></i>`).join('');
     if (F.state === 'run') F.t = setTimeout(fRender, ((F.left % 1) * 1000 || 1000) + 5);
+    else if (F.state === 'wait' || fl.classList.contains('shake')) F.t = setTimeout(fRender, 250);
   }
-  function fStart(sec, name) {
-    F.end = Date.now() + sec * 1000; F.state = 'run'; fName.textContent = name || '';
-    fl.setAttribute('aria-hidden', 'false'); fl.classList.add('on'); fRender();
+  let schedN = 0;
+  function fSchedule(m, text) {
+    F.sched = { html: schedCardHTML(m, realCtx(), 'button'), text, n: ++schedN };
+    if (F.state === 'done') { F.state = 'off'; fl.classList.remove('shake'); }
+    fShow(true); fRender();
   }
-  // A planned block: shows what's next instead of counting down.
-  function fSchedule(spec) {
-    clearTimeout(F.t); F.state = 'sched';
-    fl.classList.remove('done'); fl.classList.add('paused', 'on'); fl.setAttribute('aria-hidden', 'false');
-    fName.textContent = `Next: ${spec.name}`;
-    fTime.textContent = `${spec.days ? fmtDays(spec.days) + ' ' : ''}${fmtT(spec.start)}`;
-    fToggle.style.display = 'none';
-  }
+  function fClear() { F.state = 'off'; F.sched = null; F.steps = null; fShow(false); fRender(); }
   fToggle.addEventListener('click', () => {
     if (F.state === 'run') { F.left = (F.end - Date.now()) / 1000; F.state = 'pause'; }
-    else if (F.state === 'pause') { F.end = Date.now() + F.left * 1000; F.state = 'run'; }
+    else if (F.state === 'pause') fRun(F.left);
     fRender();
   });
-  $('f-close').addEventListener('click', () => { F.state = 'off'; clearTimeout(F.t); fl.classList.remove('on'); fl.setAttribute('aria-hidden', 'true'); });
+  $('f-close').addEventListener('click', fClear);
+  // Touching the widget stops the shake.
+  fl.addEventListener('pointerdown', () => { if (fl.classList.contains('shake')) { fl.classList.remove('shake'); F.shakeUntil = 0; } });
+  fCard.addEventListener('click', e => {
+    const b = e.target.closest('[data-a]'); if (!b) return;
+    const a = b.dataset.a;
+    if (a === 'done') { F.state = 'off'; F.steps = null; fl.classList.remove('shake'); if (!F.sched) { fShow(false); } }
+    else if (a === 'plus') { F.dur += 300; fRun(300); fl.classList.remove('shake'); }
+    else if (a === 'again') { fl.classList.remove('shake'); if (F.steps) { F.idx = 0; F.dur = F.steps[0].secs; fRun(F.dur); } else fRun(F.dur); }
+    else if (a === 'go') fRun(F.left);
+    else if (a === 'hold') F.wait = Infinity;
+    else if (a === 'ok' || a === 'undo' || a === 'edit') {
+      if (a === 'edit') { q.value = F.sched.text; preview(); q.focus(); }
+      F.sched = null; if (F.state === 'off') fShow(false);
+    }
+    fRender();
+  });
 
-  const q = $('q'), what = $('what'), qMirror = $('q-mirror');
-  const preview = () => {
-    const m = model(q.value);
-    qMirror.innerHTML = markedText(q.value, m) + (m.ghost ? `<span class="ghost">${ghostHTML(q.value, m)}</span>` : '');
-    what.innerHTML = preHTML(m);
-  };
-  q.addEventListener('input', preview);
-  q.addEventListener('scroll', () => { qMirror.scrollLeft = q.scrollLeft; });
+  const form = $('launcher'), q = $('q'), what = $('what'), qMirror = $('q-mirror'), qSteps = $('q-steps'), qWhen = $('q-when'), qChips = $('q-chips'), qClear = $('q-clear');
+  function preview() {
+    const ctx = realCtx(), m = model(q.value);
+    qMirror.innerHTML = markedText(q.value, m) + (m.ghost ? `<span class="ghost">${ghostHTML(q.value, m)}</span>` : '') + '​';
+    form.classList.toggle('long', q.value.length > 40);
+    what.innerHTML = preHTML(m, ctx);
+    qSteps.hidden = qWhen.hidden = m.kind !== 'session';
+    if (m.kind === 'session') { qSteps.innerHTML = stepsHTML(m.ss, ctx); qWhen.innerHTML = whenHTML(m.ss, ctx, 'button'); }
+    // Quick lengths only while there's nothing to start yet.
+    qChips.hidden = !(m.kind === 'empty' || m.ghost);
+    qClear.hidden = !q.value;
+  }
+  q.addEventListener('input', () => {
+    // A list pasted (or typed) one per line: each line is a time block.
+    if (/\n/.test(q.value)) { const at = q.selectionStart; q.value = q.value.replace(/\s*\n+\s*/g, ', ').replace(/^,\s*/, ''); q.setSelectionRange(Math.min(at + 1, q.value.length), Math.min(at + 1, q.value.length)); }
+    preview();
+  });
   q.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); return; }
+    if (e.key === 'Escape' && q.value) { e.preventDefault(); q.value = ''; preview(); return; }
     if (e.key !== 'Tab' || e.shiftKey) return;
     const m = model(q.value);
     if (m.ghost) { e.preventDefault(); q.value = q.value.replace(/\s*$/, ' ') + '25m'; preview(); }
-    else if (!q.value.trim()) { e.preventDefault(); q.value = 'Write intro 25m'; preview(); }
+    else if (!q.value.trim()) { e.preventDefault(); q.value = 'Reply to emails 25m'; preview(); }
   });
-  $('launcher').addEventListener('submit', e => {
+  form.querySelector('label').addEventListener('click', e => { if (!e.target.closest('button')) q.focus(); });
+  qClear.addEventListener('click', () => { q.value = ''; preview(); q.focus(); });
+  // "Starts": rewrites the start time at the end of the text, so what you see is what runs.
+  qWhen.addEventListener('click', e => {
+    const b = e.target.closest('button[data-at]'); if (!b) return;
+    q.value = q.value.replace(START_RE, '') + (b.dataset.at ? `, starting at ${b.dataset.at} today` : '');
+    preview(); q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+  });
+  form.addEventListener('submit', e => {
     e.preventDefault();
     const m = model(q.value);
     if (m.kind === 'empty') fStart(DEFAULT, '');
     else if (m.kind === 'start') fStart(m.secs, m.name);
     else if (m.kind === 'pomo') fStart(1500, 'Focus');
-    else if (m.kind === 'sched') fSchedule(m.spec);
+    else if (m.kind === 'session' && !m.ss.sched) fStartSession(m.ss);
+    else if (m.kind === 'session' || m.kind === 'sched') fSchedule(m, q.value);
     else if (m.kind === 'add' && F.state !== 'off') {
-      if (F.state === 'run') F.end += m.secs * 1000; else if (F.state === 'pause') F.left += m.secs; else { F.end = Date.now() + m.secs * 1000; F.state = 'run'; }
+      if (F.state === 'run') F.end += m.secs * 1000; else if (F.state === 'pause' || F.state === 'wait') F.left += m.secs; else { fRun(m.secs); fl.classList.remove('shake'); }
       fRender();
     } else { q.focus(); return; }
     q.value = ''; preview();
   });
   // A chip starts what you've written (if anything) for that long.
-  document.querySelectorAll('.launcher .chips button').forEach(b => b.addEventListener('click', () => {
+  qChips.querySelectorAll('button').forEach(b => b.addEventListener('click', () => {
     const m = model(q.value);
     fStart(parse(b.dataset.q).seconds, m.kind === 'start' && m.ghost ? m.name : '');
     q.value = ''; preview();
