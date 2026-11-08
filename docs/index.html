@@ -261,7 +261,8 @@
   .sw-blockbox { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
   .s-widget.editing .sw-blockbox { grid-template-rows: 1fr; }
   .sw-blockbox > div { overflow: hidden; min-height: 0; }
-  .sw-blockbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 300px; }
+  .sw-blockbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 332px; }
+  .s-widget:not(.editing) .sw-blockbox .in { width: 276px; }
   .sw-blockbox .lbx { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; color: var(--ember); margin-bottom: 5px; }
   .sw-blockbox .nm { height: 24px; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 12px; font-weight: 650; padding: 0 8px; display: flex; align-items: center; }
   .sw-blockbox .rg { display: flex; justify-content: space-between; align-items: baseline; margin: 9px 1px 6px; }
@@ -284,7 +285,7 @@
   .sw-tl .o { position: absolute; top: 16px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.12); }
   .sw-tl .b { white-space: nowrap; overflow: hidden; position: absolute; top: 14px; height: 22px; border-radius: 5px; background: var(--ember-deep); color: #fff; font-size: 9.5px; font-weight: 650; padding: 0 7px; display: flex; align-items: center; transition: left .12s linear; }
   .sw-blockbox .ft { display: flex; gap: 5px; justify-content: flex-end; margin-top: 10px; }
-  .sw-blockbox .ft span { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.08); white-space: nowrap; transition: background .15s; }
+  .sw-blockbox .ft span { font-size: 11px; font-weight: 600; padding: 4px 8px; border-radius: 6px; background: rgba(255,255,255,0.08); white-space: nowrap; transition: background .15s; }
   .sw-blockbox .ft span.del { color: #FF9C8A; margin-right: auto; }
   .sw-blockbox .ft span.pri { background: var(--ember-deep); color: #fff; }
   .sw-blockbox .ft span.hot { background: rgba(255,255,255,0.2); }
@@ -1162,7 +1163,7 @@
      rewrites the text, so the text always says what will happen. */
   // What the text says about when, or null when there's nothing to start or plan.
   function whenInfo(m) {
-    const of = (w, spans, dur) => ({ mode: !w ? 'now' : w.days ? 'routine' : 'today', minute: w ? w.start : null, days: w ? w.days : null, spans: w ? spans.filter(x => x[2] === 'when') : [], dur });
+    const of = (w, spans, dur) => ({ mode: !w ? 'now' : w.days ? 'routine' : 'today', minute: w ? w.start : null, days: w ? w.days : null, dayOff: w ? w.dayOff : undefined, spans: w ? spans.filter(x => x[2] === 'when') : [], dur });
     if (m.kind === 'start') return of(null, [], m.secs);
     if (m.kind === 'session') return of(m.ss.sched, m.ss.spans, m.ss.total);
     if (m.kind === 'sched') return of(m.spec, m.spec.spans, m.spec.dur);
@@ -1212,7 +1213,9 @@
     const B = (label, kind, val, on, extra = '', cls = '') => tag === 'button'
       ? `<button type="button" data-k="${kind}" data-v="${val}" class="${on ? 'on' : ''} ${cls}" aria-pressed="${on}"${extra}>${label}</button>`
       : `<span class="b ${on ? 'on' : ''} ${cls}" data-k="${kind}" data-v="${val}">${label}</span>`;
-    const modes = [['Start now', 'now'], ['Later today', 'today'], ['Routine', 'routine']];
+    // Honest label: a time that has already passed today means tomorrow.
+    const tmrw = info.mode === 'today' && nextOcc(info.minute, null, info.dayOff, ctx) === 'Tomorrow';
+    const modes = [['Start now', 'now'], [tmrw ? 'Tomorrow' : 'Later today', 'today'], ['Routine', 'routine']];
     let h = `<div class="ms">${modes.map(([l, v]) => B(l, 'mode', v, info.mode === v).replace(/class="b /, 'class="')).join('')}</div>`;
     if (info.mode !== 'now') h += `<div class="wr"><span class="wl">At</span>${timeChoices(info, ctx).map(x => B(fmtT(x), 'at', x, info.minute === x)).join('')}<span class="q">or type “at 3:15pm”</span></div>`;
     if (info.mode === 'routine') {
@@ -1373,9 +1376,9 @@
       `<div class="r"><span class="t">${fmtR(s0, d)}</span><b>${n}</b>${ed ? '<em>today</em>' : rep ? '<em>↻</em>' : ''}${tag ? `<em class="${tag.toLowerCase()}">${tag}</em>` : ''}<span class="x" aria-hidden="true">×</span></div>`).join('');
   }
   // The editor's timeline: 4 hours, snapping to 5 minutes.
-  const TL = { W: 276, span: 240, win: 480 };
+  const TL = { W: 308, span: 240, win: 465 };
   const tlX = m => (m - TL.win) / TL.span * TL.W;
-  function drawTimeline(startMin, dur = 90, win = 480) {
+  function drawTimeline(startMin, dur = 90, win = 465) {
     TL.win = win;
     let h = '';
     for (let q = Math.ceil(win / 15) * 15; q <= win + TL.span; q += 15) if (q % 60) h += `<div class="qh" style="left:${tlX(q)}px"></div>`;

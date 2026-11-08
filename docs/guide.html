@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Guide · Drift</title>
-<meta name="description" content="How Drift works: the launcher, the widget, the dial, sessions, scheduling, Pomodoro, focus sounds and every shortcut.">
+<meta name="description" content="How Drift works: the launcher, the widget, the dial, sessions, planning later today, routines, Pomodoro, focus sounds and every shortcut.">
 <meta name="theme-color" content="#171513">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -67,11 +67,11 @@
 </nav>
 <main>
 <h1>How Drift works</h1>
-<p class="lede">A timer you start in a second, from any app. Line up a few blocks to run back to back, or plan your day and let each one start itself. Here's everything it does.</p>
+<p class="lede">A timer you start in a second, from any app. Line up a few blocks to run back to back. Start now, plan it for later today, or make it a routine, and Drift starts each one on time. Here's everything it does.</p>
 <ul class="toc">
   <li><a href="#basics">The basics</a></li><li><a href="#launcher">Writing a timer</a></li><li><a href="#widget">The widget</a></li>
   <li><a href="#dial">Changing the time</a></li><li><a href="#sessions">Sessions</a></li><li><a href="#extra">Extra time</a></li>
-  <li><a href="#several">Several timers</a></li><li><a href="#plan">Scheduling</a></li><li><a href="#pomodoro">Pomodoro</a></li>
+  <li><a href="#several">Several timers</a></li><li><a href="#plan">Later today and routines</a></li><li><a href="#pomodoro">Pomodoro</a></li>
   <li><a href="#end">When time's up</a></li><li><a href="#sound">Focus sounds</a></li><li><a href="#voice">Voice</a></li>
   <li><a href="#menubar">Menu bar</a></li><li><a href="#shortcuts">Shortcuts</a></li><li><a href="#settings">Settings</a></li><li><a href="#privacy">Privacy</a></li>
 </ul>
@@ -89,9 +89,11 @@
   <tr><td><code><span class="pill">25</span></code></td><td>A bare number means minutes. Name it later.</td></tr>
   <tr><td><code><span class="pill">1:30</span></code>, <code><span class="pill">90s</span></code>, <code><span class="pill">2h 15m</span></code></td><td>Any way you'd write a time</td></tr>
   <tr><td><code>inbox <span class="pill">10m</span>, plan the day <span class="pill">10m</span></code></td><td>A session: time blocks back to back (see <a href="#sessions">Sessions</a>)</td></tr>
+  <tr><td><code>Client call <span class="when">at 2pm</span> for <span class="pill">30m</span></code></td><td>Planned for later today (see <a href="#plan">Later today and routines</a>)</td></tr>
   <tr><td><code>pomodoro</code>, <code>50/10</code></td><td>Focus and break, alternating (see <a href="#pomodoro">Pomodoro</a>)</td></tr>
   <tr><td><code>add 5 minutes</code>, <code>pause</code>, <code>resume code review</code>, <code>cancel standup prep</code></td><td>Change a timer that's already running</td></tr>
 </table>
+<p>Under what you type, a switch shows when it will happen: <b>Start now · Later today · Routine</b>. Drift picks it from your words, and tapping one changes the text to match (more in <a href="#plan">Later today and routines</a>).</p>
 <p>The box wraps onto more lines as you write, so a long list stays in view. While it's empty you'll see one-click lengths (5, 10, 15, 25, 45 minutes, 1 hour; or <kbd>⌘ 1</kbd>–<kbd>⌘ 9</kbd> for your quick starts) and your recent tasks with their usual length. They step aside once you start typing. If you've written a task but no time, a length starts that task for that long. To close the launcher, press <kbd>Esc</kbd>, click outside it or click <b>×</b>.</p>
 
 <h2 id="widget">The widget</h2>
@@ -112,9 +114,9 @@
 <table>
   <tr><td><code>Morning startup: inbox <span class="pill">10m</span>, plan the day <span class="pill">10m</span>, review calendar <span class="pill">5m</span></code></td><td>"Morning startup", three time blocks, 25 minutes in all</td></tr>
   <tr><td><code>Code review <span class="pill">30m</span>, then reply to emails <span class="pill">15m</span></code></td><td>Two time blocks, no name needed</td></tr>
-  <tr><td><code>Morning startup: inbox <span class="pill">10m</span>, plan the day <span class="pill">10m</span> <span class="when">at 8am weekdays</span></code></td><td>The same, scheduled every weekday at 8</td></tr>
+  <tr><td><code>Morning startup: inbox <span class="pill">10m</span>, plan the day <span class="pill">10m</span> <span class="when">at 8am weekdays</span></code></td><td>The same, as a routine every weekday at 8</td></tr>
 </table>
-<p>As you type, the launcher lists each block with its clock time and says when the whole session ends. A <b>Starts</b> row offers <b>Now</b> and the next three half hours (for example <b>2:00 PM</b>, <b>2:30 PM</b>, <b>3:00 PM</b>). One tap adds "starting at 2pm today" to what you wrote, so what you see is what runs; you can also just type <span class="when">at 3pm</span>.</p>
+<p>As you type, the launcher lists each block with its clock time and says when the whole session ends. To run it later, tap <b>Later today</b> or <b>Routine</b> under what you wrote, or type <span class="when">at 3pm</span>; see <a href="#plan">Later today and routines</a>.</p>
 <p>The widget shows the block you're on, with a thin bar for the whole session. Expanded, every block is listed with its clock time, and <b>Next</b> moves straight on if you finish early. When a block ends, a card says what's done and what's next:</p>
 <div class="card"><p><b>✓ Inbox done</b> · Next: Plan the day, 10m · starts in 10s &nbsp; <b>Start now</b> · <b>Pause</b></p></div>
 <p>How long the hand-off waits is up to you: Settings → <b>Next time block starts</b>: right away, after 5, 10 or 30 seconds, or when you press Start. When the last block ends you get <b>Session complete</b>, with <b>Run again</b>.</p>
@@ -127,20 +129,45 @@
 <h2 id="several">Several timers</h2>
 <p>Start as many as you like. One stays in view; the button beside it shows how many others there are (<b>+2</b>). Expand the widget to see them all with their own pause, cancel, name and time. Click one to bring it to the top.</p>
 
-<h2 id="plan">Scheduling</h2>
-<p>Write <span class="when">when</span> instead of (or as well as) how long, and Drift schedules it instead of starting it now. The time of day and the days light up in <span class="when">blue</span>. Sessions can be scheduled the same way.</p>
+<h2 id="plan">Later today and routines</h2>
+<p>Every timer starts one of three ways, named by when: <b>Start now</b>, <b>Later today</b> or as a <b>Routine</b> that repeats on set days. Under what you type, a switch shows which one Return will do. Drift picks it from your words, and the time of day and the days light up in <span class="when">blue</span>:</p>
 <table>
-  <tr><td><code>Deep work <span class="when">9-10:30 weekdays</span></code></td><td>Every weekday, 9:00 to 10:30</td></tr>
-  <tr><td><code>Client call <span class="when">at 2pm</span> for <span class="pill">30m</span></code></td><td>Once, today (or tomorrow if it's past 2)</td></tr>
-  <tr><td><code>Weekly planning <span class="pill">15m</span> <span class="when">fri at 4pm</span></code></td><td>Every Friday at 4</td></tr>
-  <tr><td><code>Prep for standup <span class="when">tomorrow at 9:15am</span></code></td><td>Once, with your default length</td></tr>
+  <tr><td><code>Reply to emails <span class="pill">25m</span></code></td><td><b>Start now</b>: no time of day</td></tr>
+  <tr><td><code>Client call <span class="when">at 2pm</span> for <span class="pill">30m</span></code></td><td><b>Later today</b>, 2:00 to 2:30 (tomorrow, if it's already past 2)</td></tr>
+  <tr><td><code>Weekly planning <span class="pill">30m</span> <span class="when">fri at 4pm</span></code></td><td><b>Routine</b>, every Friday at 4</td></tr>
+  <tr><td><code>Deep work <span class="when">9-10:30 weekdays</span></code></td><td><b>Routine</b>, every weekday, 9:00 to 10:30</td></tr>
 </table>
-<p>When you press Return, a <b>Scheduled</b> card at the top of the widget confirms what, when, each block's time for a session, and when Drift will start it, for example: <i>Tomorrow at 9:00 AM, Drift checks in and starts it for you.</i> Press <b>Got it</b>, <b>Edit</b> to change it, or <b>Undo</b>. You can also use the menu bar → More Ways to Start → <b>Schedule a Session…</b></p>
-<p>Today's sessions appear in the expanded widget and the menu bar, marked <b>Next</b>, <b>Now</b>, <b>Done</b> or <b>Skipped</b>. A line under the timer tells you what's next.</p>
+<p>Tap a mode and the text changes with it, so it always says what will happen:</p>
+<ul>
+  <li><b>Start now</b> takes the time and days out: <code>Client call 30m</code>.</li>
+  <li><b>Later today</b> adds the next half hour that's at least 10 minutes away: <code>Client call 30m <span class="when">at 2:30pm today</span></code>. An <b>At</b> row offers the next three half hours, or type <span class="when">at 3:15pm</span>. If the time you typed has already passed, the switch says <b>Tomorrow</b> instead.</li>
+  <li><b>Routine</b> adds <span class="when">weekdays at 9am</span>, keeping a time you've already picked. The <b>At</b> row offers 8:00 AM, 9:00 AM and 1:00 PM, and an <b>On</b> row has <b>Weekdays</b>, <b>Every day</b> and a toggle for each day: M T W T F S S.</li>
+</ul>
+<p>It works the same for a single task and for a session. The hint beside Return tells you what it will do: <i>Return to start</i>, <i>Return to plan it</i> or <i>Return to add routine</i>.</p>
+<h3>The confirmation card</h3>
+<p>When you press Return, a card at the top of the widget confirms it: <b>PLANNED</b> for later today, <b>ROUTINE ADDED</b> for one that repeats. It shows what, when, each block's time for a session, and when Drift will start it:</p>
+<div class="card"><p><b>PLANNED</b> · Client call · Today · 2:30–3:00 PM<br>Today at 2:30 PM, Drift checks in and starts it for you. &nbsp; <b>Got it</b> · <b>Edit</b> · <b>Undo</b></p></div>
+<p>After you edit it, the card says <b>UPDATED</b>, with <b>Got it</b>, <b>Edit</b> and <b>Delete</b>. You can also plan from the widget (<b>+ Plan</b> beside Today, or <b>Plan</b> at the bottom while nothing is planned) or from the menu bar → More Ways to Start → <b>Plan Later Today…</b> or <b>New Routine…</b></p>
+<p>Today's items appear in the expanded widget and the menu bar, marked <b>Next</b>, <b>Now</b>, <b>Done</b> or <b>Skipped</b>. A line under the timer tells you what's next.</p>
 <h3>When it's time</h3>
-<p>Drift plays a soft chime, shows a notification and puts a card on the widget: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you're heads down and ignore it, it starts by itself after a minute. Its timer ends when it's scheduled to end, so starting ten minutes late keeps your time box instead of pushing your whole day.</p>
-<h3>Changing a scheduled session</h3>
-<p>Click it in the widget or the menu bar. Drag it along its timeline to move it; drag its right edge to change the length; or nudge the start, pick a length and choose the days it repeats. For one that repeats, you choose: <b>Just today</b>, or every day it repeats. One changed for a single day is marked <b>today</b>. If it's running, its timer follows the change.</p>
+<p>Drift plays a soft chime, shows a notification and puts a card on the widget: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you're heads down and ignore it, it starts by itself after a minute. Its timer ends when it's planned to end, so starting ten minutes late keeps your time box instead of pushing your whole day.</p>
+<h3>Changing it</h3>
+<p>Click it in the widget's Today list or the menu bar. The editor is headed <b>EDIT</b> (or <b>EDIT ROUTINE</b>); for something new it's <b>PLAN LATER TODAY</b> or <b>NEW ROUTINE</b>.</p>
+<ul>
+  <li><b>Timeline:</b> shows four hours. Drag the block to move it, its right edge to change the length. It snaps to 5 minutes; hold <kbd>⌥</kbd> while you drag for single minutes.</li>
+  <li><b>Exact times:</b> click the start or end time and type it: <code>2:50</code>, <code>250</code> or <code>2:50pm</code>.</li>
+  <li><b>Nudge:</b> −5, −1, +1 and +5 minutes.</li>
+  <li><b>Repeat:</b> <b>Today</b> (or <b>Tomorrow</b>), <b>Weekdays</b>, <b>Every day</b>, or tap the days you want.</li>
+</ul>
+<p>Save with <b>Plan it</b>, <b>Add routine</b> or <b>Save</b>. When you move a routine, you choose: <b>Just today</b>, or every day it repeats. One changed for a single day is marked <b>today</b>. If it's running, its timer follows the change.</p>
+<h3>Skipping and deleting</h3>
+<ul>
+  <li>Hover a row in the widget's Today list and click <b>×</b>.</li>
+  <li>Right-click a row: <b>Edit…</b>, <b>Skip Today</b> or <b>Delete</b> (<b>Delete Routine</b> for one that repeats).</li>
+  <li>In the menu bar, each Today row has the same submenu: Edit…, Skip Today, Delete.</li>
+  <li>In the editor: <b>Delete</b>, or <b>Delete routine</b>.</li>
+</ul>
+<p>After you delete something, an Undo bar shows at the top of the widget for about six seconds: <i>Deleted “Deep work” · Undo</i>.</p>
 
 <h2 id="pomodoro">Pomodoro</h2>
 <p>Type <code>pomodoro</code> (or press <kbd>⌘ P</kbd> in the launcher) for 25 minutes of focus, then a 5 minute break, on repeat; every fourth break is 15 minutes. Expanded, the widget shows which round you're on and what's next. Use your own lengths with <code>50/10</code>. Skip ahead any time.</p>
@@ -164,7 +191,7 @@
 
 <h2 id="menubar">Hiding it, and the menu bar</h2>
 <p>Press <kbd>⌥ T</kbd> to hide the widget; the time moves next to the menu bar icon, and timers keep running. Press it again to bring the widget back. The menu bar icon is a small ring that empties as time passes.</p>
-<p>Its menu is short: your timers (each with pause, ±5 minutes, change time, rename, duplicate and cancel), today's plan, <b>New Timer…</b> with quick lengths (5m, 10m, 15m, 25m, 45m, 1h), <b>More Ways to Start</b> (saved sessions, Pomodoro, Voice Command… and Schedule a Session…), focus sound, Hide Widget, Help (Getting Started, Help &amp; Support) and Settings.</p>
+<p>Its menu is short: your timers (each with pause, ±5 minutes, change time, rename, duplicate and cancel), today's plan (each row with Edit…, Skip Today and Delete), <b>New Timer…</b> with quick lengths (5m, 10m, 15m, 25m, 45m, 1h), <b>More Ways to Start</b> (saved sessions, Pomodoro, Voice Command…, <b>Plan Later Today…</b> and <b>New Routine…</b>; it's called <b>Sessions and More</b> once you have saved sessions), focus sound, Hide Widget, Help (Getting Started, Help &amp; Support) and Settings.</p>
 
 <h2 id="shortcuts">Shortcuts</h2>
 <table>

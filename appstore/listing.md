@@ -43,7 +43,7 @@ Where it says **Drift**, use the final name if it changes (`scripts/rename.py` u
 
 ## Promotional text (170, can change any time without review)
 
-Press ⌥ Space, write what you're working on and for how long, and get back to it. Line up time blocks back to back, or schedule them and Drift starts each one on time.
+Press ⌥ Space, write what you're working on and for how long, and get back to it. Start now, plan it for later today, or make it a routine that starts on time.
 
 ## Keywords (100 bytes, comma-separated, no spaces needed)
 
@@ -70,17 +70,20 @@ WRITE IT THE WAY YOU'D SAY IT
 SESSIONS: SEVERAL TIME BLOCKS IN ONE GO
 • "Morning startup: inbox 10m, plan the day 10m, review calendar 5m". Each block starts when the one before it ends.
 • As you type, you see each block's clock time and when it all ends.
-• Start now, tap a start time, or add "at 3pm".
+• Start it now, later today, or as a routine.
 • Between blocks, a card says what's next and starts it for you.
 • Blocks don't stretch unless you allow it. An optional grace period caps extra time.
 • Named sessions are saved for one-click reuse.
 
-PLAN YOUR DAY
-• Type when instead of how long: "Deep work 9–10:30 weekdays", "Client call at 2pm for 30m".
-• A card confirms what's scheduled and when Drift will start it.
+START NOW, LATER TODAY, OR A ROUTINE
+• Under what you type: Start now, Later today, Routine. Drift picks one from your words.
+• "Client call at 2pm for 30m" is planned for later today. "Deep work 9–10:30 weekdays" becomes a routine.
+• Tap a mode and your text changes to match, so it always says what will happen.
+• A card confirms it: Planned, or Routine added, and when Drift will start it.
 • When it's time, Drift asks: Start, five more minutes, or skip today. Ignore it and it starts by itself.
-• Each one ends on schedule, so starting late keeps your time box.
-• Drag it on its timeline to move it, for today only or every day it repeats.
+• Each one ends on time, so starting late keeps your time box.
+• Move it to the minute: drag it on its timeline or type the exact time. Today only, or every day it repeats.
+• Delete with a click, and Undo if you change your mind.
 
 HARD TO MISS WHEN TIME'S UP
 • The widget shakes until you touch it, so you notice with the sound off.
@@ -96,7 +99,7 @@ CHANGE IT WITHOUT STOPPING
 STAYS OUT OF YOUR WAY
 • No Dock icon and no windows to manage.
 • The widget, launcher and menu show only what fits the moment.
-• Don't use scheduling, Pomodoro, focus sounds or voice? Switch them off in Settings and they're gone. Nothing is deleted.
+• Don't plan ahead, or use Pomodoro, focus sounds or voice? Switch them off in Settings and they're gone. Nothing is deleted.
 • ⌥ T hides the widget; the time moves to the menu bar.
 • Pomodoro built in: focus, break, and a longer break every fourth round.
 • Optional focus sounds, made live on your Mac: rain, ocean, fireplace, lo-fi, ambient, soft pad, Hush, and binaural beats.
@@ -146,7 +149,7 @@ How to test in under a minute:
 1. Press Option-Space from any app. Type "Reply to emails 25m" and press Return. A timer appears in the small widget at the top left of the screen. (With nothing running, the widget also offers a Start 25m button and one-tap lengths.)
 2. Click the timer's name to rename it. Click its time to open a dial for changing it.
 3. Press Option-Space and type "Inbox 1m, plan the day 1m" and press Return. This is a session: when the first block ends, a card shows what's next and starts it 10 seconds later. At the end the widget shakes and shows a Session complete card.
-4. Press Option-Space and type "Client call at 3pm for 15m" (use a time a minute or two from now). A Scheduled card confirms it. When the time comes, Drift shows a card with Start / In 5 min / Skip today; if ignored it starts by itself after a minute.
+4. Press Option-Space and type "Client call at 3pm for 15m" (use a time a minute or two from now). The switch under the text shows "Later today" and a Planned card confirms it. When the time comes, Drift shows a card with Start / In 5 min / Skip today; if ignored it starts by itself after a minute.
 5. Option-T hides and shows the widget. Everything is also in the menu bar icon.
 
 Microphone and speech recognition are optional: they're only requested if you press the microphone button or press Option-Space twice to speak a timer. Recognition is on-device.

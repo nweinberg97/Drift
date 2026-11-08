@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>Support · Drift</title>
-<meta name="description" content="How to use Drift: shortcuts, sessions, scheduling, voice, and fixes for common problems.">
+<meta name="description" content="How to use Drift: shortcuts, sessions, planning later today, routines, voice, and fixes for common problems.">
 <meta name="theme-color" content="#171513">
 <link rel="icon" type="image/png" href="favicon.png">
 <link rel="apple-touch-icon" href="icon.png">
@@ -82,10 +82,11 @@
   <tr><td><code>Code review for an hour and a half</code></td><td>1 hour 30 minutes</td></tr>
   <tr><td><code>1:30</code></td><td>1 hour 30 minutes</td></tr>
   <tr><td><code>pomodoro</code> or <code>50/10</code></td><td>Focus and break, alternating</td></tr>
-  <tr><td><code>Deep work 9-10:30 weekdays</code></td><td>A scheduled block, every weekday</td></tr>
-  <tr><td><code>Client call at 2pm for 30m</code></td><td>Once, today (or tomorrow if it's past 2)</td></tr>
+  <tr><td><code>Client call at 2pm for 30m</code></td><td>Later today (or tomorrow if it's past 2)</td></tr>
+  <tr><td><code>Deep work 9-10:30 weekdays</code></td><td>A routine, every weekday</td></tr>
+  <tr><td><code>Weekly planning 30m fri at 4pm</code></td><td>A routine, every Friday</td></tr>
   <tr><td><code>Morning startup: inbox 10m, plan the day 10m, review calendar 5m</code></td><td>A session: three time blocks, back to back</td></tr>
-  <tr><td><code>Code review 30m, then reply to emails 15m at 2pm</code></td><td>A session that starts at 2</td></tr>
+  <tr><td><code>Code review 30m, then reply to emails 15m at 2pm</code></td><td>A session, later today at 2</td></tr>
   <tr><td><code>add 5 minutes</code>, <code>pause</code>, <code>cancel code review</code></td><td>Change a timer that's running</td></tr>
 </table>
 
@@ -101,10 +102,11 @@
 </table>
 <p class="muted">Change any global shortcut in Settings.</p>
 
-<h2>Sessions and scheduling</h2>
+<h2>Sessions, later today and routines</h2>
 <p>List a few time blocks with commas, <i>then</i>, or one per line, and they run back to back as one session. Between blocks a card says what's next and starts it after 10 seconds (change this in Settings → <b>Next time block starts</b>). Time blocks don't get extra time unless you turn on <b>Extra time in sessions</b>.</p>
-<p>Type when instead of how long, or tap a time in the launcher's <b>Starts</b> row, and Drift schedules it. A <b>Scheduled</b> card at the top of the widget confirms what and when, with <b>Got it</b>, <b>Edit</b> and <b>Undo</b>. When the time comes, Drift chimes and shows a card: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you ignore it, it starts by itself after a minute, and it still ends on schedule.</p>
-<p>Click a scheduled session in the widget or menu bar to change it: drag it along the timeline, drag its right edge to change the length, or pick the days it repeats. For one that repeats, choose <b>Just today</b> or every day it repeats.</p>
+<p>Under what you type, <b>Start now · Later today · Routine</b> shows what Return will do. Drift picks it from your words (“at 2pm” is later today, “weekdays at 9” is a routine); tap one and the text changes to match, then pick a time in the <b>At</b> row (and days in the <b>On</b> row for a routine). A card at the top of the widget confirms it: <b>PLANNED</b> or <b>ROUTINE ADDED</b>, with <b>Got it</b>, <b>Edit</b> and <b>Undo</b>. You can also use the menu bar → More Ways to Start → <b>Plan Later Today…</b> or <b>New Routine…</b></p>
+<p>When the time comes, Drift chimes and shows a card: <b>Start</b>, <b>In 5 min</b> or <b>Skip today</b>. If you ignore it, it starts by itself after a minute, and it still ends on time.</p>
+<p>Click a planned item in the widget or menu bar to change it: drag it on the timeline (5-minute steps; hold <kbd>⌥</kbd> for single minutes), click the start or end time to type it, nudge it by −5, −1, +1 or +5 minutes, or pick the days it repeats. For a routine, choose <b>Just today</b> or every day it repeats.</p>
 
 <h2>Common questions</h2>
 <details><summary>The widget disappeared</summary>
@@ -119,7 +121,9 @@
   <p>By design, when time's up the chime repeats every few seconds (for up to two minutes) and the widget shakes until you touch it. Click the widget, then <b>Done</b>, <b>+5m</b> or <b>Restart</b>. Prefer one chime? Settings → Sound → When a timer finishes → <b>Chime once</b>. To stop the shake, turn off Settings → <b>Shake the widget when time's up</b>.</p></details>
 <details><summary>+5m is greyed out</summary>
   <p>In a session, time blocks don't stretch unless Settings → <b>Extra time in sessions</b> is on. If you've set a <b>Grace period</b>, +5m stops once a timer or time block has used it up.</p></details>
-<details><summary>Pomodoro, voice or scheduling is missing</summary>
+<details><summary>How do I delete something I planned?</summary>
+  <p>Hover its row in the widget's Today list and click <b>×</b>, or right-click it → <b>Delete</b> (<b>Delete Routine</b> for one that repeats). In the menu bar, each Today row has Edit…, Skip Today and Delete; the editor has <b>Delete</b> too. Changed your mind? Click <b>Undo</b> in the bar at the top of the widget within a few seconds. To miss it just once, use <b>Skip Today</b> instead.</p></details>
+<details><summary>Pomodoro, voice or planning is missing</summary>
   <p>Check Settings → <b>Features</b>. Plan my day, Focus sounds, Pomodoro and Voice can each be switched off, which hides them everywhere. Turning one back on brings everything back; nothing is deleted.</p></details>
 <details><summary>Start Drift when I log in</summary>
   <p>Settings → <b>Open Drift at login</b>.</p></details>
