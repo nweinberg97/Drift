@@ -340,23 +340,32 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         return menu
     }
 
-    /// One-tap lengths in a row: 5m 10m 15m 25m 45m 1h.
+    /// One-tap lengths in a row: 5m 10m 15m 25m 45m 1h. Each button is as wide
+    /// as its text needs, so nothing is ever cut off.
     private func quickStartItem() -> NSMenuItem {
         let lengths = settings.quickLengths
-        let width: CGFloat = 280
-        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 30))
-        let gap: CGFloat = 4, left: CGFloat = 20, right: CGFloat = 12
-        let w = (width - left - right - gap * CGFloat(max(0, lengths.count - 1))) / CGFloat(max(1, lengths.count))
-        for (i, seconds) in lengths.enumerated() {
+        let left: CGFloat = 20, right: CGFloat = 14, gap: CGFloat = 6, height: CGFloat = 22
+        var buttons: [NSButton] = []
+        for seconds in lengths {
             let b = NSButton(title: TimeFormatter.compact(seconds), target: self, action: #selector(startQuick(_:)))
-            b.bezelStyle = .rounded
-            b.controlSize = .small
-            b.font = NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)
+            b.bezelStyle = .inline
+            b.controlSize = .regular
+            b.font = NSFont.monospacedDigitSystemFont(ofSize: 12, weight: .medium)
             b.tag = Int(seconds)
-            b.frame = NSRect(x: left + CGFloat(i) * (w + gap), y: 3, width: w, height: 24)
             b.toolTip = "Start \(TimeFormatter.compact(seconds))"
             b.setAccessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
+            b.sizeToFit()
+            b.frame.size = NSSize(width: max(40, ceil(b.frame.width) + 10), height: height)
+            buttons.append(b)
+        }
+        let content = buttons.reduce(0) { $0 + $1.frame.width } + gap * CGFloat(max(0, buttons.count - 1))
+        let width = max(260, left + content + right)
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: height + 8))
+        var x = left
+        for b in buttons {
+            b.frame.origin = NSPoint(x: x, y: 4)
             container.addSubview(b)
+            x += b.frame.width + gap
         }
         let item = NSMenuItem()
         item.view = container
