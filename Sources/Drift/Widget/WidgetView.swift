@@ -190,7 +190,7 @@ struct WidgetView: View {
         // The idle row, cards and sessions need room; a single timer hugs its content.
         if store.primary == nil || store.primary?.isFinished == true || store.primary?.isWaiting == true
             || store.primary?.isSession == true || ui.confirmation != nil || ui.deleted != nil { return cardWidth }
-        if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return expandedWidth }
+        if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return cardWidth }
         return nil
     }
 
@@ -1180,7 +1180,7 @@ private struct DialFace: View {
                         .kerning(-0.5)
                         .foregroundStyle(Theme.primaryText)
                         .opacity(typing ? 0 : 1)
-                    Text(typing ? "Return to set" : hours > 0 ? "\(hours) h + minutes on the ring" : "Turn, or double-click to type")
+                    Text(typing ? "Return to set" : hours > 0 ? "\(hours) h + minutes on the ring" : "Double-click to type")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -1379,19 +1379,17 @@ private struct BlockRow: View {
     var body: some View {
         Button(action: open) {
             HStack(spacing: 8) {
-                Text(Schedule.range(startMinute: entry.occurrence.startMinute, duration: entry.occurrence.duration))
+                // Just the start: the name gets the room. The full range is in the tooltip.
+                Text(Schedule.time(entry.occurrence.startMinute))
                     .font(.system(size: 11.5).monospacedDigit())
                     .foregroundStyle(faded ? Theme.tertiaryText : Theme.secondaryText)
-                    .frame(width: 104, alignment: .leading)
+                    .frame(width: 60, alignment: .leading)
                 Text(entry.occurrence.name)
                     .font(.system(size: 12, weight: .medium))
                     .foregroundStyle(faded ? Theme.tertiaryText : Theme.primaryText)
                     .strikethrough(entry.state == .skipped)
                     .lineLimit(1)
                 Spacer(minLength: 4)
-                if let steps = entry.block.steps, steps.count > 1 {
-                    Text("\(steps.count) blocks").font(.system(size: 10.5)).foregroundStyle(Theme.tertiaryText)
-                }
                 if entry.occurrence.edited {
                     Tag(text: "today", style: .plain).help("Changed for today only")
                 } else if entry.block.isRepeating {
@@ -1420,7 +1418,7 @@ private struct BlockRow: View {
         }
         .buttonStyle(.plain)
         .onHover { hovering = $0 }
-        .help("Click to change it")
+        .help("\(Schedule.range(startMinute: entry.occurrence.startMinute, duration: entry.occurrence.duration))\((entry.block.steps?.count ?? 0) > 1 ? " · \(entry.block.steps?.count ?? 0) time blocks" : ""). Click to change it.")
         .contextMenu {
             Button("Edit…", action: open)
             Button(entry.state == .skipped ? "Don’t Skip Today" : "Skip Today", action: skip)
