@@ -48,6 +48,31 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            Section {
+                Toggle(isOn: $settings.featurePlan) {
+                    Text("Plan my day")
+                    Text("Scheduled sessions and the Today list")
+                }
+                Toggle(isOn: $settings.featureSounds) {
+                    Text("Focus sounds")
+                    Text("Rain, Lo-fi, Hush and more while a timer runs")
+                }
+                Toggle(isOn: $settings.featurePomodoro) {
+                    Text("Pomodoro")
+                    Text("Focus and break cycles")
+                }
+                Toggle(isOn: $settings.featureVoice) {
+                    Text("Voice")
+                    Text("Press the New timer shortcut twice to talk")
+                }
+            } header: {
+                Text("Features")
+            } footer: {
+                Text("Turn off what you don’t use and it disappears from the widget, menu bar and launcher. Nothing is deleted; turn it back on any time.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+            }
+
             Section("Timer") {
                 LabeledContent("Default length") {
                     DurationField(text: $defaultText, placeholder: "25m") { seconds in
@@ -63,6 +88,30 @@ struct SettingsView: View {
                 Picker("Keep finished timers", selection: $settings.finishedRetention) {
                     ForEach(AppSettings.FinishedRetention.allCases) { Text($0.title).tag($0) }
                 }
+                Toggle(isOn: $settings.shakeOnFinish) {
+                    Text("Shake the widget when time’s up")
+                    Text("Stops the moment you touch it. Handy with your sound off.")
+                }
+            }
+
+            Section {
+                Picker("Next time block starts", selection: $settings.betweenBlocks) {
+                    ForEach(AppSettings.BetweenBlocks.allCases) { Text($0.title).tag($0) }
+                }
+                Toggle("Extra time in sessions", isOn: $settings.extraInSessions)
+                Picker("Grace period", selection: $settings.gracePeriod) {
+                    Text("Off").tag(0.0)
+                    Text("5 min").tag(300.0)
+                    Text("10 min").tag(600.0)
+                    Text("15 min").tag(900.0)
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Sessions and extra time")
+            } footer: {
+                Text("A session is several time blocks in a row, like “Morning startup: inbox 10m, plan the day 10m”. Grace period caps how much extra time any one timer or time block can get, so a 20-minute task stays close to 20 minutes.")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
             }
 
             Section("Appearance") {
@@ -97,6 +146,7 @@ struct SettingsView: View {
                 Toggle("Notification when a timer finishes", isOn: $settings.notifications)
             }
 
+            if settings.featureSounds {
             Section {
                 Toggle("Play while a timer runs", isOn: $settings.focusSoundEnabled)
                 Picker("Sound", selection: $settings.soundscape) {
@@ -119,6 +169,7 @@ struct SettingsView: View {
                 Text("Made live on your Mac, no downloads. Plays while a timer runs and pauses during Pomodoro breaks.")
                     .font(.caption)
                     .foregroundStyle(.secondary)
+            }
             }
 
             Section {

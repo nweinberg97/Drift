@@ -69,20 +69,20 @@ struct WelcomeView: View {
 
             VStack(alignment: .leading, spacing: 16) {
                 Step(symbol: "keyboard", title: "Press \(newTimerKeys) from any app",
-                     detail: "Write what you're working on and for how long, like “Write intro 25m”, then press Return.",
+                     detail: "Write what you're working on and for how long, like “Reply to emails 25m”, then press Return.",
                      keys: newTimerKeys)
                 Step(symbol: "rectangle.topthird.inset.filled", title: "Your timer sits in the top-left corner",
                      detail: "Click its name to rename it and its time to turn the dial. \(toggleKeys) hides it; the time moves to the menu bar.",
                      keys: nil)
-                Step(symbol: "calendar", title: "Plan your day",
-                     detail: "Type when instead of how long: “Deep work 9–10:30 weekdays”. When it's time, \(AppInfo.name) asks, then starts it.",
+                Step(symbol: "calendar", title: "Several in a row, or later",
+                     detail: "“Morning startup: inbox 10m, plan the day 10m” runs them back to back. Add “at 2pm”, or type “Deep work 9–10:30 weekdays”, to plan it.",
                      keys: nil)
                 Step(symbol: "mic", title: "Or just say it",
                      detail: "Press \(newTimerKeys) twice and talk. Speech is recognised on this Mac and never stored.",
                      keys: nil)
             }
 
-            Text("Everything else is in the menu bar icon, including Settings and this guide (Getting Started).")
+            Text("Everything else is in the menu bar icon, including Settings and this guide (Help › Getting Started). Settings › Features hides what you don't use.")
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
                 .padding(.top, 20)

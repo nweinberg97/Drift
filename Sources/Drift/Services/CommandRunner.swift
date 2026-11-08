@@ -24,6 +24,8 @@ final class CommandRunner {
         case command(Preview)
         /// A time of day or days: plan it rather than start it.
         case schedule(ScheduleSpec)
+        /// Several time blocks back to back (planned, when it has a start time).
+        case session(SessionSpec)
         case invalid
     }
 
@@ -35,6 +37,12 @@ final class CommandRunner {
     /// Adds a scheduled block (set up by the app delegate).
     var addBlock: (ScheduleSpec) -> Void = { _ in }
 
+    func session(_ text: String) -> SessionSpec? {
+        SessionParser.parse(text, defaultDuration: settings.defaultDuration) { [settings] name in
+            settings.savedSession(named: name).map { ($0.name, $0.steps) }
+        }
+    }
+
     init(store: TimerStore, settings: AppSettings) {
         self.store = store
         self.settings = settings
@@ -43,6 +51,7 @@ final class CommandRunner {
     func plan(_ text: String) -> Plan {
         let trimmed = text.trimmingCharacters(in: .whitespacesAndNewlines)
         if trimmed.isEmpty { return .empty }
+        if let spec = session(text) { return .session(spec) }
         if let spec = ScheduleParser.parse(text, defaultDuration: settings.defaultDuration) { return .schedule(spec) }
         if let command = CommandParser.parse(trimmed) {
             if case let .start(seconds, name) = command { return .start(seconds: seconds, name: name, suggested: false) }
@@ -60,12 +69,16 @@ final class CommandRunner {
         if trimmed.isEmpty {
             return Preview(title: "Start \(TimeFormatter.clock(settings.defaultDuration))", detail: nil, isValid: true)
         }
+        if let s = session(trimmed) {
+            return Preview(title: s.schedule == nil ? "Start \(s.name)" : "Schedule \(s.name)",
+                           detail: "\(s.steps.count) time blocks · \(TimeFormatter.compact(s.total))", isValid: true)
+        }
         if let spec = ScheduleParser.parse(trimmed, defaultDuration: settings.defaultDuration) {
             let days = Schedule.describeDays(spec.days, date: spec.date)
             return Preview(title: "Schedule \(spec.name)", detail: "\(days) · \(Schedule.range(startMinute: spec.startMinute, duration: spec.duration))", isValid: true)
         }
         guard let command = CommandParser.parse(trimmed) else {
-            return Preview(title: "Try 25, 1:30, 90s, 2h 15m, or 45m writing", detail: nil, isValid: false)
+            return Preview(title: "Try 25, 1:30, 90s, 2h 15m, or “Reply to emails 25m”", detail: nil, isValid: false)
         }
         return preview(command)
     }
@@ -114,9 +127,17 @@ final class CommandRunner {
             showWidget()
             return .done
         }
+        if let s = session(trimmed) {
+            if let plan = s.schedule {
+                addBlock(plan)
+            } else {
+                store.startSession(name: s.name, steps: s.steps)
+                showWidget()
+            }
+            return .done
+        }
         if let spec = ScheduleParser.parse(trimmed, defaultDuration: settings.defaultDuration) {
             addBlock(spec)
-            revealTimers()
             return .done
         }
         guard let command = CommandParser.parse(trimmed) else {
@@ -124,7 +145,7 @@ final class CommandRunner {
             if let task = LauncherText.task(from: trimmed) {
                 return run(.start(seconds: settings.defaultDuration, name: task))
             }
-            return .failed("Didn't recognise that. Try “Write intro 25m”.")
+            return .failed("Didn't recognise that. Try “Reply to emails 25m”.")
         }
         return run(command)
     }

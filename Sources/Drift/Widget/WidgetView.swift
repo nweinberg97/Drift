@@ -18,6 +18,19 @@ final class WidgetUIState: ObservableObject {
     @Published var hideHint = false
     /// A finished timer is chiming; the widget pulses until it's handled.
     @Published var alerting = false
+    /// Time's up: the widget shakes until it's touched.
+    @Published var shaking = false
+    /// The "Scheduled" card at the top, after planning something.
+    @Published var confirmation: Confirmation?
+    /// The dial's limit when a grace period (or a session) caps extra time.
+    var dialMax: TimeInterval = WidgetUIState.dialMaximum
+    var dialBaseExtra: TimeInterval = 0
+
+    struct Confirmation: Equatable {
+        var blockID: UUID
+        var updated: Bool
+        var until: Date
+    }
 }
 
 extension WidgetUIState {
@@ -37,7 +50,7 @@ extension WidgetUIState {
             draft = BlockDraft(id: id, name: name, startMinute: start, duration: dur, days: block.days,
                                date: block.date ?? schedule.dayKey,
                                original: .init(name: name, startMinute: start, duration: dur, days: block.days),
-                               windowStart: 0)
+                               windowStart: 0, steps: block.steps)
         } else {
             let start = min(23 * 60, (nowMinute / 15 + 1) * 15 + 15)
             draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: [1, 2, 3, 4, 5],
@@ -54,21 +67,26 @@ extension WidgetUIState {
         renamingID = t.id
     }
 
-    func openDial(_ t: DriftTimer, now: Date) {
+    /// `room`: how much extra time the timer may still get (grace period).
+    func openDial(_ t: DriftTimer, now: Date, room: TimeInterval = .infinity) {
         guard !t.isFinished else { return }
         renamingID = nil
         dialOriginal = t.remaining(at: now)
         dialValue = max(60, (dialOriginal / 60).rounded() * 60)
+        dialBaseExtra = t.extraSoFar
+        dialMax = room.isInfinite ? Self.dialMaximum : max(dialValue, ((dialOriginal + room) / 60).rounded(.down) * 60)
         dialID = t.id
     }
+
+    var dialLimited: Bool { dialMax < Self.dialMaximum }
 
     /// Moves the dial; the timer follows live, a minute at a time.
     func setDial(_ value: TimeInterval, store: TimerStore) {
         guard let id = dialID else { return }
-        let next = min(Self.dialMaximum, max(60, (value / 60).rounded() * 60))
+        let next = min(dialMax, max(60, (value / 60).rounded() * 60))
         guard next != dialValue else { return }
         dialValue = next
-        store.setRemaining(id, seconds: next)
+        store.setRemaining(id, seconds: next, extra: dialLimited ? dialBaseExtra + max(0, next - dialOriginal) : nil)
         NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
     }
 
@@ -76,7 +94,7 @@ extension WidgetUIState {
     func closeDial(commit: Bool, store: TimerStore?) {
         guard let id = dialID else { return }
         if !commit, let store, store.timer(id) != nil {
-            store.setRemaining(id, seconds: dialOriginal)
+            store.setRemaining(id, seconds: dialOriginal, extra: dialBaseExtra)
         }
         dialID = nil
     }
@@ -107,9 +125,14 @@ struct WidgetView: View {
     private var expandedWidth: CGFloat { 272 * scale }
     private var editorWidth: CGFloat { 344 }
 
+    private var cardWidth: CGFloat { 296 * scale }
+
     private var width: CGFloat? {
         if ui.hideHint { return nil }
-        if ui.blockDraft != nil { return max(editorWidth, expandedWidth) }
+        if ui.blockDraft != nil { return max(editorWidth, cardWidth) }
+        // The idle row, cards and sessions need room; a single timer hugs its content.
+        if store.primary == nil || store.primary?.isFinished == true || store.primary?.isWaiting == true
+            || store.primary?.isSession == true || ui.confirmation != nil { return cardWidth }
         if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return expandedWidth }
         return nil
     }
@@ -120,13 +143,28 @@ struct WidgetView: View {
                 BlockPrompt(occurrence: occ, prompt: prompt, schedule: schedule, actions: actions)
                     .transition(.opacity)
             }
+            if !ui.hideHint, let c = ui.confirmation, let block = schedule.block(c.blockID) {
+                ScheduledCard(block: block, updated: c.updated, ui: ui, schedule: schedule, actions: actions)
+                    .transition(.opacity)
+            }
             if ui.hideHint {
                 HideHint(settings: settings, scale: scale)
+            } else if let primary = store.primary, primary.isFinished {
+                TimesUpCard(timer: primary, store: store, settings: settings, ui: ui, schedule: schedule, scale: scale, actions: actions)
             } else if let primary = store.primary {
+                if primary.isWaiting {
+                    HandoffCard(timer: primary, store: store)
+                        .transition(.opacity)
+                }
                 PrimaryRow(timer: primary, store: store, ui: ui, scale: scale,
                            othersCount: store.others.count, actions: actions)
-                if !ui.expanded, ui.dialID == nil, ui.blockDraft == nil, schedule.prompt == nil,
-                   let next = schedule.next(), !next.tomorrow,
+                if primary.isSession, !ui.expanded, ui.dialID == nil, let steps = primary.steps {
+                    SessionBar(timer: primary, steps: steps, now: store.now, width: cardWidth - 46 * scale)
+                        .padding(.leading, 33 * scale)
+                        .padding(.bottom, 8)
+                }
+                if settings.featurePlan, !ui.expanded, ui.dialID == nil, ui.blockDraft == nil, schedule.prompt == nil,
+                   ui.confirmation == nil, let next = schedule.next(), !next.tomorrow,
                    next.entry.occurrence.start.timeIntervalSince(schedule.now) < 2 * 3_600,
                    primary.blockID != next.entry.block.id {
                     NextBlockLine(entry: next.entry, tomorrow: false, ui: ui, schedule: schedule, actions: actions, scale: scale)
@@ -155,6 +193,8 @@ struct WidgetView: View {
         .animation(reduceMotion ? nil : Theme.quick, value: ui.dialID)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.blockDraft == nil)
         .animation(reduceMotion ? nil : Theme.quick, value: schedule.prompt)
+        .animation(reduceMotion ? nil : Theme.quick, value: ui.confirmation)
+        .animation(reduceMotion ? nil : Theme.quick, value: store.primary?.isWaiting)
         .animation(reduceMotion ? nil : Theme.quick, value: store.timers.map(\.id))
         .fixedSize()
         .reportSize(actions.resize)
@@ -170,17 +210,21 @@ struct WidgetView: View {
                 Button("Dismiss") { actions.acknowledge(); store.remove(t.id) }
             } else {
                 Button(t.isRunning ? "Pause" : "Resume") { store.toggle(t.id) }
+                if t.isSession {
+                    Button(t.nextBlock.map { "Next: \($0.name)" } ?? "Finish") { store.nextBlock(t.id) }
+                }
                 Button("Add 5 Minutes") { store.adjust(t.id, by: 300) }
+                    .disabled(store.extraLeft(t) < 1)
                 Button("Remove 5 Minutes") { store.adjust(t.id, by: -300) }
                     .disabled(t.remaining(at: store.now) <= 300)
-                Button("Change Time…") { ui.openDial(t, now: Date()); actions.focusPanel() }
+                Button("Change Time…") { ui.openDial(t, now: Date(), room: store.extraLeft(t)); actions.focusPanel() }
                 if t.pomodoro == nil { Button(t.name == nil ? "Add Task…" : "Rename…") { ui.beginRename(t); actions.focusPanel() } }
                 if let cycle = t.pomodoro {
                     Button("Skip to \(cycle.upNext.name)") { store.skipPhase(t.id) }
                 }
-                Button("Duplicate") { store.duplicate(t.id) }
+                if !t.isSession { Button("Duplicate") { store.duplicate(t.id) } }
                 Divider()
-                Button(t.pomodoro == nil ? "Cancel Timer" : "End Pomodoro") { store.remove(t.id) }
+                Button(t.pomodoro != nil ? "End Pomodoro" : t.isSession ? "End Session" : "Cancel Timer") { store.remove(t.id) }
             }
             Divider()
         }
@@ -258,8 +302,8 @@ private struct PrimaryRow: View {
                     if ui.expanded {
                         Button { store.remove(timer.id) } label: { Image(systemName: "xmark") }
                             .buttonStyle(IconButtonStyle(size: 26 * scale, tint: Theme.secondaryText))
-                            .help(timer.pomodoro == nil ? "Cancel this timer" : "End Pomodoro")
-                            .accessibilityLabel(timer.pomodoro == nil ? "Cancel timer" : "End Pomodoro")
+                            .help(timer.pomodoro != nil ? "End Pomodoro" : timer.isSession ? "End this session" : "Cancel this timer")
+                            .accessibilityLabel(timer.pomodoro != nil ? "End Pomodoro" : timer.isSession ? "End session" : "Cancel timer")
                             .transition(.opacity.combined(with: .scale(scale: 0.8)))
                     }
                 }
@@ -298,7 +342,7 @@ private struct PrimaryRow: View {
             ui.closeDial(commit: true, store: store)
             actions.releaseFocus()
         } else {
-            ui.openDial(timer, now: Date())
+            ui.openDial(timer, now: Date(), room: store.extraLeft(timer))
             actions.focusPanel()
         }
     }
@@ -312,7 +356,7 @@ private struct PrimaryRow: View {
 }
 
 /// The expand arrow: a soft filled pill so it reads as "there's more here".
-private struct ExpandButtonStyle: ButtonStyle {
+struct ExpandButtonStyle: ButtonStyle {
     let scale: CGFloat
     let highlighted: Bool
     @State private var hovering = false
@@ -428,72 +472,6 @@ struct StatusDot: View {
     }
 }
 
-// MARK: - Idle (no timers)
-
-private struct IdleRow: View {
-    @ObservedObject var store: TimerStore
-    @ObservedObject var settings: AppSettings
-    @ObservedObject var ui: WidgetUIState
-    @ObservedObject var schedule: ScheduleStore
-    let scale: CGFloat
-    let actions: WidgetActions
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4 * scale) {
-            HStack(spacing: 9 * scale) {
-                Circle()
-                    .strokeBorder(Theme.tertiaryText, lineWidth: 1.25)
-                    .frame(width: 7 * scale, height: 7 * scale)
-                    .frame(width: 11 * scale, height: 11 * scale)
-
-                TimeText(remaining: settings.defaultDuration, size: 22 * scale, color: Theme.secondaryText)
-                    .contentShape(Rectangle())
-                    .onTapGesture { actions.openComposer() }
-                    .help("Choose a duration")
-                    .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel("New timer")
-                    .accessibilityAction { actions.openComposer() }
-
-                Spacer(minLength: 6)
-
-                Button { store.create(seconds: settings.defaultDuration) } label: {
-                    Image(systemName: "play.fill").offset(x: 0.5)
-                }
-                .buttonStyle(IconButtonStyle(size: 26 * scale, tint: Theme.accent))
-                .help("Start \(TimeFormatter.compact(settings.defaultDuration))")
-                .accessibilityLabel("Start \(TimeFormatter.spoken(settings.defaultDuration)) timer")
-
-                if !schedule.blocks.isEmpty {
-                    Button { ui.expanded.toggle() } label: {
-                        Image(systemName: ui.expanded ? "chevron.up" : "chevron.down")
-                            .font(.system(size: 10 * scale, weight: .bold))
-                    }
-                    .buttonStyle(IconButtonStyle(size: 26 * scale, tint: Theme.secondaryText))
-                    .help(ui.expanded ? "Collapse" : "Today's plan")
-                    .accessibilityLabel(ui.expanded ? "Collapse" : "Show today's plan")
-                }
-            }
-
-            if !ui.expanded, let next = schedule.next() {
-                NextBlockLine(entry: next.entry, tomorrow: next.tomorrow, ui: ui, schedule: schedule, actions: actions, scale: scale)
-                    .padding(.leading, -13 * scale)
-            } else if schedule.blocks.isEmpty, let shortcut = settings.shortcuts[.newTimer] {
-                HStack(spacing: 6) {
-                    KeyCaps(text: shortcut.display)
-                    Text("write a task and a time, from any app")
-                        .font(Theme.caption)
-                        .foregroundStyle(Theme.tertiaryText)
-                }
-                .padding(.leading, 20 * scale)
-                .transition(.opacity)
-            }
-        }
-        .padding(.leading, 13 * scale)
-        .padding(.trailing, 7 * scale)
-        .padding(.vertical, 7 * scale)
-    }
-}
-
 // MARK: - Expanded
 
 private struct ExpandedSection: View {
@@ -506,14 +484,24 @@ private struct ExpandedSection: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let t = store.primary {
+            if let t = store.primary, !t.isFinished {
                 ProgressLine(progress: t.progress(at: store.now), active: t.isRunning)
                     .padding(.horizontal, 13 * scale)
 
                 if let cycle = t.pomodoro {
                     PomodoroStrip(cycle: cycle, scale: scale)
                 }
+                if t.isSession, let steps = t.steps {
+                    SessionList(timer: t, steps: steps, store: store, scale: scale)
+                }
                 controls(for: t)
+                if let note = graceNote(t) {
+                    Text(note)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Theme.tertiaryText)
+                        .padding(.horizontal, 13 * scale)
+                        .padding(.bottom, 6)
+                }
             }
 
             let others = store.others
@@ -527,11 +515,15 @@ private struct ExpandedSection: View {
                 .padding(.vertical, 4)
             }
 
-            Hairline()
-            TodaySection(ui: ui, schedule: schedule, actions: actions, scale: scale)
+            if settings.featurePlan && !schedule.blocks.isEmpty {
+                Hairline()
+                TodaySection(ui: ui, schedule: schedule, actions: actions, scale: scale)
+            }
 
-            Hairline()
-            FocusSoundRow(settings: settings, scale: scale)
+            if settings.featureSounds {
+                Hairline()
+                FocusSoundRow(settings: settings, scale: scale)
+            }
 
             Hairline()
             HStack(spacing: 4) {
@@ -542,14 +534,26 @@ private struct ExpandedSection: View {
                     }
                 }
                 .buttonStyle(QuietButtonStyle(prominent: true))
-                .help("Type a time like 25m or 45m writing")
-                if let shortcut = settings.shortcuts[.newTimer] {
-                    KeyCaps(text: shortcut.display)
+                .help("Write a task and a time, like “Reply to emails 25m”")
+                if settings.featureVoice {
+                    Button { actions.openVoice() } label: { Image(systemName: "mic") }
+                        .buttonStyle(IconButtonStyle(size: 24, tint: Theme.secondaryText))
+                        .help("Say it: “25 minutes for email”")
+                        .accessibilityLabel("Speak a timer")
                 }
-                Button { actions.openVoice() } label: { Image(systemName: "mic") }
-                    .buttonStyle(IconButtonStyle(size: 24, tint: Theme.secondaryText))
-                    .help("Say it: \"25 minutes for email\"")
-                    .accessibilityLabel("Speak a timer")
+                if settings.featurePlan && schedule.blocks.isEmpty {
+                    Button {
+                        ui.editBlock(nil, schedule: schedule)
+                        actions.focusPanel()
+                    } label: {
+                        HStack(spacing: 4) {
+                            Image(systemName: "calendar").font(.system(size: 10, weight: .semibold))
+                            Text("Plan")
+                        }
+                    }
+                    .buttonStyle(QuietButtonStyle())
+                    .help("Plan a session, like “Deep work 9–10:30 weekdays”")
+                }
                 Spacer()
                 Button { actions.hide() } label: {
                     HStack(spacing: 4) {
@@ -566,34 +570,52 @@ private struct ExpandedSection: View {
         }
     }
 
+    /// Shown once extra time has been used under a grace period.
+    private func graceNote(_ t: DriftTimer) -> String? {
+        guard settings.gracePeriod > 0, t.extraSoFar > 0, t.pomodoro == nil else { return nil }
+        let room = store.extraLeft(t)
+        return room >= 60 ? "Grace period: \(TimeFormatter.compact(room)) of extra time left" : "Grace period used. Time to wrap up."
+    }
+
+    private func plusTitle(_ room: TimeInterval) -> String {
+        room.isInfinite || room >= 300 ? "+5 min" : "+\(TimeFormatter.compact(max(60, room)))"
+    }
+
     @ViewBuilder
     private func controls(for t: DriftTimer) -> some View {
+        let room = store.extraLeft(t)
         HStack(spacing: 2) {
-            if t.isFinished {
-                Button("+5 min") { actions.acknowledge(); store.adjust(t.id, by: 300) }
-                    .buttonStyle(QuietButtonStyle())
-                    .help("Snooze for 5 minutes")
-                Button("Restart") { actions.acknowledge(); store.resume(t.id) }
+            if t.isSession {
+                Button(t.nextBlock.map { "Next: \($0.name)" } ?? "Finish") { store.nextBlock(t.id) }
+                    .buttonStyle(QuietButtonStyle(prominent: true))
+                    .lineLimit(1)
+                    .help("Done early? Move straight on.")
+                if room >= 1 {
+                    Button(plusTitle(room)) { store.adjust(t.id, by: 300) }
+                        .buttonStyle(QuietButtonStyle())
+                }
+                Button("Set time…") { ui.openDial(t, now: Date(), room: room); actions.focusPanel() }
                     .buttonStyle(QuietButtonStyle())
                 Spacer()
-                Button("Dismiss") { actions.acknowledge(); store.remove(t.id) }
-                    .buttonStyle(QuietButtonStyle(prominent: true))
             } else if let cycle = t.pomodoro {
                 Button("Skip to \(cycle.upNext.name.lowercased())") { store.skipPhase(t.id) }
                     .buttonStyle(QuietButtonStyle())
                     .help("End this \(cycle.phaseName.lowercased()) now and start the \(cycle.upNext.name.lowercased())")
-                Button("+5 min") { store.adjust(t.id, by: 300) }
+                Button(plusTitle(room)) { store.adjust(t.id, by: 300) }
                     .buttonStyle(QuietButtonStyle())
+                    .disabled(room < 1)
                 Spacer()
             } else {
                 Button("−5 min") { store.adjust(t.id, by: -300) }
                     .buttonStyle(QuietButtonStyle())
                     .disabled(t.remaining(at: store.now) <= 301)
                     .accessibilityLabel("Remove 5 minutes")
-                Button("+5 min") { store.adjust(t.id, by: 300) }
+                Button(plusTitle(room)) { store.adjust(t.id, by: 300) }
                     .buttonStyle(QuietButtonStyle())
+                    .disabled(room < 1)
+                    .help(room < 1 ? "Grace period used" : "Add time")
                     .accessibilityLabel("Add 5 minutes")
-                Button("Set time…") { ui.openDial(t, now: Date()); actions.focusPanel() }
+                Button("Set time…") { ui.openDial(t, now: Date(), room: room); actions.focusPanel() }
                     .buttonStyle(QuietButtonStyle(prominent: true))
                     .help("Turn a dial or pick 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h")
                 Spacer()
@@ -712,7 +734,7 @@ private struct OtherTimerRow: View {
                     .foregroundStyle(Theme.accent)
             } else {
                 Button {
-                    ui.openDial(timer, now: Date())
+                    ui.openDial(timer, now: Date(), room: store.extraLeft(timer))
                     actions.focusPanel()
                 } label: {
                     Text(TimeFormatter.clock(timer.remaining(at: store.now)))
@@ -859,7 +881,7 @@ private struct TaskLabel: View {
 }
 
 /// Text you can click to edit: a dotted underline on hover says so.
-private struct EditableTextStyle: ButtonStyle {
+struct EditableTextStyle: ButtonStyle {
     let active: Bool
     @State private var hovering = false
 
@@ -910,6 +932,12 @@ private struct DialSection: View {
             .padding(.horizontal, 4)
             .padding(.bottom, 8)
 
+            if ui.dialLimited {
+                Text(timer.isSession && !settings.extraInSessions ? "Time blocks can be shortened, not stretched" : "Up to \(TimeFormatter.compact(ui.dialMax)) with your grace period")
+                    .font(.system(size: 11))
+                    .foregroundStyle(Theme.tertiaryText)
+                    .padding(.bottom, 6)
+            }
             DialFace(value: ui.dialValue)
                 .frame(width: Self.diameter, height: Self.diameter)
                 .contentShape(Circle())
@@ -1128,7 +1156,7 @@ private struct BlockPrompt: View {
 }
 
 /// "Next: Email at 1:00 PM" under the timer.
-private struct NextBlockLine: View {
+struct NextBlockLine: View {
     let entry: ScheduleStore.Entry
     let tomorrow: Bool
     @ObservedObject var ui: WidgetUIState
@@ -1183,14 +1211,14 @@ private struct TodaySection: View {
                     }
                 }
                 .buttonStyle(QuietButtonStyle(prominent: true))
-                .help("Plan a time box, like “Deep work 9–10:30 weekdays”")
+                .help("Plan a session, like “Deep work 9–10:30 weekdays”")
             }
             .padding(.leading, 13 * scale)
             .padding(.trailing, 7 * scale)
             .padding(.top, 2)
 
             if entries.isEmpty {
-                Text(schedule.blocks.isEmpty ? "Plan a block from ⌥ Space: “Deep work 9–10:30 weekdays”" : "Nothing planned today")
+                Text(schedule.blocks.isEmpty ? "Plan a session from ⌥ Space: “Deep work 9–10:30 weekdays”" : "Nothing planned today")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Theme.tertiaryText)
                     .padding(.horizontal, 13 * scale)
@@ -1230,6 +1258,9 @@ private struct BlockRow: View {
                     .strikethrough(entry.state == .skipped)
                     .lineLimit(1)
                 Spacer(minLength: 4)
+                if let steps = entry.block.steps, steps.count > 1 {
+                    Text("\(steps.count) blocks").font(.system(size: 10.5)).foregroundStyle(Theme.tertiaryText)
+                }
                 if entry.occurrence.edited {
                     Tag(text: "today", style: .plain).help("Changed for today only")
                 } else if entry.block.isRepeating {
@@ -1279,6 +1310,7 @@ private struct BlockEditor: View {
     @ObservedObject var schedule: ScheduleStore
     let actions: WidgetActions
     @FocusState private var nameFocused: Bool
+    @State private var splitText = ""
 
     private static let lengths: [TimeInterval] = [900, 1_500, 1_800, 2_700, 3_600, 5_400, 7_200]
 
@@ -1301,7 +1333,7 @@ private struct BlockEditor: View {
         let skipped = block?.status[key] == .skipped
         let twoWay = block?.isRepeating == true && todayOcc != nil && draft.changedTime && !draft.changedRepeat
         VStack(alignment: .leading, spacing: 0) {
-            TextField("What is this block for?", text: binding(\.name, ""))
+            TextField("What is this session for?", text: binding(\.name, ""))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13.5, weight: .semibold))
                 .focused($nameFocused)
@@ -1369,6 +1401,8 @@ private struct BlockEditor: View {
                 }
             }
 
+            splitSection(draft)
+
             Text(hint(twoWay: twoWay, block: block))
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.tertiaryText)
@@ -1411,6 +1445,78 @@ private struct BlockEditor: View {
         .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 0.5) }
     }
 
+    /// Split the session into time blocks: type them, or 2/3/4 equal parts.
+    @ViewBuilder
+    private func splitSection(_ draft: BlockDraft) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
+            HStack(spacing: 5) {
+                Text(draft.steps.map { "\($0.count) time blocks" } ?? "Time blocks")
+                    .font(.system(size: 11.5, weight: .semibold))
+                    .foregroundStyle(Theme.primaryText)
+                Spacer()
+                if draft.steps != nil {
+                    Button("Don’t split") { ui.blockDraft?.steps = nil }
+                        .buttonStyle(PillButtonStyle())
+                } else {
+                    ForEach([2, 3, 4], id: \.self) { n in
+                        Button("\(n)") { splitEvenly(n, draft) }
+                            .buttonStyle(PillButtonStyle(square: true))
+                            .help("Split into \(n) equal parts")
+                    }
+                }
+            }
+            if let steps = draft.steps {
+                VStack(alignment: .leading, spacing: 2) {
+                    ForEach(Array(steps.enumerated()), id: \.offset) { item in
+                        HStack(spacing: 6) {
+                            Text(Schedule.time(draft.startMinute + Int(steps.prefix(item.offset).reduce(0) { $0 + $1.seconds } / 60), suffix: false))
+                                .foregroundStyle(Theme.tertiaryText)
+                                .frame(width: 34, alignment: .leading)
+                            Text(item.element.name).foregroundStyle(Theme.secondaryText).lineLimit(1)
+                            Spacer()
+                            Text(TimeFormatter.compact(item.element.seconds)).foregroundStyle(Theme.tertiaryText)
+                            Button { removeStep(item.offset) } label: { Image(systemName: "xmark") }
+                                .buttonStyle(IconButtonStyle(size: 18))
+                                .help("Remove this time block")
+                        }
+                        .font(.system(size: 11.5).monospacedDigit())
+                    }
+                }
+            }
+            TextField(draft.steps == nil ? "Or type them: outline 30m, write 1h, edit 30m" : "Retype them: outline 30m, write 1h", text: $splitText)
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .padding(.horizontal, 8)
+                .frame(height: 26)
+                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.control))
+                .onSubmit {
+                    guard var d = ui.blockDraft else { return }
+                    applySplit(&d)
+                    ui.blockDraft = d
+                }
+        }
+        .padding(.top, 12)
+    }
+
+    private func splitEvenly(_ n: Int, _ draft: BlockDraft) {
+        let each = max(60, (draft.duration / Double(n) / 60).rounded(.down) * 60)
+        let base = draft.name.isEmpty ? "Part" : draft.name
+        ui.blockDraft?.steps = (0..<n).map { i in
+            TimeBlock(name: "\(base) \(i + 1)", seconds: i == n - 1 ? draft.duration - each * Double(n - 1) : each)
+        }
+    }
+
+    private func removeStep(_ i: Int) {
+        guard var steps = ui.blockDraft?.steps, steps.indices.contains(i) else { return }
+        let gone = steps.remove(at: i)
+        if steps.count < 2 {
+            ui.blockDraft?.steps = nil
+        } else {
+            steps[max(0, i - 1)].seconds += gone.seconds
+            ui.blockDraft?.steps = steps
+        }
+    }
+
     private func onceTitle(_ draft: BlockDraft, _ key: String) -> String {
         draft.days == nil && draft.date == key ? "Today only" : "Once"
     }
@@ -1450,10 +1556,25 @@ private struct BlockEditor: View {
     }
 
     private func save(todayOnly: Bool) {
-        guard let draft = ui.blockDraft else { return }
-        schedule.save(draft, todayOnly: todayOnly)
+        guard var draft = ui.blockDraft else { return }
+        if !splitText.trimmingCharacters(in: .whitespaces).isEmpty { applySplit(&draft) }
+        let id = schedule.save(draft, todayOnly: todayOnly)
         close()
-        ui.expanded = true
+        if let id { ui.confirmation = .init(blockID: id, updated: draft.id != nil, until: Date().addingTimeInterval(15)) }
+    }
+
+    /// "outline 30m, write 1h": the session's time blocks. Unused time becomes a last block.
+    private func applySplit(_ draft: inout BlockDraft) {
+        var steps = SessionParser.steps(from: splitText)
+        guard !steps.isEmpty else { return }
+        let total = steps.reduce(0) { $0 + $1.seconds }
+        if total < draft.duration - 59 {
+            steps.append(TimeBlock(name: draft.name.isEmpty ? "More time" : draft.name, seconds: draft.duration - total))
+        } else if total > draft.duration {
+            draft.duration = total
+        }
+        draft.steps = steps.count > 1 ? steps : nil
+        splitText = ""
     }
 
     private func close() {
@@ -1557,7 +1678,7 @@ struct BlockTimeline: View {
     }
 }
 
-private struct PillButtonStyle: ButtonStyle {
+struct PillButtonStyle: ButtonStyle {
     var prominent = false
     var selected = false
     var square = false

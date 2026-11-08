@@ -23,6 +23,8 @@ struct BlockDraft: Equatable {
     var original: Original?
     /// First minute shown on the editor's timeline.
     var windowStart: Int
+    /// Split into time blocks (a session); nil runs it as one timer.
+    var steps: [TimeBlock]?
 
     var changedTime: Bool {
         guard let o = original else { return false }
@@ -134,6 +136,27 @@ final class ScheduleStore: ObservableObject {
         block(id).flatMap { Schedule.occurrence(of: $0, on: now, calendar: calendar) }
     }
 
+    /// The next time a block runs: later today, or on one of the next seven days.
+    func nextOccurrence(of id: UUID) -> (occurrence: BlockOccurrence, label: String)? {
+        guard let block = block(id) else { return nil }
+        for k in 0..<8 {
+            guard let day = calendar.date(byAdding: .day, value: k, to: now),
+                  let occ = Schedule.occurrence(of: block, on: day, calendar: calendar) else { continue }
+            if k == 0 && (occ.start <= now || block.status[occ.dayKey] != nil) { continue }
+            let label: String
+            switch k {
+            case 0: label = "Today"
+            case 1: label = "Tomorrow"
+            default:
+                let f = DateFormatter()
+                f.setLocalizedDateFormatFromTemplate("EEEE")
+                label = f.string(from: day)
+            }
+            return (occ, label)
+        }
+        return nil
+    }
+
     func describeDays(_ block: ScheduledBlock) -> String {
         Schedule.describeDays(block.days, date: block.date, now: now, calendar: calendar)
     }
@@ -148,7 +171,7 @@ final class ScheduleStore: ObservableObject {
             block.status[occ.dayKey] = .missed
         }
         blocks.append(block)
-        settings.remember(task: block.name, seconds: block.duration)
+        if let steps = block.steps { settings.remember(session: block.name, steps: steps) } else { settings.remember(task: block.name, seconds: block.duration) }
         save()
         return block
     }
@@ -161,8 +184,34 @@ final class ScheduleStore: ObservableObject {
         blocks[i].status[occ.dayKey] = .started
         save()
         let seconds = max(60, occ.end.timeIntervalSince(Date()))
-        let timer = timers.create(seconds: seconds, name: occ.name)
+        let timer: DriftTimer
+        if let steps = blocks[i].steps, steps.count > 1 {
+            timer = timers.startSession(name: occ.name, steps: Self.fit(steps, to: seconds), remember: false)
+        } else {
+            timer = timers.create(seconds: seconds, name: occ.name)
+        }
         timers.attachBlock(timer.id, block: id, day: occ.dayKey)
+    }
+
+    /// Time blocks fitted to the time that's left: starting late takes the
+    /// minutes out of the last blocks; extra room goes to the last one.
+    static func fit(_ steps: [TimeBlock], to seconds: TimeInterval) -> [TimeBlock] {
+        var out = steps
+        var over = out.reduce(0) { $0 + $1.seconds } - seconds
+        if over < 0, !out.isEmpty {
+            out[out.count - 1].seconds -= over
+            return out
+        }
+        var i = out.count - 1
+        while i >= 0 && over > 0 {
+            let cut = min(over, out[i].seconds - 60)
+            if cut > 0 {
+                out[i].seconds -= cut
+                over -= cut
+            }
+            i -= 1
+        }
+        return out
     }
 
     func snooze(_ id: UUID) {
@@ -186,7 +235,9 @@ final class ScheduleStore: ObservableObject {
     }
 
     /// Saves the editor. For a repeating block, `todayOnly` changes just today.
-    func save(_ draft: BlockDraft, todayOnly: Bool) {
+    /// Returns the block's id.
+    @discardableResult
+    func save(_ draft: BlockDraft, todayOnly: Bool) -> UUID? {
         var name = draft.name.trimmingCharacters(in: .whitespacesAndNewlines)
         if name.isEmpty { name = "Focus" }
         name = name.prefix(1).uppercased() + name.dropFirst()
@@ -195,9 +246,8 @@ final class ScheduleStore: ObservableObject {
         guard let id = draft.id, let i = index(id) else {
             let spec = ScheduleSpec(name: name, startMinute: draft.startMinute, duration: draft.duration,
                                     days: draft.days, date: draft.days == nil ? draft.date : nil,
-                                    whenRanges: [], lengthRanges: [])
-            add(spec)
-            return
+                                    whenRanges: [], lengthRanges: [], steps: draft.steps)
+            return add(spec).id
         }
 
         if todayOnly {
@@ -209,6 +259,7 @@ final class ScheduleStore: ObservableObject {
             blocks[i].days = draft.days.map { Array(Set($0)).sorted() }
             blocks[i].date = draft.days == nil ? draft.date : nil
             blocks[i].overrides[key] = nil
+            blocks[i].steps = (draft.steps?.count ?? 0) > 1 ? draft.steps : nil
         }
         // Moved later than now: it can come due again today.
         if let occ = occurrenceToday(id) {
@@ -216,10 +267,11 @@ final class ScheduleStore: ObservableObject {
             // A running block follows the change.
             if let t = timers.timers.first(where: { $0.blockID == id && $0.blockDay == key && !$0.isFinished }) {
                 timers.setRemaining(t.id, seconds: max(60, occ.end.timeIntervalSince(Date())))
-                timers.rename(t.id, to: occ.name)
+                if !t.isSession { timers.rename(t.id, to: occ.name) }
             }
         }
         save()
+        return id
     }
 
     /// Snapshots and tests.

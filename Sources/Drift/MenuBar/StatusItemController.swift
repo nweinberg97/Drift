@@ -18,6 +18,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var edit: (UUID) -> Void
         /// Opens the block editor; nil for a new block.
         var editBlock: (UUID?) -> Void
+        var startSession: (AppSettings.SavedSession) -> Void
+        var showWidget: () -> Void
         var gettingStarted: () -> Void
     }
 
@@ -134,8 +136,8 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(.separator())
 
         // Today's plan.
-        let entries = schedule.today()
-        if !schedule.blocks.isEmpty {
+        if settings.featurePlan && !schedule.blocks.isEmpty {
+            let entries = schedule.today()
             let header = NSMenuItem(title: "Today", action: nil, keyEquivalent: "")
             header.isEnabled = false
             menu.addItem(header)
@@ -166,68 +168,81 @@ final class StatusItemController: NSObject, NSMenuDelegate {
                 }
                 menu.addItem(row)
             }
+            menu.addItem(.separator())
         }
-        menu.addItem(action("Schedule a Block…", #selector(newBlock)))
-        menu.addItem(.separator())
 
         let newItem = action("New Timer…", #selector(newTimer))
         applyShortcut(.newTimer, to: newItem)
         menu.addItem(newItem)
+        menu.addItem(quickStartItem())
 
-        let favourites = settings.presets.filter { [900, 1_500, 2_700, 3_600].contains($0) }
-        for seconds in (favourites.count >= 2 ? Array(favourites) : Array(settings.presets.prefix(4))) {
-            let start = action("Start \(TimeFormatter.compact(seconds))", #selector(startPreset(_:)))
-            start.representedObject = seconds
-            start.indentationLevel = 1
-            menu.addItem(start)
+        // Everything else to start with, in one place.
+        let more = NSMenu()
+        more.autoenablesItems = false
+        for (i, saved) in settings.savedSessions.enumerated() {
+            let item = action("\(saved.name)   \(saved.steps.count) blocks · \(TimeFormatter.compact(saved.total))", #selector(startSavedSession(_:)))
+            item.tag = i
+            more.addItem(item)
         }
-        let pomodoro = action("Start Pomodoro (25 min focus, 5 min break)", #selector(startPomodoro))
-        pomodoro.indentationLevel = 1
-        menu.addItem(pomodoro)
+        if !settings.savedSessions.isEmpty { more.addItem(.separator()) }
+        if settings.featurePomodoro {
+            more.addItem(action("Pomodoro (25 min focus, 5 min break)", #selector(startPomodoro)))
+        }
+        if settings.featureVoice {
+            let voiceItem = action("Voice Command…", #selector(voice))
+            applyShortcut(.voice, to: voiceItem)
+            more.addItem(voiceItem)
+        }
+        if settings.featurePlan {
+            more.addItem(action("Schedule a Session…", #selector(newBlock)))
+        }
+        if more.numberOfItems > 0 {
+            let moreItem = NSMenuItem(title: settings.savedSessions.isEmpty ? "More Ways to Start" : "Sessions and More", action: nil, keyEquivalent: "")
+            moreItem.submenu = more
+            menu.addItem(moreItem)
+        }
 
-        let voiceItem = action("Voice Command…", #selector(voice))
-        applyShortcut(.voice, to: voiceItem)
-        menu.addItem(voiceItem)
+        if settings.featureSounds {
+            menu.addItem(.separator())
+            let scapes = NSMenuItem(title: "Focus Sound: \(settings.focusSoundEnabled ? settings.soundscape.title : "Off")", action: nil, keyEquivalent: "")
+            let scapeMenu = NSMenu()
+            let play = action("Play While Timers Run", #selector(toggleFocusSound))
+            play.state = settings.focusSoundEnabled ? .on : .off
+            play.toolTip = "Plays softly while a timer runs. Pauses during breaks."
+            scapeMenu.addItem(play)
+            scapeMenu.addItem(.separator())
+            for category in Soundscape.Category.allCases {
+                if category != Soundscape.Category.allCases.first { scapeMenu.addItem(.separator()) }
+                let header = NSMenuItem(title: category.title, action: nil, keyEquivalent: "")
+                header.isEnabled = false
+                scapeMenu.addItem(header)
+                for scape in category.scapes {
+                    let s = action(scape.title, #selector(selectSoundscape(_:)))
+                    s.representedObject = scape.rawValue
+                    s.state = settings.soundscape == scape ? .on : .off
+                    s.toolTip = scape.subtitle
+                    s.indentationLevel = 1
+                    scapeMenu.addItem(s)
+                }
+            }
+            scapeMenu.addItem(.separator())
+            scapeMenu.addItem(volumeItem())
+            scapes.submenu = scapeMenu
+            menu.addItem(scapes)
+        }
 
         menu.addItem(.separator())
-
         if !settings.widgetHidden {
             let toggle = action("Hide Widget", #selector(toggleWidget))
             applyShortcut(.toggleWidget, to: toggle)
             menu.addItem(toggle)
-            menu.addItem(.separator())
         }
-
-        let focus = action(settings.focusSoundEnabled ? "Focus Sound: On" : "Focus Sound: Off", #selector(toggleFocusSound))
-        focus.state = settings.focusSoundEnabled ? .on : .off
-        focus.toolTip = "Plays softly while a timer runs. Pauses during breaks."
-        menu.addItem(focus)
-
-        let scapes = NSMenuItem(title: "Sound: \(settings.soundscape.title)", action: nil, keyEquivalent: "")
-        let scapeMenu = NSMenu()
-        for category in Soundscape.Category.allCases {
-            if category != Soundscape.Category.allCases.first { scapeMenu.addItem(.separator()) }
-            let header = NSMenuItem(title: category.title, action: nil, keyEquivalent: "")
-            header.isEnabled = false
-            scapeMenu.addItem(header)
-            for scape in category.scapes {
-                let s = action(scape.title, #selector(selectSoundscape(_:)))
-                s.representedObject = scape.rawValue
-                s.state = settings.soundscape == scape ? .on : .off
-                s.toolTip = scape.subtitle
-                s.indentationLevel = 1
-                scapeMenu.addItem(s)
-            }
-        }
-        scapeMenu.addItem(.separator())
-        scapeMenu.addItem(volumeItem())
-        scapes.submenu = scapeMenu
-        scapes.indentationLevel = 1
-        menu.addItem(scapes)
-
-        menu.addItem(.separator())
-        menu.addItem(action("Getting Started", #selector(gettingStarted)))
-        menu.addItem(action("Help & Support", #selector(openSupport)))
+        let help = NSMenuItem(title: "Help", action: nil, keyEquivalent: "")
+        let helpMenu = NSMenu()
+        helpMenu.addItem(action("Getting Started", #selector(gettingStarted)))
+        helpMenu.addItem(action("Help & Support", #selector(openSupport)))
+        help.submenu = helpMenu
+        menu.addItem(help)
         let settingsItem = action("Settings…", #selector(openSettings))
         settingsItem.keyEquivalent = ","
         menu.addItem(settingsItem)
@@ -290,18 +305,55 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             add("Dismiss", #selector(removeTimer(_:)))
         } else {
             add(timer.isRunning ? "Pause" : "Resume", #selector(toggleTimer(_:)))
-            add("Add 5 Minutes", #selector(addFive(_:)))
+            if timer.isSession {
+                add(timer.nextBlock.map { "Next: \($0.name)" } ?? "Finish", #selector(nextBlock(_:)))
+            }
+            add("Add 5 Minutes", #selector(addFive(_:)), enabled: store.extraLeft(timer) >= 1)
             add("Remove 5 Minutes", #selector(removeFive(_:)), enabled: timer.remaining(at: Date()) > 300)
             add("Change Time…", #selector(editTimer(_:)))
             add("Rename…", #selector(renameTimer(_:)))
-            add("Duplicate", #selector(duplicateTimer(_:)))
+            if !timer.isSession { add("Duplicate", #selector(duplicateTimer(_:))) }
             if store.primary?.id != timer.id {
                 add("Show in Widget", #selector(featureTimer(_:)))
             }
             menu.addItem(.separator())
-            add("Cancel Timer", #selector(removeTimer(_:)))
+            add(timer.isSession ? "End Session" : "Cancel Timer", #selector(removeTimer(_:)))
         }
         return menu
+    }
+
+    /// One-tap lengths in a row: 5m 10m 15m 25m 45m 1h.
+    private func quickStartItem() -> NSMenuItem {
+        let lengths = settings.quickLengths
+        let width: CGFloat = 280
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: 30))
+        let gap: CGFloat = 4, left: CGFloat = 20, right: CGFloat = 12
+        let w = (width - left - right - gap * CGFloat(max(0, lengths.count - 1))) / CGFloat(max(1, lengths.count))
+        for (i, seconds) in lengths.enumerated() {
+            let b = NSButton(title: TimeFormatter.compact(seconds), target: self, action: #selector(startQuick(_:)))
+            b.bezelStyle = .rounded
+            b.controlSize = .small
+            b.font = NSFont.monospacedDigitSystemFont(ofSize: 11.5, weight: .medium)
+            b.tag = Int(seconds)
+            b.frame = NSRect(x: left + CGFloat(i) * (w + gap), y: 3, width: w, height: 24)
+            b.toolTip = "Start \(TimeFormatter.compact(seconds))"
+            b.setAccessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
+            container.addSubview(b)
+        }
+        let item = NSMenuItem()
+        item.view = container
+        return item
+    }
+
+    @objc private func startQuick(_ sender: NSButton) {
+        sender.enclosingMenuItem?.menu?.cancelTracking()
+        store.create(seconds: TimeInterval(sender.tag))
+        actions.showWidget()
+    }
+
+    @objc private func startSavedSession(_ sender: NSMenuItem) {
+        guard settings.savedSessions.indices.contains(sender.tag) else { return }
+        actions.startSession(settings.savedSessions[sender.tag])
     }
 
     private func volumeItem() -> NSMenuItem {
@@ -368,6 +420,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
 
     @objc private func toggleTimer(_ sender: NSMenuItem) { if let id = id(sender) { store.toggle(id) } }
     @objc private func addFive(_ sender: NSMenuItem) { if let id = id(sender) { store.adjust(id, by: 300) } }
+    @objc private func nextBlock(_ sender: NSMenuItem) { if let id = id(sender) { store.nextBlock(id) } }
     @objc private func removeFive(_ sender: NSMenuItem) { if let id = id(sender) { store.adjust(id, by: -300) } }
     @objc private func duplicateTimer(_ sender: NSMenuItem) { if let id = id(sender) { store.duplicate(id) } }
     @objc private func removeTimer(_ sender: NSMenuItem) { if let id = id(sender) { store.remove(id) } }

@@ -67,7 +67,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         runner.showWidget = { [weak self] in self?.widget.show() }
         runner.revealTimers = { [weak self] in self?.widget.reveal() }
         runner.hideWidget = { [weak self] in self?.widget.hide() }
-        runner.addBlock = { [weak self] spec in self?.schedule.add(spec) }
+        runner.addBlock = { [weak self] spec in
+            guard let self else { return }
+            let block = self.schedule.add(spec)
+            self.widget.confirm(block.id, updated: false)
+        }
         // A scheduled block came due: a soft cue, a banner, and the widget in view.
         schedule.onPrompt = { [weak self] occ in
             guard let self else { return }
@@ -109,6 +113,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             rename: { [weak self] id in self?.beginEditing(id, rename: true) },
             edit: { [weak self] id in self?.beginEditing(id, rename: false) },
             editBlock: { [weak self] id in self?.widget.editBlock(id) },
+            startSession: { [weak self] saved in
+                self?.store.startSession(name: saved.name, steps: saved.steps)
+                self?.widget.show()
+            },
+            showWidget: { [weak self] in self?.widget.show() },
             gettingStarted: { [weak self] in self?.welcome.show() }
         ))
 
@@ -118,8 +127,12 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             .sink { [weak self] _ in DispatchQueue.main.async { self?.registerHotKeys() } }
             .store(in: &cancellables)
 
-        Publishers.CombineLatest3(settings.$focusSoundEnabled, settings.$soundscape, settings.$focusVolume)
+        Publishers.CombineLatest4(settings.$focusSoundEnabled, settings.$soundscape, settings.$focusVolume, settings.$featureSounds)
             .sink { [weak self] _ in DispatchQueue.main.async { self?.syncFocusSound() } }
+            .store(in: &cancellables)
+        settings.$betweenBlocks
+            .dropFirst()
+            .sink { [weak self] _ in DispatchQueue.main.async { self?.syncNotifications() } }
             .store(in: &cancellables)
         settings.$notifications
             .dropFirst()
@@ -179,7 +192,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         case .toggleWidget:
             widget.toggle()
         case .voice:
-            composer.show(listening: true)
+            composer.show(listening: settings.featureVoice)
         }
     }
 
@@ -194,6 +207,13 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         if settings.notifications { notifications.requestAuthorizationIfNeeded() }
     }
 
+    func timerStore(_ store: TimerStore, didFinishBlock finished: String, in timer: DriftTimer, late: Bool) {
+        guard !late else { return }
+        // Block to block: a soft cue, and the widget in view for the hand-off card.
+        if settings.completionSound { chimes.playPhase(volume: settings.soundVolume) }
+        if settings.widgetHidden || timer.isWaiting { widget.show() }
+    }
+
     func timerStore(_ store: TimerStore, didFinish timer: DriftTimer, late: Bool) {
         guard !late else { return }
         if timer.pomodoro != nil {
@@ -203,7 +223,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             return
         }
         let persistent = settings.completionSound && settings.completionAlert == .untilDismissed
-        widget.presentFinished(timer.id, alerting: persistent)
+        widget.presentFinished(timer.id, alerting: persistent, shake: settings.shakeOnFinish)
         guard settings.completionSound else { return }
         if persistent {
             chimes.startRinging(volume: settings.soundVolume)
@@ -216,6 +236,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     private func stopAlert() {
         chimes.stopRinging()
         widget.ui.alerting = false
+        widget.stopShake()
     }
 
     func timerStoreScheduleDidChange(_ store: TimerStore) {
@@ -224,14 +245,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     }
 
     private func syncNotifications() {
-        notifications.sync(timers: store.timers, enabled: settings.notifications)
+        notifications.sync(timers: store.timers, enabled: settings.notifications, handoff: settings.betweenBlocks.delay)
     }
 
     /// Focus sound plays while any timer runs — except during Pomodoro breaks.
     private func syncFocusSound() {
         let focusing = store.timers.contains { $0.isRunning && $0.pomodoro?.isBreak != true }
         focusSound.update(
-            shouldPlay: settings.focusSoundEnabled && focusing,
+            shouldPlay: settings.featureSounds && settings.focusSoundEnabled && focusing,
             soundscape: settings.soundscape,
             volume: settings.focusVolume
         )

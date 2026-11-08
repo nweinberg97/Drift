@@ -14,6 +14,8 @@ protocol TimerStoreDelegate: AnyObject {
     /// Running timers or their end times changed (start, pause, adjust,
     /// cancel…). Notifications and focus sound resync on this.
     func timerStoreScheduleDidChange(_ store: TimerStore)
+    /// A session's time block ended and the next one is up (now, or after a hand-off).
+    func timerStore(_ store: TimerStore, didFinishBlock finished: String, in timer: DriftTimer, late: Bool)
 }
 
 /// Owns every timer. All timing is timestamp-based (see `DriftTimer`), so the
@@ -103,6 +105,48 @@ final class TimerStore: ObservableObject {
         return timer
     }
 
+    /// Starts a session: time blocks that run back to back, one timer.
+    @discardableResult
+    func startSession(name: String?, steps: [TimeBlock], remember: Bool = true) -> DriftTimer {
+        let current = Date()
+        let blocks = steps.map { TimeBlock(name: $0.name, seconds: max(60, $0.seconds)) }
+        var timer = DriftTimer(name: name, duration: blocks.first?.seconds ?? settings.defaultDuration, createdAt: current)
+        timer.steps = blocks
+        timer.stepIndex = 0
+        timer.start(at: current)
+        timers.append(timer)
+        primaryID = timer.id
+        if remember, let name { settings.remember(session: name, steps: blocks) }
+        delegate?.timerStore(self, didStart: timer)
+        commit()
+        return timer
+    }
+
+    /// Done early: on to the next time block now (or finish on the last one).
+    func nextBlock(_ id: UUID) {
+        guard let t = timer(id) else { return }
+        if t.nextBlock == nil {
+            // Finished on purpose: the Time's up card shows, without the chime.
+            mutate(id) { $0.finish(at: Date()) }
+            primaryID = id
+            return
+        }
+        mutate(id) { $0.advanceStep(at: Date(), fromEnd: false) }
+    }
+
+    /// The hand-off card's Start now.
+    func startWaiting(_ id: UUID) { mutate(id) { $0.startWaiting(at: Date()) } }
+
+    /// The hand-off card's Pause: wait for Start instead of counting down.
+    func holdWaiting(_ id: UUID) { mutate(id) { if $0.waitUntil != nil { $0.waitUntil = .distantFuture } } }
+
+    /// How much more time this timer (or time block) may get. `.infinity` without a grace period.
+    func extraLeft(_ t: DriftTimer) -> TimeInterval {
+        if t.isSession && !settings.extraInSessions { return 0 }
+        guard settings.gracePeriod > 0 else { return .infinity }
+        return max(0, settings.gracePeriod - t.extraSoFar)
+    }
+
     func startPomodoro(focus: TimeInterval, rest: TimeInterval) {
         create(seconds: focus, pomodoro: PomodoroCycle(focus: focus, rest: rest))
     }
@@ -116,21 +160,55 @@ final class TimerStore: ObservableObject {
     func pause(_ id: UUID) { mutate(id) { $0.pause(at: Date()) } }
     func resume(_ id: UUID) { mutate(id) { $0.start(at: Date()) } }
 
+    /// Adds or removes time. Adding respects "Extra time in sessions" and the
+    /// grace period; returns false when nothing could be added.
     @discardableResult
     func adjust(_ id: UUID, by delta: TimeInterval) -> Bool {
+        guard let t = timer(id) else { return false }
+        var d = delta
+        if d > 0 {
+            d = min(d, extraLeft(t))
+            guard d >= 1 else { return false }
+        }
         var ok = false
-        mutate(id) { ok = $0.adjust(by: delta, at: Date()) }
+        mutate(id) { timer in
+            ok = timer.adjust(by: d, at: Date())
+            guard ok else { return }
+            if d > 0 { timer.recordExtra(d) }
+            if var steps = timer.steps, steps.indices.contains(timer.step), !timer.isFinished {
+                steps[timer.step].seconds = max(60, steps[timer.step].seconds + d)
+                // A scheduled session keeps its end time: extra comes out of the last block.
+                let last = steps.count - 1
+                if timer.blockID != nil, d > 0, last > timer.step, steps[last].seconds - d >= 60 { steps[last].seconds -= d }
+                timer.steps = steps
+            }
+        }
         return ok
     }
 
-    func setRemaining(_ id: UUID, seconds: TimeInterval) {
-        mutate(id) { $0.setRemaining(seconds, at: Date()) }
+    /// `extra`: the extra time this change brings the timer to in total (the dial).
+    func setRemaining(_ id: UUID, seconds: TimeInterval, extra: TimeInterval? = nil) {
+        mutate(id) {
+            $0.setRemaining(seconds, at: Date())
+            if let extra { $0.setExtra(extra) }
+        }
     }
 
     func rename(_ id: UUID, to name: String?) {
         var trimmed = name?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
         trimmed = trimmed.prefix(1).uppercased() + trimmed.dropFirst()
         let value: String? = trimmed.isEmpty ? nil : trimmed
+        // In a session, the label is the current time block.
+        if let t = timer(id), t.isSession {
+            guard let value else { return }
+            mutate(id) { timer in
+                if var steps = timer.steps, steps.indices.contains(timer.step) {
+                    steps[timer.step].name = value
+                    timer.steps = steps
+                }
+            }
+            return
+        }
         mutate(id) { $0.name = value }
         if let value, let t = timer(id), t.pomodoro == nil { settings.remember(task: value, seconds: t.duration) }
     }
@@ -183,11 +261,22 @@ final class TimerStore: ObservableObject {
         now = current
         var changed = false
         var finished: [(DriftTimer, Bool)] = []
+        var handedOff: [(String, DriftTimer, Bool)] = []
+
+        // Hand-off cards whose countdown ran out: the next block starts.
+        for index in timers.indices where timers[index].waitIsOver(at: current) {
+            timers[index].startWaiting(at: current)
+            changed = true
+        }
 
         for index in timers.indices where timers[index].shouldFinish(at: current) {
             let end = timers[index].endDate ?? current
             let late = current.timeIntervalSince(end) > 60
-            if timers[index].pomodoro != nil {
+            if let block = timers[index].currentBlock, timers[index].nextBlock != nil {
+                // A session moves on to its next time block.
+                timers[index].advanceStep(at: late ? current : end, fromEnd: true, delay: late ? 0 : settings.betweenBlocks.delay)
+                handedOff.append((block.name, timers[index], late))
+            } else if timers[index].pomodoro != nil {
                 finished.append((timers[index], late))
                 // Roll into the next phase from now, so a long sleep doesn't
                 // leave a half-elapsed break behind.
@@ -208,7 +297,10 @@ final class TimerStore: ObservableObject {
             if timers.count != before { changed = true }
         }
 
-        if changed { commit(scheduleOnly: false) }
+        if changed || !handedOff.isEmpty { commit(scheduleOnly: false) }
+        for (name, timer, late) in handedOff {
+            delegate?.timerStore(self, didFinishBlock: name, in: timer, late: late)
+        }
         for (timer, late) in finished {
             delegate?.timerStore(self, didFinish: timer, late: late)
         }
@@ -230,6 +322,9 @@ final class TimerStore: ObservableObject {
                 // Next whole-second boundary of this timer's countdown.
                 let fraction = remaining - remaining.rounded(.down)
                 delays.append(fraction > 0.001 ? fraction : 1)
+            }
+            if let wait = t.waitUntil, wait != .distantFuture {
+                delays.append(wait.timeIntervalSince(current))
             }
             if let at = t.finishedAt, let retention = settings.finishedRetention.interval {
                 delays.append(at.addingTimeInterval(retention).timeIntervalSince(current))
@@ -272,6 +367,8 @@ final class TimerStore: ObservableObject {
         for index in timers.indices where timers[index].shouldFinish(at: current) {
             if timers[index].pomodoro != nil {
                 timers[index].advancePomodoro(from: current)
+            } else if timers[index].nextBlock != nil {
+                timers[index].advanceStep(at: current, fromEnd: true, delay: .infinity)
             } else {
                 timers[index].finish(at: current)
             }

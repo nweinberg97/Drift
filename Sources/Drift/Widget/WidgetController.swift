@@ -57,6 +57,13 @@ final class WidgetController: NSObject, NSWindowDelegate {
             .sink { [weak self] _ in self?.screensChanged() }
             .store(in: &cancellables)
 
+        // A card saved in the block editor: keep it on screen for a moment, then let it go.
+        ui.$confirmation
+            .map { $0 != nil }
+            .removeDuplicates()
+            .sink { [weak self] showing in if showing { self?.scheduleConfirmationCheck() } }
+            .store(in: &cancellables)
+
         // Collapse back to one line once nothing needs the extra room.
         store.$timers
             .map(\.isEmpty)
@@ -73,6 +80,13 @@ final class WidgetController: NSObject, NSWindowDelegate {
             .sink { [weak self] id, editing in self?.panel.draggable = (id == nil && !editing) }
             .store(in: &cancellables)
 
+        // Touching the widget stops the shake and the chime; the card stays until Done.
+        mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
+            guard let self, event.window === self.panel, self.ui.alerting || self.ui.shaking else { return event }
+            self.acknowledge()
+            return event
+        }
+
         // Scrolling over the open dial turns it too.
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
             guard let self, event.window === self.panel, self.ui.dialID != nil else { return event }
@@ -82,7 +96,79 @@ final class WidgetController: NSObject, NSWindowDelegate {
     }
 
     private var scrollMonitor: Any?
+    private var mouseMonitor: Any?
     private var scrollAccumulated: CGFloat = 0
+    private var shakeTimer: Timer?
+    private var shakeStart = Date()
+    private var shakeBaseX: CGFloat?
+    private var confirmationCheck: DispatchWorkItem?
+
+    // MARK: - Shake
+
+    /// Time's up: short shakes every couple of seconds, for up to a minute,
+    /// so it's seen even with the sound off. Any touch stops it.
+    func startShake() {
+        ui.shaking = true
+        guard shakeTimer == nil, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
+        shakeStart = Date()
+        shakeBaseX = panel.frame.minX
+        let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in self.shakeStep() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        shakeTimer = t
+    }
+
+    private func shakeStep() {
+        guard let base = shakeBaseX, panel.isVisible else { stopShake(); return }
+        let elapsed = Date().timeIntervalSince(shakeStart)
+        if elapsed > 60 { stopShake(); return }
+        let cycle = elapsed.truncatingRemainder(dividingBy: 2.6)
+        var dx: CGFloat = 0
+        if cycle < 0.62 {
+            let p = cycle / 0.62
+            dx = CGFloat(sin(p * .pi * 8) * 7 * (1 - p))
+        }
+        panel.setFrameOrigin(NSPoint(x: base + dx, y: panel.frame.minY))
+    }
+
+    func stopShake() {
+        ui.shaking = false
+        shakeTimer?.invalidate()
+        shakeTimer = nil
+        if let base = shakeBaseX { panel.setFrameOrigin(NSPoint(x: base, y: panel.frame.minY)) }
+        shakeBaseX = nil
+    }
+
+    // MARK: - Scheduled confirmation
+
+    /// Shows the "Scheduled" card at the top. It goes after 15 seconds,
+    /// but stays while the pointer is over the widget.
+    func confirm(_ blockID: UUID, updated: Bool) {
+        show()
+        ui.expanded = false
+        ui.confirmation = .init(blockID: blockID, updated: updated, until: Date().addingTimeInterval(15))
+        scheduleConfirmationCheck()
+    }
+
+    private func scheduleConfirmationCheck() {
+        confirmationCheck?.cancel()
+        let work = DispatchWorkItem { [weak self] in
+            guard let self, let c = self.ui.confirmation else { return }
+            if Date() >= c.until {
+                if NSMouseInRect(NSEvent.mouseLocation, self.panel.frame, false) {
+                    self.ui.confirmation?.until = Date().addingTimeInterval(3)
+                } else {
+                    self.ui.confirmation = nil
+                    return
+                }
+            }
+            self.scheduleConfirmationCheck()
+        }
+        confirmationCheck = work
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
+    }
 
     private func scrollDial(_ event: NSEvent) {
         let dy = event.scrollingDeltaY
@@ -116,7 +202,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
     func openDial(_ id: UUID) {
         guard let t = store.timer(id) else { return }
         show()
-        ui.openDial(t, now: Date())
+        ui.openDial(t, now: Date(), room: store.extraLeft(t))
         focus()
     }
 
@@ -168,14 +254,15 @@ final class WidgetController: NSObject, NSWindowDelegate {
         isVisible ? hide(hint: false) : show()
     }
 
-    /// A timer finished: make sure it's seen, with the finish controls open.
-    func presentFinished(_ id: UUID, alerting: Bool) {
+    /// A timer finished: make sure it's seen. The Time's up card has the controls.
+    func presentFinished(_ id: UUID, alerting: Bool, shake: Bool) {
         store.makePrimary(id)
         show()
         ui.renamingID = nil
         ui.closeDial(commit: true, store: store)
-        ui.expanded = true
+        ui.blockDraft = nil
         ui.alerting = alerting
+        if shake { startShake() }
     }
 
     /// Shows the widget expanded — "show my timers".
@@ -245,7 +332,9 @@ final class WidgetController: NSObject, NSWindowDelegate {
         guard ui.renamingID == nil, ui.blockDraft == nil, let primary = store.primary else { return false }
         switch event.charactersIgnoringModifiers {
         case " ":
-            if primary.isFinished { store.remove(primary.id) } else { store.toggle(primary.id) }
+            if primary.isFinished { acknowledge(); store.remove(primary.id) }
+            else if primary.isWaiting { store.startWaiting(primary.id) }
+            else { store.toggle(primary.id) }
             return true
         case "+", "=":
             store.adjust(primary.id, by: 300)

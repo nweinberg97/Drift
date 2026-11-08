@@ -32,7 +32,8 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
     }
 
     /// Replaces all pending notifications with one per running timer.
-    func sync(timers: [DriftTimer], enabled: Bool, now: Date = Date()) {
+    /// `handoff`: seconds before a session's next time block starts by itself.
+    func sync(timers: [DriftTimer], enabled: Bool, handoff: TimeInterval = 0, now: Date = Date()) {
         guard let center else { return }
         center.removeAllPendingNotificationRequests()
         guard enabled else { return }
@@ -42,7 +43,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             guard remaining > 0.5 else { continue }
 
             let content = UNMutableNotificationContent()
-            let copy = Self.copy(for: timer)
+            let copy = Self.copy(for: timer, handoff: handoff)
             content.title = copy.title
             content.body = copy.body
             content.sound = nil // Drift plays its own, gentler chime.
@@ -66,7 +67,7 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
         center.add(UNNotificationRequest(identifier: "block-\(UUID().uuidString)", content: content, trigger: nil))
     }
 
-    static func copy(for timer: DriftTimer) -> (title: String, body: String) {
+    static func copy(for timer: DriftTimer, handoff: TimeInterval = 0) -> (title: String, body: String) {
         if let cycle = timer.pomodoro {
             let next = cycle.upNext
             switch cycle.phase {
@@ -77,7 +78,19 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
                 return ("Break's over", "Back to focus for \(TimeFormatter.spoken(next.duration)).")
             }
         }
-        let title = timer.name.map { "\($0) is done" } ?? "Timer done"
+        if let block = timer.currentBlock {
+            if let next = timer.nextBlock {
+                let when: String
+                if handoff.isInfinite { when = "Press Start when you’re ready." }
+                else if handoff > 0 { when = "Starts in \(Int(handoff)) seconds." }
+                else { when = "It’s started." }
+                return ("\(block.name) done", "Next: \(next.name), \(TimeFormatter.spoken(next.seconds)). \(when)")
+            }
+            let count = timer.steps?.count ?? 1
+            return ("Session complete\(timer.name.map { ": \($0)" } ?? "")",
+                    "\(count) time blocks · \(TimeFormatter.spoken(timer.sessionTotal)).")
+        }
+        let title = timer.name.map { "Time’s up: \($0)" } ?? "Time’s up"
         return (title, "\(TimeFormatter.spoken(timer.duration)) complete.")
     }
 

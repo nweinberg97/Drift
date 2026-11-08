@@ -58,6 +58,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         var editChange: ((inout BlockDraft) -> Void)?
         var focusSound = false
         var dark = false
+        /// Show the "Scheduled" card for this block.
+        var confirmFor: Int?
+        var shaking = false
     }
 
     private func running(_ name: String?, total: TimeInterval, left: TimeInterval, pomodoro: PomodoroCycle? = nil) -> DriftTimer {
@@ -81,11 +84,29 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         return t
     }
 
+    private func session(_ name: String, step: Int, left: TimeInterval, waiting: TimeInterval? = nil) -> DriftTimer {
+        let steps = [TimeBlock(name: "Inbox", seconds: 600), TimeBlock(name: "Plan the day", seconds: 600),
+                     TimeBlock(name: "Review calendar", seconds: 300), TimeBlock(name: "Team updates", seconds: 300)]
+        var t = running(name, total: steps[step].seconds, left: left)
+        t.steps = steps
+        t.stepIndex = step
+        if let waiting {
+            t.state = .paused(remaining: steps[step].seconds)
+            t.waitUntil = Date().addingTimeInterval(waiting)
+            t.handoff = steps[step - 1].name
+        }
+        return t
+    }
+
     private func scenarios() -> [Scenario] {
-        let writing = running("Writing", total: 2_700, left: 1_453.4)
+        let writing = running("Draft proposal", total: 2_700, left: 1_453.4)
         let unnamed = running(nil, total: 1_500, left: 1_213.4)
-        let laundry = running("Laundry", total: 3_600, left: 2_462.4)
-        let tea = paused("Tea", total: 300, left: 192)
+        let laundry = running("Code review", total: 3_600, left: 2_462.4)
+        let tea = paused("Prep for standup", total: 600, left: 192)
+        let morning = session("Morning startup", step: 1, left: 371.4)
+        let handoff = session("Morning startup", step: 2, left: 300, waiting: 8.6)
+        var sessionDone = session("Morning startup", step: 3, left: 0)
+        sessionDone.state = .finished(at: Date())
         var focus = PomodoroCycle()
         focus.round = 2
         let pomo = running(nil, total: 1_500, left: 931.4, pomodoro: focus)
@@ -93,7 +114,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         rest.round = 2
         rest.phase = .rest
         let pomoBreak = running(nil, total: 300, left: 244.4, pomodoro: rest)
-        let done = finished("Email", total: 1_500)
+        let done = finished("Reply to emails", total: 1_500)
 
         return [
             Scenario(name: "01-idle", timers: []),
@@ -104,7 +125,13 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "06-renaming", timers: [unnamed], primary: unnamed.id, expanded: true, renaming: true),
             Scenario(name: "07-pomodoro-focus-expanded", timers: [pomo], primary: pomo.id, expanded: true),
             Scenario(name: "08-pomodoro-break-collapsed", timers: [pomoBreak], primary: pomoBreak.id),
-            Scenario(name: "09-finished-alerting", timers: [done, laundry], primary: done.id, expanded: true, alerting: true),
+            Scenario(name: "09-finished-alerting", timers: [done, laundry], primary: done.id, alerting: true, shaking: true),
+            Scenario(name: "09b-finished-expanded", timers: [done, laundry], primary: done.id, expanded: true),
+            Scenario(name: "16-session-collapsed", timers: [morning], primary: morning.id),
+            Scenario(name: "17-session-expanded", timers: [morning], primary: morning.id, expanded: true),
+            Scenario(name: "18-session-handoff", timers: [handoff], primary: handoff.id),
+            Scenario(name: "19-session-complete", timers: [sessionDone], primary: sessionDone.id),
+            Scenario(name: "19b-session-dark", timers: [morning], primary: morning.id, expanded: true, dark: true),
             Scenario(name: "10-hide-hint", timers: [writing], primary: writing.id, hideHint: true),
             Scenario(name: "11-dark-expanded", timers: [writing, laundry, tea], primary: writing.id, expanded: true, focusSound: true, dark: true),
             Scenario(name: "12-dark-collapsed", timers: [writing, laundry], primary: writing.id, dark: true),
@@ -118,6 +145,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "34-plan-editor-just-today", timers: [writing], primary: writing.id, blocks: plan(), editBlock: 0,
                      editChange: { $0.startMinute += 30 }),
             Scenario(name: "35-plan-dark-expanded", timers: [], expanded: true, blocks: plan(), dark: true),
+            Scenario(name: "36-plan-scheduled-card", timers: [], blocks: plan(), confirmFor: 0),
+            Scenario(name: "37-plan-scheduled-session", timers: [writing], primary: writing.id, blocks: plan(), confirmFor: 3),
+            Scenario(name: "38-plan-scheduled-dark", timers: [], blocks: plan(), dark: true, confirmFor: 3),
         ]
     }
 
@@ -131,8 +161,15 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         let soon = min(1_380, (minute / 15 + 4) * 15)
         return [
             ScheduledBlock(name: "Deep work", startMinute: soon, duration: 5_400, days: Array(0...6), date: nil),
-            ScheduledBlock(name: "Email", startMinute: max(0, minute - 1), duration: 1_800, days: nil, date: key),
-            ScheduledBlock(name: "Reading", startMinute: min(1_410, soon + 120), duration: 1_800, days: [0, 1, 2, 3, 4, 5, 6], date: nil),
+            ScheduledBlock(name: "Client call", startMinute: max(0, minute - 1), duration: 1_800, days: nil, date: key),
+            ScheduledBlock(name: "Weekly planning", startMinute: min(1_410, soon + 120), duration: 1_800, days: [0, 1, 2, 3, 4, 5, 6], date: nil),
+            {
+                var b = ScheduledBlock(name: "Writing, Editing, Reading", startMinute: min(1_380, soon + 30), duration: 3_600, days: nil,
+                                       date: key)
+                b.steps = [TimeBlock(name: "Writing", seconds: 600), TimeBlock(name: "Editing", seconds: 1_200),
+                           TimeBlock(name: "Reading", seconds: 1_800)]
+                return b
+            }(),
         ]
     }
 
@@ -146,9 +183,10 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             ui.expanded = s.expanded
             ui.hideHint = s.hideHint
             ui.alerting = s.alerting
+            ui.shaking = s.shaking
             if s.renaming, let id = s.primary {
                 ui.renamingID = id
-                ui.draft = "Email"
+                ui.draft = "Reply to emails"
             }
             if let value = s.dial, let id = s.primary {
                 ui.dialID = id
@@ -159,9 +197,12 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                 prompt = .init(blockID: s.blocks[i].id, deadline: Date().addingTimeInterval(42))
             }
             schedule.replaceAll(s.blocks, prompt: prompt)
+            if let i = s.confirmFor, i < s.blocks.count {
+                ui.confirmation = .init(blockID: s.blocks[i].id, updated: false, until: Date().addingTimeInterval(15))
+            }
             if let i = s.editBlock {
                 ui.editBlock(i >= 0 && i < s.blocks.count ? s.blocks[i].id : nil, schedule: schedule)
-                if i < 0 { ui.blockDraft?.name = "Gym" }
+                if i < 0 { ui.blockDraft?.name = "Weekly planning" }
                 if let change = s.editChange, var d = ui.blockDraft {
                     change(&d)
                     ui.blockDraft = d
@@ -179,20 +220,23 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         let runner = CommandRunner(store: store, settings: settings)
         let launcher: [(String, String, Bool, Bool)] = [
             ("20-launcher-first-run", "", false, false),
-            ("21-launcher-task-only", "Write intro", false, false),
-            ("22-launcher-task-and-time", "Write intro 45m", false, false),
+            ("21-launcher-task-only", "Draft proposal", false, false),
+            ("22-launcher-task-and-time", "Draft proposal 45m", false, false),
             ("23-launcher-number", "25", false, false),
             ("24-launcher-recents", "", true, false),
-            ("25-launcher-dark-words", "Reading for an hour and a half", true, true),
+            ("25-launcher-dark-words", "Code review for an hour and a half", true, true),
             ("26-launcher-schedule", "Deep work 9-10:30 weekdays", true, false),
-            ("27-launcher-schedule-at", "Email at 1pm for 30m", true, true),
+            ("27-launcher-schedule-at", "Client call at 2pm for 30m", true, true),
+            ("28-launcher-session", "Morning startup: inbox 10m, plan the day 10m, review calendar 5m", true, false),
+            ("29-launcher-session-later", "10m writing, 20m editing, 30m reading, 15m email triage, starting at 11:30pm today", true, false),
+            ("29b-launcher-session-dark", "10m writing, 20m editing, 30m reading", true, true),
         ]
         for (name, text, returning, dark) in launcher {
             settings.forgetRecents()
             settings.hasWrittenTask = false
             if returning {
-                settings.remember(task: "Email", seconds: 1_500)
-                settings.remember(task: "Write intro", seconds: 2_700)
+                settings.remember(task: "Reply to emails", seconds: 1_500)
+                settings.remember(task: "Draft proposal", seconds: 2_700)
             }
             let model = ComposerModel()
             model.text = text
@@ -221,16 +265,16 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
     /// Marketing screenshots at 2880×1800 (Apple's largest Mac size): a headline
     /// beside the real UI, scaled up, on a dark ember backdrop.
     private func renderStoreShots(runner: CommandRunner) async {
-        let writing = running("Write intro", total: 2_700, left: 2_699.4)
-        let email = running("Email", total: 1_500, left: 1_453.4)
-        let laundry = running("Laundry", total: 3_600, left: 2_462.4)
-        let tea = paused("Tea", total: 300, left: 192)
-        let reading = running("Reading", total: 1_800, left: 1_312.4)
+        let writing = running("Draft proposal", total: 2_700, left: 2_699.4)
+        let email = running("Reply to emails", total: 1_500, left: 1_453.4)
+        let laundry = running("Code review", total: 3_600, left: 2_462.4)
+        let tea = paused("Prep for standup", total: 600, left: 192)
+        let reading = running("Weekly planning", total: 1_800, left: 1_312.4)
         // Store shots show a typical day, not the build machine's clock.
         let plan = [
             ScheduledBlock(name: "Deep work", startMinute: 9 * 60, duration: 5_400, days: Array(0...6), date: nil),
-            ScheduledBlock(name: "Email", startMinute: 13 * 60, duration: 1_800, days: Array(0...6), date: nil),
-            ScheduledBlock(name: "Reading", startMinute: 20 * 60, duration: 1_800, days: Array(0...6), date: nil),
+            ScheduledBlock(name: "Client call", startMinute: 13 * 60, duration: 1_800, days: Array(0...6), date: nil),
+            ScheduledBlock(name: "Weekly planning", startMinute: 16 * 60, duration: 1_800, days: [5], date: nil),
         ]
 
         func widget(_ timers: [DriftTimer], primary: UUID?, blocks: [ScheduledBlock] = [], prompt: Int? = nil,
@@ -251,7 +295,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         settings.forgetRecents()
         settings.hasWrittenTask = true
         let model = ComposerModel()
-        model.text = "Write intro 45m"
+        model.text = "Draft proposal 45m"
         let launcher = ComposerView(
             model: model, settings: settings, voice: voice,
             preview: { runner.preview($0) }, plan: { runner.plan($0) },
@@ -284,7 +328,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
 
         // 3. Plan your day.
         let w3 = widget([email], primary: email.id, blocks: plan, prompt: 0) { ui in ui.expanded = true }
-        await renderShot(name: "store-3-plan", headline: "Plan your day.\nBlocks start on time.",
+        await renderShot(name: "store-3-plan", headline: "Plan your day.\nSessions start on time.",
                          sub: "Type “Deep work 9–10:30 weekdays”. When it's time, Drift asks, then starts it. Move any block just for today.",
                          layout: .side) {
             w3.fixedSize().scaleEffect(1.85).position(x: 1_060, y: 450)
@@ -294,7 +338,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         let w4 = widget([email, laundry, tea, reading], primary: email.id, blocks: plan) { ui in
             ui.expanded = true
             ui.renamingID = email.id
-            ui.draft = "Email inbox"
+            ui.draft = "Reply to emails"
         }
         await renderShot(name: "store-4-several", headline: "Name it in place.\nRun several at once.",
                          sub: "Click a name to type, a time to change it. Every timer in one small widget.",

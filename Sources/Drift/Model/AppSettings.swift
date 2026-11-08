@@ -1,5 +1,6 @@
 import AppKit
 import Combine
+import DriftCore
 import Foundation
 
 /// User preferences, persisted to UserDefaults. Deliberately small.
@@ -57,8 +58,45 @@ final class AppSettings: ObservableObject {
     struct RecentTask: Codable, Equatable, Identifiable {
         var name: String
         var seconds: TimeInterval
+        /// A saved session: starting it runs its time blocks.
+        var session: Bool?
         var id: String { name.lowercased() }
     }
+
+    /// A named session, saved so it's one click away next time.
+    struct SavedSession: Codable, Equatable, Identifiable {
+        var name: String
+        var steps: [TimeBlock]
+        var id: String { name.lowercased() }
+        var total: TimeInterval { steps.reduce(0) { $0 + $1.seconds } }
+    }
+
+    /// When a session's next time block starts.
+    enum BetweenBlocks: String, CaseIterable, Identifiable {
+        case rightAway, fiveSeconds, tenSeconds, thirtySeconds, manual
+        var id: String { rawValue }
+        var title: String {
+            switch self {
+            case .rightAway: return "Right away"
+            case .fiveSeconds: return "After 5 seconds"
+            case .tenSeconds: return "After 10 seconds"
+            case .thirtySeconds: return "After 30 seconds"
+            case .manual: return "When I press Start"
+            }
+        }
+        /// 0: no hand-off card. `.infinity`: wait for Start.
+        var delay: TimeInterval {
+            switch self {
+            case .rightAway: return 0
+            case .fiveSeconds: return 5
+            case .tenSeconds: return 10
+            case .thirtySeconds: return 30
+            case .manual: return .infinity
+            }
+        }
+    }
+
+    static let gracePeriods: [TimeInterval] = [0, 300, 600, 900]
 
     static let defaultPresets: [TimeInterval] = [300, 600, 900, 1_200, 1_500, 1_800, 2_700, 3_600, 7_200]
     private static let oldDefaultPresets: [TimeInterval] = [300, 900, 1_500, 2_700, 3_600]
@@ -69,6 +107,21 @@ final class AppSettings: ObservableObject {
     @Published var defaultDuration: TimeInterval { didSet { set(defaultDuration, "defaultDuration") } }
     @Published var presets: [TimeInterval] { didSet { set(presets, "presets") } }
     @Published var finishedRetention: FinishedRetention { didSet { set(finishedRetention.rawValue, "finishedRetention") } }
+    /// Shake the widget when time's up, so it's seen with the sound off.
+    @Published var shakeOnFinish: Bool { didSet { set(shakeOnFinish, "shakeOnFinish") } }
+
+    // Sessions and extra time
+    @Published var betweenBlocks: BetweenBlocks { didSet { set(betweenBlocks.rawValue, "betweenBlocks") } }
+    /// Off: time blocks can be shortened but not stretched.
+    @Published var extraInSessions: Bool { didSet { set(extraInSessions, "extraInSessions") } }
+    /// Most extra time any one timer or time block can get. 0 = no limit.
+    @Published var gracePeriod: TimeInterval { didSet { set(gracePeriod, "gracePeriod") } }
+
+    // Features you can turn off; each disappears from the widget, menu and launcher.
+    @Published var featurePlan: Bool { didSet { set(featurePlan, "featurePlan") } }
+    @Published var featureSounds: Bool { didSet { set(featureSounds, "featureSounds") } }
+    @Published var featurePomodoro: Bool { didSet { set(featurePomodoro, "featurePomodoro") } }
+    @Published var featureVoice: Bool { didSet { set(featureVoice, "featureVoice") } }
 
     // Appearance
     @Published var appearance: Appearance { didSet { set(appearance.rawValue, "appearance"); applyAppearance() } }
@@ -100,6 +153,7 @@ final class AppSettings: ObservableObject {
     /// The first-launch guide has been shown.
     @Published var hasSeenWelcome: Bool { didSet { set(hasSeenWelcome, "hasSeenWelcome") } }
     @Published private(set) var recents: [RecentTask] { didSet { saveRecents() } }
+    @Published private(set) var savedSessions: [SavedSession] { didSet { saveSessions() } }
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
@@ -107,6 +161,14 @@ final class AppSettings: ObservableObject {
         let storedPresets = defaults.array(forKey: "presets") as? [Double]
         presets = (storedPresets == nil || storedPresets == Self.oldDefaultPresets) ? Self.defaultPresets : storedPresets!
         finishedRetention = FinishedRetention(rawValue: defaults.string(forKey: "finishedRetention") ?? "") ?? .untilDismissed
+        shakeOnFinish = defaults.object(forKey: "shakeOnFinish") as? Bool ?? true
+        betweenBlocks = BetweenBlocks(rawValue: defaults.string(forKey: "betweenBlocks") ?? "") ?? .tenSeconds
+        extraInSessions = defaults.object(forKey: "extraInSessions") as? Bool ?? false
+        gracePeriod = defaults.object(forKey: "gracePeriod") as? Double ?? 0
+        featurePlan = defaults.object(forKey: "featurePlan") as? Bool ?? true
+        featureSounds = defaults.object(forKey: "featureSounds") as? Bool ?? true
+        featurePomodoro = defaults.object(forKey: "featurePomodoro") as? Bool ?? true
+        featureVoice = defaults.object(forKey: "featureVoice") as? Bool ?? true
         appearance = Appearance(rawValue: defaults.string(forKey: "appearance") ?? "") ?? .system
         widgetSize = WidgetSize(rawValue: defaults.string(forKey: "widgetSize") ?? "") ?? .compact
         widgetOpacity = defaults.object(forKey: "widgetOpacity") as? Double ?? 1
@@ -127,6 +189,12 @@ final class AppSettings: ObservableObject {
             recents = stored
         } else {
             recents = []
+        }
+        if let data = defaults.data(forKey: "savedSessions"),
+           let stored = try? JSONDecoder().decode([SavedSession].self, from: data) {
+            savedSessions = stored
+        } else {
+            savedSessions = []
         }
 
         var loaded = ShortcutAction.defaults
@@ -158,8 +226,40 @@ final class AppSettings: ObservableObject {
         if !hasWrittenTask { hasWrittenTask = true }
     }
 
+    /// Saves a named session and puts it first under Recent.
+    func remember(session name: String, steps: [TimeBlock]) {
+        let trimmed = name.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty, steps.count > 1 else { return }
+        let clean = steps.map { TimeBlock(name: $0.name, seconds: $0.seconds) }
+        var list = savedSessions.filter { $0.id != trimmed.lowercased() }
+        list.insert(SavedSession(name: trimmed, steps: clean), at: 0)
+        savedSessions = Array(list.prefix(8))
+        var r = recents.filter { $0.id != trimmed.lowercased() }
+        r.insert(RecentTask(name: trimmed, seconds: clean.reduce(0) { $0 + $1.seconds }, session: true), at: 0)
+        recents = Array(r.prefix(4))
+        if !hasWrittenTask { hasWrittenTask = true }
+    }
+
+    func savedSession(named name: String) -> SavedSession? {
+        let key = name.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
+        return savedSessions.first { $0.id == key }
+    }
+
     func forgetRecents() {
         recents = []
+        savedSessions = []
+    }
+
+    private func saveSessions() {
+        if let data = try? JSONEncoder().encode(savedSessions) {
+            defaults.set(data, forKey: "savedSessions")
+        }
+    }
+
+    /// Quick lengths for small rows: the everyday ones from your list.
+    var quickLengths: [TimeInterval] {
+        let common = presets.filter { [300, 600, 900, 1_500, 2_700, 3_600].contains($0) }
+        return common.count >= 4 ? common : Array(presets.prefix(6))
     }
 
     private func saveRecents() {
