@@ -687,9 +687,6 @@ struct ComposerView: View {
         if set == [0, 6] { return "weekends" }
         return set.sorted { ($0 + 6) % 7 < ($1 + 6) % 7 }.map { Schedule.shortDayNames[$0].lowercased() }.joined(separator: " ")
     }
-        model.text = text
-        model.focusToken += 1
-    }
 
     private var presetsRow: some View {
         let task: String? = {
