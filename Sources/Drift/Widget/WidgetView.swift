@@ -30,6 +30,10 @@ final class WidgetUIState: ObservableObject {
     @Published var idleDial = false
     /// The timer whose time is being typed in place (double-click the time).
     @Published var typingID: UUID?
+    /// How far −, +, scrolling and dragging move a work session: 1, 5 or 10 minutes.
+    @Published var nudgeStep = 5
+    /// Typing a value into the dial's centre (double-click it).
+    @Published var dialTyping = false
     /// The dial's limit when a grace period (or a session) caps extra time.
     var dialMax: TimeInterval = WidgetUIState.dialMaximum
     var dialBaseExtra: TimeInterval = 0
@@ -78,6 +82,20 @@ extension WidgetUIState {
         }
         draft.windowStart = BlockTimeline.window(around: draft.startMinute)
         blockDraft = draft
+    }
+
+    /// Moves a work session's start, or changes its length, by whole steps.
+    func nudge(_ steps: Int, length: Bool) {
+        guard let d = blockDraft else { return }
+        let delta = steps * nudgeStep
+        if length {
+            let m = Int(d.duration / 60) + delta
+            blockDraft?.duration = TimeInterval(max(5, min(16 * 60, m)) * 60)
+        } else {
+            let m = max(0, min(1_439, d.startMinute + delta))
+            blockDraft?.startMinute = m
+            blockDraft?.windowStart = BlockTimeline.window(around: m, current: d.windowStart)
+        }
     }
 
     func beginRename(_ t: DriftTimer) {
@@ -129,6 +147,7 @@ extension WidgetUIState {
 
     /// Done keeps the new time; Cancel puts the old one back.
     func closeDial(commit: Bool, store: TimerStore?) {
+        dialTyping = false
         if idleDial { idleDial = false }
         guard let id = dialID else { return }
         if !commit, let store, store.timer(id) != nil {
@@ -207,7 +226,6 @@ struct WidgetView: View {
                 }
                 if settings.featurePlan, !ui.expanded, ui.dialID == nil, ui.blockDraft == nil, schedule.prompt == nil,
                    ui.confirmation == nil, let next = schedule.next(), !next.tomorrow,
-                   next.entry.occurrence.start.timeIntervalSince(schedule.now) < 2 * 3_600,
                    primary.blockID != next.entry.block.id {
                     NextBlockLine(entry: next.entry, tomorrow: false, ui: ui, schedule: schedule, actions: actions, scale: scale)
                 }
@@ -925,9 +943,9 @@ private struct TaskLabel: View {
                         .foregroundStyle(Theme.secondaryText)
                         .lineLimit(1)
                 } else {
-                    HStack(spacing: 3) {
-                        Image(systemName: "plus").font(.system(size: size - 2, weight: .bold))
-                        Text("Add task")
+                    HStack(spacing: 4) {
+                        Image(systemName: "pencil").font(.system(size: size - 1, weight: .semibold))
+                        Text("Name it")
                     }
                     .font(.system(size: size, weight: .medium))
                     .foregroundStyle(Theme.tertiaryText)
@@ -1015,10 +1033,22 @@ private struct DialSection: View {
                     .foregroundStyle(Theme.tertiaryText)
                     .padding(.bottom, 6)
             }
-            DialFace(value: ui.dialValue)
+            DialFace(value: ui.dialValue, typing: ui.dialTyping)
                 .frame(width: Self.diameter, height: Self.diameter)
                 .contentShape(Circle())
                 .gesture(turn)
+                .overlay {
+                    // The number in the middle: double-click to type a time.
+                    if ui.dialTyping {
+                        DialTypeField(ui: ui, store: store)
+                    } else {
+                        Color.clear
+                            .frame(width: 110, height: 56)
+                            .contentShape(Rectangle())
+                            .onTapGesture(count: 2) { ui.dialTyping = true }
+                            .help("Double-click to type a time")
+                    }
+                }
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel("Time left")
                 .accessibilityValue(TimeFormatter.spoken(ui.dialValue))
@@ -1111,6 +1141,7 @@ private struct DialSection: View {
 
 private struct DialFace: View {
     let value: TimeInterval
+    var typing = false
 
     var body: some View {
         let minutes = value.truncatingRemainder(dividingBy: 3_600) / 3_600
@@ -1148,7 +1179,8 @@ private struct DialFace: View {
                         .font(Theme.digits(34))
                         .kerning(-0.5)
                         .foregroundStyle(Theme.primaryText)
-                    Text(hours > 0 ? "\(hours) h + minutes on the ring" : "Turn to adjust")
+                        .opacity(typing ? 0 : 1)
+                    Text(typing ? "Return to set" : hours > 0 ? "\(hours) h + minutes on the ring" : "Turn, or double-click to type")
                         .font(.system(size: 11))
                         .foregroundStyle(Theme.secondaryText)
                 }
@@ -1275,9 +1307,14 @@ private struct TodaySection: View {
     @ObservedObject var schedule: ScheduleStore
     let actions: WidgetActions
     let scale: CGFloat
+    @State private var showEarlier = false
 
     var body: some View {
-        let entries = schedule.today()
+        // What's still ahead; earlier and skipped items fold away.
+        let all = schedule.today()
+        let finished: Set<ScheduleStore.EntryState> = [.done, .passed, .skipped]
+        let earlier = all.filter { finished.contains($0.state) }
+        let entries = showEarlier ? all : all.filter { !finished.contains($0.state) }
         VStack(alignment: .leading, spacing: 0) {
             HStack {
                 Text("TODAY")
@@ -1301,7 +1338,7 @@ private struct TodaySection: View {
             .padding(.top, 2)
 
             if entries.isEmpty {
-                Text(schedule.blocks.isEmpty ? "Plan from ⌥ Space: “Client call at 2pm for 30m”" : "Nothing planned today")
+                Text(schedule.blocks.isEmpty ? "Plan from ⌥ Space: “Client call at 2pm for 30m”" : earlier.isEmpty ? "Nothing planned today" : "Nothing else today")
                     .font(.system(size: 11.5))
                     .foregroundStyle(Theme.tertiaryText)
                     .padding(.horizontal, 13 * scale)
@@ -1316,6 +1353,11 @@ private struct TodaySection: View {
                 }, remove: {
                     ui.delete(entry.block.id, schedule: schedule)
                 })
+            }
+            if !earlier.isEmpty {
+                Button(showEarlier ? "Hide earlier" : "Show \(earlier.count) earlier") { showEarlier.toggle() }
+                    .buttonStyle(QuietButtonStyle())
+                    .padding(.leading, 6 * scale)
             }
         }
         .padding(.bottom, 3)
@@ -1435,11 +1477,18 @@ private struct BlockEditor: View {
         let skipped = block?.status[key] == .skipped
         let twoWay = block?.isRepeating == true && todayOcc != nil && draft.changedTime && !draft.changedRepeat
         VStack(alignment: .leading, spacing: 0) {
-            Text(draft.id != nil ? (draft.days == nil ? "EDIT WORK SESSION" : "EDIT ROUTINE") : (draft.days == nil ? "PLAN A WORK SESSION" : "NEW ROUTINE"))
-                .font(.system(size: 10.5, weight: .semibold))
-                .kerning(0.4)
-                .foregroundStyle(Theme.accent)
-                .padding(.bottom, 6)
+            HStack {
+                Text(draft.id != nil ? (draft.days == nil ? "EDIT WORK SESSION" : "EDIT ROUTINE") : (draft.days == nil ? "PLAN A WORK SESSION" : "NEW ROUTINE"))
+                    .font(.system(size: 10.5, weight: .semibold))
+                    .kerning(0.4)
+                    .foregroundStyle(Theme.accent)
+                Spacer()
+                Button { close() } label: { Image(systemName: "xmark").font(.system(size: 10, weight: .bold)) }
+                    .buttonStyle(IconButtonStyle(size: 22, tint: Theme.secondaryText))
+                    .help("Close without saving (esc)")
+                    .accessibilityLabel("Close")
+            }
+            .padding(.bottom, 4)
             TextField("What is it for?", text: binding(\.name, ""))
                 .textFieldStyle(.plain)
                 .font(.system(size: 13.5, weight: .semibold))
@@ -1473,21 +1522,33 @@ private struct BlockEditor: View {
 
             BlockTimeline(ui: ui, schedule: schedule)
 
-            row("Start") {
-                ForEach([-5, -1, 1, 5], id: \.self) { (d: Int) in
-                    Button(stepTitle(d)) {
-                        let m = max(0, min(1_439, draft.startMinute + d))
-                        ui.blockDraft?.startMinute = m
-                        ui.blockDraft?.windowStart = BlockTimeline.window(around: m, current: draft.windowStart)
+            // − and + move by the step; dragging and scrolling use it too.
+            row("Step") {
+                HStack(spacing: 2) {
+                    ForEach([1, 5, 10], id: \.self) { m in
+                        Button("\(m) min") { ui.nudgeStep = m }
+                            .buttonStyle(StepTabStyle(selected: ui.nudgeStep == m))
                     }
-                    .buttonStyle(PillButtonStyle())
                 }
+                .padding(2)
+                .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.control))
+            }
+            row("Start") {
+                nudgeButton("−", "Earlier by \(ui.nudgeStep) min") { ui.nudge(-1, length: false) }
+                Text(Schedule.time(draft.startMinute))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Theme.primaryText)
+                    .frame(minWidth: 64)
+                nudgeButton("+", "Later by \(ui.nudgeStep) min") { ui.nudge(1, length: false) }
             }
             row("Length") {
-                ForEach(Self.lengths.prefix(4), id: \.self) { l in lengthChip(l, draft) }
-            }
-            row("") {
-                ForEach(Self.lengths.suffix(3), id: \.self) { l in lengthChip(l, draft) }
+                nudgeButton("−", "\(ui.nudgeStep) min shorter") { ui.nudge(-1, length: true) }
+                Text(TimeFormatter.compact(draft.duration))
+                    .font(.system(size: 12, weight: .semibold).monospacedDigit())
+                    .foregroundStyle(Theme.primaryText)
+                    .frame(minWidth: 64)
+                nudgeButton("+", "\(ui.nudgeStep) min longer") { ui.nudge(1, length: true) }
+                ForEach([1_500.0, 2_700, 3_600], id: \.self) { l in lengthChip(l, draft) }
             }
             row("Repeat") {
                 Button(onceTitle(draft, key)) {
@@ -1641,10 +1702,17 @@ private struct BlockEditor: View {
         return "Once"
     }
 
+    private func nudgeButton(_ title: String, _ help: String, _ action: @escaping () -> Void) -> some View {
+        Button(title, action: action)
+            .buttonStyle(PillButtonStyle(square: true))
+            .help(help)
+            .accessibilityLabel(help)
+    }
+
     private func stepTitle(_ d: Int) -> String { d > 0 ? "+\(d)" : "−\(-d)" }
 
     private func hint(twoWay: Bool, block: ScheduledBlock?) -> String {
-        guard twoWay, let block else { return "Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it." }
+        guard twoWay, let block else { return "Hover the timeline and scroll to nudge the start (⇧ scroll for the length), drag it, or click a time to type it." }
         let all = allLabel(block)
         return "Save this change for today only, or for " + all.prefix(1).lowercased() + all.dropFirst() + "."
     }
@@ -1794,15 +1862,15 @@ struct BlockTimeline: View {
                 if dragOrigin == nil { dragOrigin = (draft.startMinute, draft.duration) }
                 guard let origin = dragOrigin else { return }
                 // Snaps to 5 minutes; hold ⌥ for single minutes.
-                let step = NSEvent.modifierFlags.contains(.option) ? 1 : 5
+                let step = NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep
                 let raw = Double(g.translation.width / width * CGFloat(Self.span))
                 if resizing {
                     let end = Int(origin.duration / 60) + Int(raw.rounded())
-                    let snapped = step == 1 ? end : Int((Double(end) / 5).rounded()) * 5
+                    let snapped = step == 1 ? end : Int((Double(end) / Double(step)).rounded()) * step
                     ui.blockDraft?.duration = TimeInterval(max(5, min(8 * 60, snapped)) * 60)
                 } else {
                     let start = origin.start + Int(raw.rounded())
-                    let snapped = step == 1 ? start : Int((Double(start) / 5).rounded()) * 5
+                    let snapped = step == 1 ? start : Int((Double(start) / Double(step)).rounded()) * step
                     ui.blockDraft?.startMinute = max(0, min(1_440 - 5, snapped))
                 }
             }
@@ -1840,5 +1908,55 @@ struct PillButtonStyle: ButtonStyle {
             .opacity(configuration.isPressed ? 0.85 : 1)
             .contentShape(Rectangle())
             .onHover { hovering = $0 }
+    }
+}
+
+/// A part of the editor's 1 min · 5 min · 10 min step switch.
+private struct StepTabStyle: ButtonStyle {
+    let selected: Bool
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 11.5, weight: selected ? .semibold : .medium).monospacedDigit())
+            .foregroundStyle(selected || hovering ? Theme.primaryText : Theme.secondaryText)
+            .padding(.horizontal, 9)
+            .frame(height: 20)
+            .background(
+                RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    .fill(selected ? Theme.surface : Color.clear)
+                    .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 1, y: 0.5)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
+    }
+}
+
+/// Type a time into the dial: "30", "45m", "1:30".
+private struct DialTypeField: View {
+    @ObservedObject var ui: WidgetUIState
+    @ObservedObject var store: TimerStore
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        TextField(TimeFormatter.compact(ui.dialValue), text: $text)
+            .textFieldStyle(.plain)
+            .multilineTextAlignment(.center)
+            .font(Theme.digits(30))
+            .foregroundStyle(Theme.primaryText)
+            .frame(width: 112)
+            .padding(.vertical, 2)
+            .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 7, style: .continuous).strokeBorder(Theme.accent, lineWidth: 1))
+            .focused($focused)
+            .onSubmit {
+                if let d = DurationParser.parse(text) { ui.setDial(d.seconds, store: store) }
+                ui.dialTyping = false
+            }
+            .onExitCommand { ui.dialTyping = false }
+            .onAppear { DispatchQueue.main.async { focused = true } }
+            .onChange(of: focused) { f in if !f { ui.dialTyping = false } }
+            .accessibilityLabel("Type a time")
     }
 }

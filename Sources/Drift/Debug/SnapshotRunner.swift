@@ -124,8 +124,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
 
         return [
             Scenario(name: "01-idle", timers: []),
-            Scenario(name: "01b-idle-later-today", timers: [], idleMode: 1),
-            Scenario(name: "01c-idle-routine", timers: [], idleMode: 2),
+            Scenario(name: "01b-idle-pomodoro", timers: [], idleMode: 1),
+            Scenario(name: "01c-idle-plan", timers: [], idleMode: 2),
             Scenario(name: "01d-idle-dark", timers: [], dark: true),
             Scenario(name: "01e-idle-dial", timers: [], idleDial: true),
             Scenario(name: "02b-typing-time", timers: [writing], primary: writing.id, typing: true),

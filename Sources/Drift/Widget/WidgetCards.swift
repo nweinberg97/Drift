@@ -16,12 +16,16 @@ struct IdleRow: View {
 
     private var hasPlan: Bool { settings.featurePlan && !schedule.blocks.isEmpty }
 
-    private var mode: Int { settings.featurePlan ? ui.idleMode : 0 }
+    /// The tabs that are switched on: 0 Start now, 1 Pomodoro, 2 Plan.
+    private var tabs: [Int] {
+        [0] + (settings.featurePomodoro ? [1] : []) + (settings.featurePlan ? [2] : [])
+    }
+    private var mode: Int { tabs.contains(ui.idleMode) ? ui.idleMode : 0 }
 
     private var question: String {
         switch mode {
-        case 1: return "What's coming up later today?"
-        case 2: return "What do you do regularly?"
+        case 1: return "Focus in rounds, with breaks"
+        case 2: return "Plan a work session"
         default: return "What are you working on?"
         }
     }
@@ -33,14 +37,14 @@ struct IdleRow: View {
                     .strokeBorder(Theme.tertiaryText, lineWidth: 1.25)
                     .frame(width: 7 * scale, height: 7 * scale)
                     .frame(width: 11 * scale, height: 11 * scale)
-                Button { mode == 0 ? actions.openComposer() : openEditor(start: nil, days: nil) } label: {
+                Button { mode == 2 ? openEditor(routine: false, start: nil, days: nil) : actions.openComposer() } label: {
                     Text(question)
                         .font(.system(size: 13 * scale, weight: .semibold))
                         .foregroundStyle(Theme.primaryText)
                         .lineLimit(1)
                 }
                 .buttonStyle(EditableTextStyle(active: false))
-                .help(mode == 0 ? "Write the task and how long" : "Name it and set the time")
+                .help(mode == 2 ? "Set up a work session" : "Write the task and how long")
                 .accessibilityLabel(question)
                 Spacer(minLength: 4)
                 if hasPlan {
@@ -60,12 +64,12 @@ struct IdleRow: View {
             .padding(.top, 9 * scale)
             .padding(.bottom, 6 * scale)
 
-            // Start now, later today, or every week: all three in plain sight.
-            if settings.featurePlan {
+            // Start now, Pomodoro, or plan: all in plain sight.
+            if tabs.count > 1 {
                 HStack(spacing: 2) {
                     tab("Start now", 0)
-                    tab("Later today", 1)
-                    tab("Routine", 2)
+                    if tabs.contains(1) { tab("Pomodoro", 1) }
+                    if tabs.contains(2) { tab("Plan", 2) }
                 }
                 .padding(2)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
@@ -75,8 +79,8 @@ struct IdleRow: View {
 
             Group {
                 switch mode {
-                case 1: laterRow
-                case 2: routineRow
+                case 1: pomodoroRow
+                case 2: planRow
                 default: startRow
                 }
             }
@@ -92,9 +96,54 @@ struct IdleRow: View {
     }
 
     private func tab(_ title: String, _ index: Int) -> some View {
-        Button(title) { ui.idleMode = index }
-            .buttonStyle(IdleTabStyle(selected: mode == index, scale: scale))
-            .help(index == 0 ? "Start a timer now" : index == 1 ? "Plan something for later today" : "Set up something that repeats")
+        Button(title) {
+            // Switching tabs puts away whatever was open.
+            ui.blockDraft = nil
+            ui.idleDial = false
+            ui.idleMode = index
+        }
+        .buttonStyle(IdleTabStyle(selected: mode == index, scale: scale))
+        .help(index == 0 ? "Start a timer now" : index == 1 ? "Focus and break, on repeat" : "A work session later today, or a routine")
+    }
+
+    /// 25 / 5, 50 / 10 or 90 / 15: one tap.
+    private var pomodoroRow: some View {
+        HStack(spacing: 4 * scale) {
+            Button { store.startPomodoro(focus: 1_500, rest: 300) } label: {
+                HStack(spacing: 6 * scale) {
+                    Image(systemName: "play.fill").font(.system(size: 9 * scale, weight: .bold))
+                    Text("Start 25 / 5")
+                }
+            }
+            .buttonStyle(StartChipStyle(scale: scale, prominent: true))
+            .help("25 min focus, then a 5 min break, on repeat. Every 4th break is 15 min.")
+            Button("50 / 10") { store.startPomodoro(focus: 3_000, rest: 600) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("50 min focus, 10 min break")
+            Button("90 / 15") { store.startPomodoro(focus: 5_400, rest: 900) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("90 min focus, 15 min break")
+        }
+    }
+
+    /// Today, a routine, or your own days: each opens the planner set up, ready to adjust.
+    private var planRow: some View {
+        let cal = Calendar.current
+        let now = schedule.now
+        let nowMinute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        let next = min(23 * 60 + 30, Int((Double(nowMinute + 10) / 30).rounded(.up)) * 30)
+        let today = cal.component(.weekday, from: now) - 1
+        return HStack(spacing: 4 * scale) {
+            Button("Today") { openEditor(routine: false, start: next, days: nil) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("A work session later today, at \(Schedule.time(next))")
+            Button("Routine") { openEditor(routine: true, start: 9 * 60, days: [1, 2, 3, 4, 5]) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("Weekdays at 9:00 AM; change it in the next step")
+            Button("Custom…") { openEditor(routine: true, start: 9 * 60, days: [today]) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("Pick your own days and time")
+        }
     }
 
     private var startRow: some View {
@@ -118,6 +167,7 @@ struct IdleRow: View {
             }
             // Any length: the dial.
             Button {
+                ui.blockDraft = nil
                 ui.openIdleDial(settings.defaultDuration)
                 actions.focusPanel()
             } label: {
@@ -130,40 +180,9 @@ struct IdleRow: View {
         }
     }
 
-    /// The next three half hours: tap one, then name it.
-    private var laterRow: some View {
-        let cal = Calendar.current
-        let now = schedule.now
-        let nowMinute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
-        let first = Int((Double(nowMinute + 10) / 30).rounded(.up)) * 30
-        let times = [first, first + 30, first + 60].filter { $0 < 1_440 }
-        return HStack(spacing: 4 * scale) {
-            ForEach(times, id: \.self) { m in
-                Button(Schedule.time(m)) { openEditor(start: m, days: nil) }
-                    .buttonStyle(StartChipStyle(scale: scale))
-                    .help("Plan something at \(Schedule.time(m))")
-            }
-            Button("Other…") { openEditor(start: nil, days: nil) }
-                .buttonStyle(StartChipStyle(scale: scale))
-                .help("Pick any time")
-        }
-    }
-
-    /// Pick the days, then name it and set the time.
-    private var routineRow: some View {
-        HStack(spacing: 4 * scale) {
-            Button("Weekdays") { openEditor(start: 9 * 60, days: [1, 2, 3, 4, 5]) }
-                .buttonStyle(StartChipStyle(scale: scale))
-            Button("Every day") { openEditor(start: 8 * 60, days: Array(0...6)) }
-                .buttonStyle(StartChipStyle(scale: scale))
-            Button("Custom…") { openEditor(start: 9 * 60, days: [1]) }
-                .buttonStyle(StartChipStyle(scale: scale))
-                .help("Choose the days yourself")
-        }
-    }
-
-    private func openEditor(start: Int?, days: [Int]?) {
-        ui.editBlock(nil, schedule: schedule, routine: mode == 2, start: start, days: days)
+    private func openEditor(routine: Bool, start: Int?, days: [Int]?) {
+        ui.idleDial = false
+        ui.editBlock(nil, schedule: schedule, routine: routine, start: start, days: days)
         actions.focusPanel()
     }
 }

@@ -37,7 +37,11 @@ final class WidgetController: NSObject, NSWindowDelegate {
         panel.onDragEnded = { [weak self] in self?.savePlacement() }
 
         let actions = WidgetActions(
-            openComposer: { [weak self] in self?.openComposer() },
+            openComposer: { [weak self] in
+                self?.ui.blockDraft = nil
+                self?.ui.idleDial = false
+                self?.openComposer()
+            },
             openVoice: { [weak self] in self?.openVoice() },
             acknowledge: { [weak self] in self?.acknowledge() },
             hide: { [weak self] in self?.hide() },
@@ -62,6 +66,17 @@ final class WidgetController: NSObject, NSWindowDelegate {
             .map { $0 != nil }
             .removeDuplicates()
             .sink { [weak self] showing in if showing { self?.scheduleConfirmationCheck() } }
+            .store(in: &cancellables)
+
+        // Starting something else puts away an open planner or dial.
+        store.$timers
+            .map(\.count)
+            .removeDuplicates()
+            .dropFirst()
+            .sink { [weak self] _ in
+                self?.ui.blockDraft = nil
+                self?.ui.idleDial = false
+            }
             .store(in: &cancellables)
 
         // Collapse back to one line once nothing needs the extra room.
@@ -89,7 +104,12 @@ final class WidgetController: NSObject, NSWindowDelegate {
 
         // Scrolling over the open dial turns it too.
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
-            guard let self, event.window === self.panel, self.ui.dialID != nil || self.ui.idleDial else { return event }
+            guard let self, event.window === self.panel else { return event }
+            if self.ui.blockDraft != nil {
+                self.scrollPlanner(event)
+                return nil
+            }
+            guard self.ui.dialID != nil || self.ui.idleDial else { return event }
             self.scrollDial(event)
             return nil
         }
@@ -168,6 +188,23 @@ final class WidgetController: NSObject, NSWindowDelegate {
         }
         confirmationCheck = work
         DispatchQueue.main.asyncAfter(deadline: .now() + 1, execute: work)
+    }
+
+    /// Hover the planner and scroll: the start moves by the step; ⇧ (or a
+    /// sideways swipe) changes the length.
+    private func scrollPlanner(_ event: NSEvent) {
+        let sideways = abs(event.scrollingDeltaX) > abs(event.scrollingDeltaY)
+        let length = event.modifierFlags.contains(.shift) || sideways
+        let delta = sideways ? -event.scrollingDeltaX : event.scrollingDeltaY
+        if event.hasPreciseScrollingDeltas {
+            scrollAccumulated += delta
+            let steps = (scrollAccumulated / 14).rounded(.towardZero)
+            guard steps != 0 else { return }
+            scrollAccumulated -= steps * 14
+            ui.nudge(Int(-steps), length: length)
+        } else if delta != 0 {
+            ui.nudge(delta > 0 ? -1 : 1, length: length)
+        }
     }
 
     private func scrollDial(_ event: NSEvent) {
