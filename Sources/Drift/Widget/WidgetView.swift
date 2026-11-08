@@ -24,6 +24,8 @@ final class WidgetUIState: ObservableObject {
     @Published var confirmation: Confirmation?
     /// Just deleted: a bar with Undo shows for a few seconds.
     @Published var deleted: ScheduledBlock?
+    /// The idle widget's tab: 0 Start now, 1 Later today, 2 Routine.
+    @Published var idleMode = 0
     /// The dial's limit when a grace period (or a session) caps extra time.
     var dialMax: TimeInterval = WidgetUIState.dialMaximum
     var dialBaseExtra: TimeInterval = 0
@@ -49,7 +51,7 @@ extension WidgetUIState {
 
     /// Opens the editor on an existing block (as it runs today) or a new one:
     /// later today, or a routine.
-    func editBlock(_ id: UUID?, schedule: ScheduleStore, routine: Bool = false) {
+    func editBlock(_ id: UUID?, schedule: ScheduleStore, routine: Bool = false, start: Int? = nil, days: [Int]? = nil) {
         closeDial(commit: true, store: nil)
         renamingID = nil
         let now = schedule.now
@@ -64,10 +66,10 @@ extension WidgetUIState {
                                original: .init(name: name, startMinute: start, duration: dur, days: block.days),
                                windowStart: 0, steps: block.steps)
         } else {
-            let start = routine ? 9 * 60 : min(23 * 60 + 30, (nowMinute / 15 + 1) * 15 + 15)
+            let start = start ?? (routine ? 9 * 60 : min(23 * 60 + 30, (nowMinute / 15 + 1) * 15 + 15))
             var date = schedule.dayKey
             if !routine, start <= nowMinute, let t = cal.date(byAdding: .day, value: 1, to: now) { date = Schedule.dayKey(t) }
-            draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: routine ? [1, 2, 3, 4, 5] : nil,
+            draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: routine ? (days ?? [1, 2, 3, 4, 5]) : nil,
                                date: date, original: nil, windowStart: 0)
         }
         draft.windowStart = BlockTimeline.window(around: draft.startMinute)

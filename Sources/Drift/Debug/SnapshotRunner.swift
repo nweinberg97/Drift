@@ -62,6 +62,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         var confirmFor: Int?
         var shaking = false
         var routine = false
+        var idleMode = 0
         /// Show the Undo bar for this block.
         var deletedFor: Int?
     }
@@ -121,6 +122,9 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
 
         return [
             Scenario(name: "01-idle", timers: []),
+            Scenario(name: "01b-idle-later-today", timers: [], idleMode: 1),
+            Scenario(name: "01c-idle-routine", timers: [], idleMode: 2),
+            Scenario(name: "01d-idle-dark", timers: [], dark: true),
             Scenario(name: "02-running-collapsed", timers: [writing], primary: writing.id),
             Scenario(name: "03-several-collapsed", timers: [writing, laundry, tea], primary: writing.id),
             Scenario(name: "04-several-expanded", timers: [writing, laundry, tea], primary: writing.id, expanded: true),
@@ -189,6 +193,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             ui.hideHint = s.hideHint
             ui.alerting = s.alerting
             ui.shaking = s.shaking
+            ui.idleMode = s.idleMode
             if s.renaming, let id = s.primary {
                 ui.renamingID = id
                 ui.draft = "Reply to emails"

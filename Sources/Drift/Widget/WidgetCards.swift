@@ -16,24 +16,32 @@ struct IdleRow: View {
 
     private var hasPlan: Bool { settings.featurePlan && !schedule.blocks.isEmpty }
 
+    private var mode: Int { settings.featurePlan ? ui.idleMode : 0 }
+
+    private var question: String {
+        switch mode {
+        case 1: return "What's coming up later today?"
+        case 2: return "What do you do regularly?"
+        default: return "What are you working on?"
+        }
+    }
+
     var body: some View {
-        let def = settings.defaultDuration
-        let quick = Array([600.0, 900, 1_500, 2_700, 3_600].filter { $0 != def }.prefix(4))
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8 * scale) {
                 Circle()
                     .strokeBorder(Theme.tertiaryText, lineWidth: 1.25)
                     .frame(width: 7 * scale, height: 7 * scale)
                     .frame(width: 11 * scale, height: 11 * scale)
-                Button { actions.openComposer() } label: {
-                    Text("What are you working on?")
+                Button { mode == 0 ? actions.openComposer() : openEditor(start: nil, days: nil) } label: {
+                    Text(question)
                         .font(.system(size: 13 * scale, weight: .semibold))
                         .foregroundStyle(Theme.primaryText)
                         .lineLimit(1)
                 }
                 .buttonStyle(EditableTextStyle(active: false))
-                .help("Write the task and how long")
-                .accessibilityLabel("New timer: write what you're working on")
+                .help(mode == 0 ? "Write the task and how long" : "Name it and set the time")
+                .accessibilityLabel(question)
                 Spacer(minLength: 4)
                 if hasPlan {
                     Button { ui.expanded.toggle() } label: {
@@ -43,47 +51,34 @@ struct IdleRow: View {
                     .buttonStyle(ExpandButtonStyle(scale: scale, highlighted: !ui.expanded))
                     .help(ui.expanded ? "Collapse" : "Today's plan")
                     .accessibilityLabel(ui.expanded ? "Collapse" : "Show today's plan")
-                } else if let shortcut = settings.shortcuts[.newTimer] {
+                } else if mode == 0, let shortcut = settings.shortcuts[.newTimer] {
                     KeyCaps(text: shortcut.display)
                 }
             }
             .padding(.leading, 13 * scale)
             .padding(.trailing, 8 * scale)
             .padding(.top, 9 * scale)
-            .padding(.bottom, 5 * scale)
+            .padding(.bottom, 6 * scale)
 
-            HStack(spacing: 4 * scale) {
-                Button { store.create(seconds: def) } label: {
-                    HStack(spacing: 6 * scale) {
-                        Image(systemName: "play.fill").font(.system(size: 9 * scale, weight: .bold))
-                        Text("Start \(TimeFormatter.compact(def))")
-                    }
+            // Start now, later today, or every week: all three in plain sight.
+            if settings.featurePlan {
+                HStack(spacing: 2) {
+                    tab("Start now", 0)
+                    tab("Later today", 1)
+                    tab("Routine", 2)
                 }
-                .buttonStyle(StartChipStyle(scale: scale, prominent: true))
-                .help("Start a \(TimeFormatter.compact(def)) timer now")
-                .accessibilityLabel("Start \(TimeFormatter.spoken(def))")
-                ForEach(quick, id: \.self) { seconds in
-                    Button(TimeFormatter.compact(seconds)) { store.create(seconds: seconds) }
-                        .buttonStyle(StartChipStyle(scale: scale))
-                        .help("Start \(TimeFormatter.compact(seconds)) now")
-                        .accessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
-                }
-                Menu {
-                    ForEach(settings.presets, id: \.self) { seconds in
-                        Button("Start \(TimeFormatter.compact(seconds))") { store.create(seconds: seconds) }
-                    }
-                    Divider()
-                    Button("Other length or task…") { actions.openComposer() }
-                } label: {
-                    Image(systemName: "ellipsis")
-                }
-                .menuStyle(.borderlessButton)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .frame(width: 28 * scale, height: 28 * scale)
+                .padding(2)
                 .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
-                .help("Any length")
-                .accessibilityLabel("More lengths")
+                .padding(.horizontal, 8 * scale)
+                .padding(.bottom, 6 * scale)
+            }
+
+            Group {
+                switch mode {
+                case 1: laterRow
+                case 2: routineRow
+                default: startRow
+                }
             }
             .padding(.horizontal, 8 * scale)
             .padding(.bottom, 9 * scale)
@@ -94,6 +89,110 @@ struct IdleRow: View {
                     .padding(.top, -2)
             }
         }
+    }
+
+    private func tab(_ title: String, _ index: Int) -> some View {
+        Button(title) { ui.idleMode = index }
+            .buttonStyle(IdleTabStyle(selected: mode == index, scale: scale))
+            .help(index == 0 ? "Start a timer now" : index == 1 ? "Plan something for later today" : "Set up something that repeats")
+    }
+
+    private var startRow: some View {
+        let def = settings.defaultDuration
+        let quick = Array([600.0, 900, 1_500, 2_700, 3_600].filter { $0 != def }.prefix(4))
+        return HStack(spacing: 4 * scale) {
+            Button { store.create(seconds: def) } label: {
+                HStack(spacing: 6 * scale) {
+                    Image(systemName: "play.fill").font(.system(size: 9 * scale, weight: .bold))
+                    Text("Start \(TimeFormatter.compact(def))")
+                }
+            }
+            .buttonStyle(StartChipStyle(scale: scale, prominent: true))
+            .help("Start a \(TimeFormatter.compact(def)) timer now")
+            .accessibilityLabel("Start \(TimeFormatter.spoken(def))")
+            ForEach(quick, id: \.self) { seconds in
+                Button(TimeFormatter.compact(seconds)) { store.create(seconds: seconds) }
+                    .buttonStyle(StartChipStyle(scale: scale))
+                    .help("Start \(TimeFormatter.compact(seconds)) now")
+                    .accessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
+            }
+            Menu {
+                ForEach(settings.presets, id: \.self) { seconds in
+                    Button("Start \(TimeFormatter.compact(seconds))") { store.create(seconds: seconds) }
+                }
+                Divider()
+                Button("Other length or task…") { actions.openComposer() }
+            } label: {
+                Image(systemName: "ellipsis")
+            }
+            .menuStyle(.borderlessButton)
+            .menuIndicator(.hidden)
+            .fixedSize()
+            .frame(width: 28 * scale, height: 28 * scale)
+            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
+            .help("Any length")
+            .accessibilityLabel("More lengths")
+        }
+    }
+
+    /// The next three half hours: tap one, then name it.
+    private var laterRow: some View {
+        let cal = Calendar.current
+        let now = schedule.now
+        let nowMinute = cal.component(.hour, from: now) * 60 + cal.component(.minute, from: now)
+        let first = Int((Double(nowMinute + 10) / 30).rounded(.up)) * 30
+        let times = [first, first + 30, first + 60].filter { $0 < 1_440 }
+        return HStack(spacing: 4 * scale) {
+            ForEach(times, id: \.self) { m in
+                Button(Schedule.time(m)) { openEditor(start: m, days: nil) }
+                    .buttonStyle(StartChipStyle(scale: scale))
+                    .help("Plan something at \(Schedule.time(m))")
+            }
+            Button("Other…") { openEditor(start: nil, days: nil) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("Pick any time")
+        }
+    }
+
+    /// Pick the days, then name it and set the time.
+    private var routineRow: some View {
+        HStack(spacing: 4 * scale) {
+            Button("Weekdays") { openEditor(start: 9 * 60, days: [1, 2, 3, 4, 5]) }
+                .buttonStyle(StartChipStyle(scale: scale))
+            Button("Every day") { openEditor(start: 8 * 60, days: Array(0...6)) }
+                .buttonStyle(StartChipStyle(scale: scale))
+            Button("Custom…") { openEditor(start: 9 * 60, days: [1]) }
+                .buttonStyle(StartChipStyle(scale: scale))
+                .help("Choose the days yourself")
+        }
+    }
+
+    private func openEditor(start: Int?, days: [Int]?) {
+        ui.editBlock(nil, schedule: schedule, routine: mode == 2, start: start, days: days)
+        actions.focusPanel()
+    }
+}
+
+/// A tab of the idle widget's Start now · Later today · Routine switch.
+struct IdleTabStyle: ButtonStyle {
+    let selected: Bool
+    let scale: CGFloat
+    @State private var hovering = false
+
+    func makeBody(configuration: Configuration) -> some View {
+        configuration.label
+            .font(.system(size: 11.5 * scale, weight: selected ? .semibold : .medium))
+            .foregroundStyle(selected || hovering ? Theme.primaryText : Theme.secondaryText)
+            .lineLimit(1)
+            .frame(maxWidth: .infinity)
+            .frame(height: 22 * scale)
+            .background(
+                RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(selected ? Theme.surface : Color.clear)
+                    .shadow(color: .black.opacity(selected ? 0.12 : 0), radius: 1, y: 0.5)
+            )
+            .contentShape(Rectangle())
+            .onHover { hovering = $0 }
     }
 }
 

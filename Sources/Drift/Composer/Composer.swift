@@ -421,7 +421,7 @@ struct ComposerView: View {
             } else {
                 switch currentPlan {
                 case .empty:
-                    Text("Write the task and how long, like “Reply to emails 25m”")
+                    Text("Try “Emails 25m”, “Call at 2pm” or “Standup weekdays at 9”")
                         .foregroundStyle(Theme.tertiaryText)
                         .lineLimit(1)
                     Spacer(minLength: 8)
