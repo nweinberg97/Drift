@@ -36,6 +36,8 @@ public struct ScheduledBlock: Codable, Identifiable, Equatable, Sendable {
     public var snoozedUntil: [String: Date]
     /// Per-day changes made "just today".
     public var overrides: [String: Override]
+    /// Split into time blocks: a session that runs them back to back.
+    public var steps: [TimeBlock]?
 
     public init(id: UUID = UUID(), name: String, startMinute: Int, duration: TimeInterval, days: [Int]?, date: String?) {
         self.id = id
@@ -51,6 +53,7 @@ public struct ScheduledBlock: Codable, Identifiable, Equatable, Sendable {
 
     public init(spec: ScheduleSpec) {
         self.init(name: spec.name, startMinute: spec.startMinute, duration: spec.duration, days: spec.days, date: spec.date)
+        steps = (spec.steps?.count ?? 0) > 1 ? spec.steps : nil
     }
 
     public var isRepeating: Bool { days != nil }
@@ -162,9 +165,13 @@ public struct ScheduleSpec: Equatable {
     public var whenRanges: [Range<String.Index>]
     /// "30m": how long, when it isn't implied by a range.
     public var lengthRanges: [Range<String.Index>]
+    /// A session planned for later: its time blocks.
+    public var steps: [TimeBlock]?
 
     public init(name: String, startMinute: Int, duration: TimeInterval, days: [Int]?, date: String?,
-                whenRanges: [Range<String.Index>] = [], lengthRanges: [Range<String.Index>] = []) {
+                whenRanges: [Range<String.Index>] = [], lengthRanges: [Range<String.Index>] = [],
+                steps: [TimeBlock]? = nil) {
+        self.steps = steps
         self.name = name
         self.startMinute = startMinute
         self.duration = duration
@@ -214,8 +221,8 @@ public enum ScheduleParser {
         }
 
         let tm = "(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|a\\.m\\.|p\\.m\\.)?"
-        let rangeRE = try! NSRegularExpression(pattern: "(?:\\bfrom\\s+)?\\b\(tm)\\s*(?:-|to|until|till)\\s*\(tm)(?![\\d:])")
-        let atRE = try! NSRegularExpression(pattern: "(?:\\bat\\s+|@\\s*)\(tm)(?![\\d:])")
+        let rangeRE = try! NSRegularExpression(pattern: "(?:\\bfrom\\s+)?\\b\(tm)\\s*(?:-|to|until|till)\\s*\(tm)(?!\\d|:\\d)")
+        let atRE = try! NSRegularExpression(pattern: "(?:\\bat\\s+|@\\s*)\(tm)(?!\\d|:\\d)")
         let ampmRE = try! NSRegularExpression(pattern: "\\b(\\d{1,2})(?::(\\d{2}))?\\s*(am|pm|a\\.m\\.|p\\.m\\.)")
         let unitAfterRE = try! NSRegularExpression(pattern: "^\\s*(s|secs?|seconds?|m|mins?|minutes?|h|hrs?|hours?)\\b")
         let full = NSRange(location: 0, length: ns.length)

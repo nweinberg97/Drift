@@ -126,6 +126,16 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
     /// Set when the timer was started by a scheduled block, with that day's key.
     public var blockID: UUID?
     public var blockDay: String?
+    /// A session: time blocks that run back to back. `name` is the session's name.
+    public var steps: [TimeBlock]?
+    public var stepIndex: Int?
+    /// Between time blocks: the next one starts by itself at this moment
+    /// (`distantFuture` means when you press Start).
+    public var waitUntil: Date?
+    /// The time block that just ended, for "Inbox done".
+    public var handoff: String?
+    /// Extra time added to a single timer so far (for the grace period).
+    public var extraUsed: TimeInterval?
 
     public init(
         id: UUID = UUID(),
@@ -149,7 +159,96 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
 
     public var displayName: String? {
         if let pomodoro { return pomodoro.phaseName }
+        if let block = currentBlock { return block.name }
         return name
+    }
+
+    // MARK: - Sessions
+
+    public var isSession: Bool { (steps?.count ?? 0) > 1 }
+    public var step: Int { stepIndex ?? 0 }
+
+    public var currentBlock: TimeBlock? {
+        guard let steps, steps.indices.contains(step) else { return nil }
+        return steps[step]
+    }
+
+    public var nextBlock: TimeBlock? {
+        guard let steps, steps.indices.contains(step + 1) else { return nil }
+        return steps[step + 1]
+    }
+
+    /// Waiting between time blocks.
+    public var isWaiting: Bool { waitUntil != nil }
+
+    public var sessionTotal: TimeInterval { (steps ?? []).reduce(0) { $0 + $1.seconds } }
+
+    /// Extra time already added to this timer, or to the current time block.
+    public var extraSoFar: TimeInterval {
+        if let block = currentBlock { return block.extra }
+        return extraUsed ?? 0
+    }
+
+    public mutating func recordExtra(_ seconds: TimeInterval) {
+        guard seconds > 0 else { return }
+        if var s = steps, s.indices.contains(step) {
+            s[step].extra += seconds
+            steps = s
+        } else {
+            extraUsed = (extraUsed ?? 0) + seconds
+        }
+    }
+
+    /// Sets the total extra for the current timer or block (the dial works this way).
+    public mutating func setExtra(_ seconds: TimeInterval) {
+        if var s = steps, s.indices.contains(step) {
+            s[step].extra = max(0, seconds)
+            steps = s
+        } else {
+            extraUsed = max(0, seconds)
+        }
+    }
+
+    /// Moves a session on to its next time block. Returns false on the last one.
+    /// `fromEnd`: the block ran out. With a `delay`, the next block waits that
+    /// long (a hand-off card shows); `.infinity` waits for Start.
+    @discardableResult
+    public mutating func advanceStep(at now: Date, fromEnd: Bool, delay: TimeInterval = 0) -> Bool {
+        guard let steps, steps.indices.contains(step + 1) else { return false }
+        let finishedName = steps[step].name
+        stepIndex = step + 1
+        let next = steps[step]
+        duration = next.seconds
+        startedAt = now
+        if fromEnd && delay > 0 {
+            state = .paused(remaining: next.seconds)
+            waitUntil = delay.isInfinite ? .distantFuture : now.addingTimeInterval(delay)
+            handoff = finishedName
+        } else {
+            waitUntil = nil
+            handoff = nil
+            if !fromEnd, isPaused {
+                state = .paused(remaining: next.seconds)
+            } else {
+                state = .running(endDate: now.addingTimeInterval(next.seconds))
+            }
+        }
+        return true
+    }
+
+    /// Starts the waiting time block now.
+    public mutating func startWaiting(at now: Date) {
+        guard waitUntil != nil else { return }
+        waitUntil = nil
+        handoff = nil
+        let left = remaining(at: now)
+        state = .running(endDate: now.addingTimeInterval(max(left, DriftTimer.minimumRemaining)))
+        startedAt = now
+    }
+
+    public func waitIsOver(at now: Date) -> Bool {
+        guard let waitUntil else { return false }
+        return waitUntil <= now
     }
 
     public var isRunning: Bool {
@@ -216,6 +315,8 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
             state = .running(endDate: now.addingTimeInterval(duration))
             startedAt = now
         case let .paused(remaining):
+            waitUntil = nil
+            handoff = nil
             state = .running(endDate: now.addingTimeInterval(max(remaining, DriftTimer.minimumRemaining)))
         case .finished:
             if let pomodoro { duration = pomodoro.currentDuration }
@@ -277,6 +378,10 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
     public mutating func setRemaining(_ seconds: TimeInterval, at now: Date) {
         let value = max(seconds, DriftTimer.minimumRemaining)
         duration = value
+        if var s = steps, s.indices.contains(step) {
+            s[step].seconds = value
+            steps = s
+        }
         switch state {
         case .paused:
             state = .paused(remaining: value)
