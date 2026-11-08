@@ -99,7 +99,7 @@ struct IdleRow: View {
 
     private var startRow: some View {
         let def = settings.defaultDuration
-        let quick = Array([600.0, 900, 1_500, 2_700, 3_600].filter { $0 != def }.prefix(4))
+        let quick = Array([600.0, 900, 1_500, 2_700, 3_600].filter { $0 != def }.prefix(3))
         return HStack(spacing: 4 * scale) {
             Button { store.create(seconds: def) } label: {
                 HStack(spacing: 6 * scale) {
