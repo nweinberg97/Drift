@@ -541,6 +541,8 @@ struct ComposerView: View {
         /// Where the "when" words are in the text.
         var ranges: [Range<String.Index>]
         var duration: TimeInterval
+        /// Day key of a one-off: a time that's passed means tomorrow.
+        var date: String? = nil
     }
 
     private var whenInfo: WhenInfo? {
@@ -549,9 +551,9 @@ struct ComposerView: View {
             return WhenInfo(mode: .now, minute: nil, days: nil, ranges: [], duration: seconds)
         case let .session(s):
             guard let p = s.schedule else { return WhenInfo(mode: .now, minute: nil, days: nil, ranges: [], duration: s.total) }
-            return WhenInfo(mode: p.days == nil ? .today : .routine, minute: p.startMinute, days: p.days, ranges: s.whenRanges, duration: s.total)
+            return WhenInfo(mode: p.days == nil ? .today : .routine, minute: p.startMinute, days: p.days, ranges: s.whenRanges, duration: s.total, date: p.date)
         case let .schedule(spec):
-            return WhenInfo(mode: spec.days == nil ? .today : .routine, minute: spec.startMinute, days: spec.days, ranges: spec.whenRanges, duration: spec.duration)
+            return WhenInfo(mode: spec.days == nil ? .today : .routine, minute: spec.startMinute, days: spec.days, ranges: spec.whenRanges, duration: spec.duration, date: spec.date)
         default:
             return nil
         }
@@ -566,7 +568,8 @@ struct ComposerView: View {
             VStack(alignment: .leading, spacing: 7) {
                 HStack(spacing: 2) {
                     modeButton("Start now", .now, info)
-                    modeButton("Later today", .today, info)
+                    // Honest label: a time that has passed today means tomorrow.
+                    modeButton(info.mode == .today && info.date != nil && info.date != Schedule.dayKey(Date()) ? "Tomorrow" : "Later today", .today, info)
                     modeButton("Routine", .routine, info)
                 }
                 .padding(2)
