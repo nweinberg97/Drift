@@ -116,22 +116,17 @@ struct IdleRow: View {
                     .help("Start \(TimeFormatter.compact(seconds)) now")
                     .accessibilityLabel("Start \(TimeFormatter.spoken(seconds))")
             }
-            Menu {
-                ForEach(settings.presets, id: \.self) { seconds in
-                    Button("Start \(TimeFormatter.compact(seconds))") { store.create(seconds: seconds) }
-                }
-                Divider()
-                Button("Other length or task…") { actions.openComposer() }
+            // Any length: the dial.
+            Button {
+                ui.openIdleDial(settings.defaultDuration)
+                actions.focusPanel()
             } label: {
-                Image(systemName: "ellipsis")
+                Image(systemName: "timer").font(.system(size: 12 * scale, weight: .semibold))
             }
-            .menuStyle(.borderlessButton)
-            .menuIndicator(.hidden)
-            .fixedSize()
-            .frame(width: 28 * scale, height: 28 * scale)
-            .background(RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control))
-            .help("Any length")
-            .accessibilityLabel("More lengths")
+            .buttonStyle(StartChipStyle(scale: scale))
+            .frame(width: 30 * scale)
+            .help("Pick any length on the dial")
+            .accessibilityLabel("Pick any length")
         }
     }
 
@@ -708,5 +703,58 @@ struct TimeEntry: View {
             return abs(am - near) <= abs(pm - near) ? am : pm
         }
         return h * 60 + minute
+    }
+}
+
+// MARK: - Typing a length
+
+/// Double-click the time and type a new one: "30", "45m", "1:30", "1h 15m".
+struct TimeTypeField: View {
+    let timer: DriftTimer
+    @ObservedObject var store: TimerStore
+    @ObservedObject var ui: WidgetUIState
+    let scale: CGFloat
+    let actions: WidgetActions
+    @State private var text = ""
+    @FocusState private var focused: Bool
+
+    var body: some View {
+        let left = timer.remaining(at: store.now)
+        TextField(TimeFormatter.compact(max(60, (left / 60).rounded() * 60)), text: $text)
+            .textFieldStyle(.plain)
+            .font(Theme.digits(20 * scale))
+            .foregroundStyle(Theme.primaryText)
+            .frame(width: 86 * scale)
+            .padding(.horizontal, 5)
+            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent, lineWidth: 1))
+            .focused($focused)
+            .onSubmit(commit)
+            .onExitCommand(perform: cancel)
+            .onAppear { DispatchQueue.main.async { focused = true } }
+            .onChange(of: focused) { isFocused in
+                if !isFocused && ui.typingID == timer.id { commit() }
+            }
+            .help("Type a time like 30, 45m, 1:30 or 1h 15m, then Return")
+            .accessibilityLabel("Type a new time")
+    }
+
+    private func commit() {
+        guard ui.typingID == timer.id else { return }
+        if let d = DurationParser.parse(text) {
+            let left = timer.remaining(at: Date())
+            let room = store.extraLeft(timer)
+            var value = d.seconds
+            if !room.isInfinite { value = min(value, left + room) }
+            store.setRemaining(timer.id, seconds: value,
+                               extra: room.isInfinite ? nil : timer.extraSoFar + max(0, value - left))
+        }
+        ui.typingID = nil
+        actions.releaseFocus()
+    }
+
+    private func cancel() {
+        ui.typingID = nil
+        actions.releaseFocus()
     }
 }

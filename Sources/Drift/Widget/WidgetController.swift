@@ -76,8 +76,8 @@ final class WidgetController: NSObject, NSWindowDelegate {
 
         // Dragging on the dial turns it; it mustn't move the widget.
         ui.$dialID
-            .combineLatest(ui.$blockDraft.map { $0 != nil }.removeDuplicates())
-            .sink { [weak self] id, editing in self?.panel.draggable = (id == nil && !editing) }
+            .combineLatest(ui.$blockDraft.map { $0 != nil }.removeDuplicates(), ui.$idleDial)
+            .sink { [weak self] id, editing, idle in self?.panel.draggable = (id == nil && !editing && !idle) }
             .store(in: &cancellables)
 
         // Touching the widget stops the shake and the chime; the card stays until Done.
@@ -89,7 +89,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
 
         // Scrolling over the open dial turns it too.
         scrollMonitor = NSEvent.addLocalMonitorForEvents(matching: .scrollWheel) { [weak self] event in
-            guard let self, event.window === self.panel, self.ui.dialID != nil else { return event }
+            guard let self, event.window === self.panel, self.ui.dialID != nil || self.ui.idleDial else { return event }
             self.scrollDial(event)
             return nil
         }
@@ -309,8 +309,12 @@ final class WidgetController: NSObject, NSWindowDelegate {
     }
 
     private func handleEscape() {
-        if ui.blockDraft != nil {
+        if ui.typingID != nil {
+            ui.typingID = nil
+        } else if ui.blockDraft != nil {
             ui.blockDraft = nil
+        } else if ui.idleDial {
+            ui.idleDial = false
         } else if ui.dialID != nil {
             ui.closeDial(commit: false, store: store)
         } else if ui.renamingID != nil {
@@ -327,12 +331,22 @@ final class WidgetController: NSObject, NSWindowDelegate {
     /// Keyboard control when the widget has focus:
     /// space pause/resume · +/− adjust 5 min · return expand · esc collapse/hide
     private func handleKey(_ event: NSEvent) -> Bool {
-        if ui.dialID != nil {
+        if ui.typingID != nil { return false }
+        if ui.dialID != nil || ui.idleDial {
             let step: TimeInterval = event.modifierFlags.contains(.shift) ? 300 : 60
             switch event.keyCode {
             case 126, 124: ui.setDial(ui.dialValue + step, store: store); return true   // ↑ →
             case 125, 123: ui.setDial(ui.dialValue - step, store: store); return true   // ↓ ←
-            case 36, 76: ui.closeDial(commit: true, store: store); releaseFocus(); return true
+            case 36, 76:
+                if ui.idleDial {
+                    let value = ui.dialValue
+                    ui.idleDial = false
+                    store.create(seconds: value)
+                } else {
+                    ui.closeDial(commit: true, store: store)
+                }
+                releaseFocus()
+                return true
             default: return false
             }
         }
@@ -447,6 +461,7 @@ final class WidgetController: NSObject, NSWindowDelegate {
     func windowDidResignKey(_ notification: Notification) {
         // Clicking away keeps what you changed.
         if ui.dialID != nil { ui.closeDial(commit: true, store: store) }
+        if ui.idleDial { ui.idleDial = false }
     }
 
     func windowDidChangeScreen(_ notification: Notification) {

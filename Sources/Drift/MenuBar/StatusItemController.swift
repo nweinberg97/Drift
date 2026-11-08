@@ -193,31 +193,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         menu.addItem(newItem)
         menu.addItem(quickStartItem())
 
-        // Everything else to start with, in one place.
-        let more = NSMenu()
-        more.autoenablesItems = false
-        for (i, saved) in settings.savedSessions.enumerated() {
-            let item = action("\(saved.name)   \(saved.steps.count) blocks · \(TimeFormatter.compact(saved.total))", #selector(startSavedSession(_:)))
-            item.tag = i
-            more.addItem(item)
-        }
-        if !settings.savedSessions.isEmpty { more.addItem(.separator()) }
-        if settings.featurePomodoro {
-            more.addItem(action("Pomodoro (25 min focus, 5 min break)", #selector(startPomodoro)))
-        }
-        if settings.featureVoice {
-            let voiceItem = action("Voice Command…", #selector(voice))
-            applyShortcut(.voice, to: voiceItem)
-            more.addItem(voiceItem)
-        }
-        if settings.featurePlan {
-            more.addItem(action("Plan Later Today…", #selector(newBlock)))
-            more.addItem(action("New Routine…", #selector(newRoutine)))
-        }
-        if more.numberOfItems > 0 {
-            let moreItem = NSMenuItem(title: settings.savedSessions.isEmpty ? "More Ways to Start" : "Sessions and More", action: nil, keyEquivalent: "")
-            moreItem.submenu = more
-            menu.addItem(moreItem)
+        // More ways to start, as buttons you can see at once instead of a submenu.
+        if let grid = actionGridItem() { menu.addItem(grid) }
+        if !settings.savedSessions.isEmpty {
+            let saved = NSMenu()
+            saved.autoenablesItems = false
+            for (i, session) in settings.savedSessions.enumerated() {
+                let item = action("\(session.name)   \(session.steps.count) blocks · \(TimeFormatter.compact(session.total))", #selector(startSavedSession(_:)))
+                item.tag = i
+                saved.addItem(item)
+            }
+            let savedItem = NSMenuItem(title: "Saved Sessions", action: nil, keyEquivalent: "")
+            savedItem.submenu = saved
+            menu.addItem(savedItem)
         }
 
         if settings.featureSounds {
@@ -372,6 +360,58 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         return item
     }
 
+    /// Plan work session · New routine · Pomodoro · Voice, two to a row.
+    private func actionGridItem() -> NSMenuItem? {
+        var entries: [(String, String, Selector, String)] = []
+        if settings.featurePlan {
+            entries.append(("Plan work session", "calendar.badge.plus", #selector(newBlock(_:)), "Set up a work session for later today"))
+            entries.append(("New routine", "repeat", #selector(newRoutine(_:)), "Something you do on set days, like weekdays at 9"))
+        }
+        if settings.featurePomodoro {
+            entries.append(("Pomodoro", "arrow.triangle.2.circlepath", #selector(startPomodoroFromGrid(_:)), "25 min focus, then a 5 min break, on repeat"))
+        }
+        if settings.featureVoice {
+            entries.append(("Voice", "mic", #selector(voiceFromGrid(_:)), "Say what and how long"))
+        }
+        guard !entries.isEmpty else { return nil }
+        let width: CGFloat = 280, left: CGFloat = 14, right: CGFloat = 12, gap: CGFloat = 6, rowHeight: CGFloat = 30
+        let rows = (entries.count + 1) / 2
+        let cellWidth = (width - left - right - gap) / 2
+        let container = NSView(frame: NSRect(x: 0, y: 0, width: width, height: CGFloat(rows) * (rowHeight + gap) + 4))
+        for (i, entry) in entries.enumerated() {
+            let b = NSButton(title: entry.0, target: self, action: entry.2)
+            b.bezelStyle = .regularSquare
+            b.isBordered = true
+            b.controlSize = .regular
+            b.font = NSFont.systemFont(ofSize: 12.5, weight: .medium)
+            b.image = NSImage(systemSymbolName: entry.1, accessibilityDescription: nil)?
+                .withSymbolConfiguration(.init(pointSize: 11.5, weight: .semibold))
+            b.imagePosition = .imageLeading
+            b.imageHugsTitle = true
+            b.alignment = .left
+            b.toolTip = entry.3
+            b.setAccessibilityLabel(entry.0)
+            let row = i / 2, col = i % 2
+            let y = container.frame.height - 4 - CGFloat(row + 1) * rowHeight - CGFloat(row) * gap
+            b.frame = NSRect(x: left + CGFloat(col) * (cellWidth + gap), y: y, width: cellWidth, height: rowHeight)
+            container.addSubview(b)
+        }
+        let item = NSMenuItem()
+        item.view = container
+        return item
+    }
+
+    @objc private func startPomodoroFromGrid(_ sender: NSButton) {
+        sender.enclosingMenuItem?.menu?.cancelTracking()
+        startPomodoro()
+        actions.showWidget()
+    }
+
+    @objc private func voiceFromGrid(_ sender: NSButton) {
+        sender.enclosingMenuItem?.menu?.cancelTracking()
+        actions.voice()
+    }
+
     @objc private func startQuick(_ sender: NSButton) {
         sender.enclosingMenuItem?.menu?.cancelTracking()
         store.create(seconds: TimeInterval(sender.tag))
@@ -411,8 +451,14 @@ final class StatusItemController: NSObject, NSMenuDelegate {
     // MARK: - Actions
 
     @objc private func newTimer() { actions.newTimer() }
-    @objc private func newBlock() { actions.planToday() }
-    @objc private func newRoutine() { actions.newRoutine() }
+    @objc private func newBlock(_ sender: Any?) {
+        (sender as? NSView)?.enclosingMenuItem?.menu?.cancelTracking()
+        actions.planToday()
+    }
+    @objc private func newRoutine(_ sender: Any?) {
+        (sender as? NSView)?.enclosingMenuItem?.menu?.cancelTracking()
+        actions.newRoutine()
+    }
     @objc private func skipBlock(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID else { return }
         schedule.skipToday(id, undo: sender.tag == 1)

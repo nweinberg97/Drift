@@ -26,6 +26,10 @@ final class WidgetUIState: ObservableObject {
     @Published var deleted: ScheduledBlock?
     /// The idle widget's tab: 0 Start now, 1 Later today, 2 Routine.
     @Published var idleMode = 0
+    /// The dial is open with no timer yet: Start begins one.
+    @Published var idleDial = false
+    /// The timer whose time is being typed in place (double-click the time).
+    @Published var typingID: UUID?
     /// The dial's limit when a grace period (or a session) caps extra time.
     var dialMax: TimeInterval = WidgetUIState.dialMaximum
     var dialBaseExtra: TimeInterval = 0
@@ -96,8 +100,25 @@ extension WidgetUIState {
 
     var dialLimited: Bool { dialMax < Self.dialMaximum }
 
+    /// The dial for a new timer: pick a length, then Start.
+    func openIdleDial(_ value: TimeInterval) {
+        renamingID = nil
+        typingID = nil
+        blockDraft = nil
+        dialMax = Self.dialMaximum
+        dialValue = max(60, (value / 60).rounded() * 60)
+        idleDial = true
+    }
+
     /// Moves the dial; the timer follows live, a minute at a time.
     func setDial(_ value: TimeInterval, store: TimerStore) {
+        if idleDial && dialID == nil {
+            let next = min(Self.dialMaximum, max(60, (value / 60).rounded() * 60))
+            guard next != dialValue else { return }
+            dialValue = next
+            NSHapticFeedbackManager.defaultPerformer.perform(.alignment, performanceTime: .now)
+            return
+        }
         guard let id = dialID else { return }
         let next = min(dialMax, max(60, (value / 60).rounded() * 60))
         guard next != dialValue else { return }
@@ -108,6 +129,7 @@ extension WidgetUIState {
 
     /// Done keeps the new time; Cancel puts the old one back.
     func closeDial(commit: Bool, store: TimerStore?) {
+        if idleDial { idleDial = false }
         guard let id = dialID else { return }
         if !commit, let store, store.timer(id) != nil {
             store.setRemaining(id, seconds: dialOriginal, extra: dialBaseExtra)
@@ -199,6 +221,9 @@ struct WidgetView: View {
             } else if let id = ui.dialID, let t = store.timer(id), !ui.hideHint {
                 DialSection(timer: t, store: store, settings: settings, ui: ui, actions: actions)
                     .transition(.opacity)
+            } else if ui.idleDial, store.primary == nil, !ui.hideHint {
+                DialSection(timer: nil, store: store, settings: settings, ui: ui, actions: actions)
+                    .transition(.opacity)
             } else if ui.expanded && !ui.hideHint {
                 ExpandedSection(store: store, settings: settings, ui: ui, schedule: schedule, scale: scale, actions: actions)
                     .transition(reduceMotion ? .opacity : .opacity.combined(with: .move(edge: .top)))
@@ -211,6 +236,7 @@ struct WidgetView: View {
         .animation(reduceMotion ? nil : Theme.quick, value: ui.expanded)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.hideHint)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.dialID)
+        .animation(reduceMotion ? nil : Theme.quick, value: ui.idleDial)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.blockDraft == nil)
         .animation(reduceMotion ? nil : Theme.quick, value: schedule.prompt)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.confirmation)
@@ -267,8 +293,17 @@ private struct PrimaryRow: View {
     let actions: WidgetActions
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
+    @State private var timeHover = false
 
     private var remaining: TimeInterval { timer.remaining(at: store.now) }
+
+    private func beginTyping() {
+        actions.acknowledge()
+        ui.closeDial(commit: true, store: store)
+        ui.renamingID = nil
+        ui.typingID = timer.id
+        actions.focusPanel()
+    }
     private var isWarning: Bool { timer.isRunning && remaining <= 60 && timer.duration > 90 }
 
     private var timeColor: Color {
@@ -292,14 +327,31 @@ private struct PrimaryRow: View {
                         .onTapGesture { actions.acknowledge(); ui.expanded.toggle() }
                         .accessibilityLabel(accessibilityText)
                         .accessibilityAddTraits(.isButton)
+                } else if ui.typingID == timer.id {
+                    TimeTypeField(timer: timer, store: store, ui: ui, scale: scale, actions: actions)
                 } else {
-                    Button { toggleDial() } label: {
-                        TimeText(remaining: remaining, size: 22 * scale, color: timeColor)
-                    }
-                    .buttonStyle(EditableTextStyle(active: ui.dialID == timer.id))
-                    .help("Click to change the time")
-                    .accessibilityLabel(accessibilityText)
-                    .accessibilityHint("Opens a dial to change the time")
+                    // Click: the dial. Double-click: type the time right here.
+                    TimeText(remaining: remaining, size: 22 * scale, color: timeColor)
+                        .padding(.horizontal, 3)
+                        .padding(.vertical, 1)
+                        .background(
+                            RoundedRectangle(cornerRadius: 5, style: .continuous)
+                                .fill(ui.dialID == timer.id ? Theme.accent.opacity(0.14) : (timeHover ? Theme.control : Color.clear))
+                        )
+                        .padding(.horizontal, -3)
+                        .padding(.vertical, -1)
+                        .contentShape(Rectangle())
+                        .onHover { timeHover = $0 }
+                        .gesture(
+                            TapGesture(count: 2).onEnded { beginTyping() }
+                                .exclusively(before: TapGesture(count: 1).onEnded { toggleDial() })
+                        )
+                        .help("Click to turn the dial. Double-click to type a time.")
+                        .accessibilityLabel(accessibilityText)
+                        .accessibilityAddTraits(.isButton)
+                        .accessibilityHint("Opens a dial to change the time")
+                        .accessibilityAction { toggleDial() }
+                        .accessibilityAction(named: "Type a time") { beginTyping() }
                 }
             }
 
@@ -930,7 +982,8 @@ struct EditableTextStyle: ButtonStyle {
 /// is an hour. Presets and ±5 sit underneath. The timer follows live; Cancel
 /// puts it back.
 private struct DialSection: View {
-    let timer: DriftTimer
+    /// nil: a new timer, started with Start.
+    let timer: DriftTimer?
     @ObservedObject var store: TimerStore
     @ObservedObject var settings: AppSettings
     @ObservedObject var ui: WidgetUIState
@@ -944,12 +997,12 @@ private struct DialSection: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(alignment: .firstTextBaseline) {
-                Text(timer.displayName ?? "Timer")
+                Text(timer.map { $0.displayName ?? "Timer" } ?? "New timer")
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundStyle(Theme.primaryText)
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Text("drag, scroll or use arrows")
+                Text(timer == nil ? "turn, or tap a length" : "drag, scroll or use arrows")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.tertiaryText)
             }
@@ -957,7 +1010,7 @@ private struct DialSection: View {
             .padding(.bottom, 8)
 
             if ui.dialLimited {
-                Text(timer.isSession && !settings.extraInSessions ? "Time blocks can be shortened, not stretched" : "Up to \(TimeFormatter.compact(ui.dialMax)) with your grace period")
+                Text(timer?.isSession == true && !settings.extraInSessions ? "Time blocks can be shortened, not stretched" : "Up to \(TimeFormatter.compact(ui.dialMax)) with your grace period")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.tertiaryText)
                     .padding(.bottom, 6)
@@ -1003,7 +1056,7 @@ private struct DialSection: View {
                 Button("Cancel") { finish(commit: false) }
                     .buttonStyle(QuietButtonStyle())
                     .keyboardShortcut(.cancelAction)
-                Button("Done") { finish(commit: true) }
+                Button(timer == nil ? "Start \(TimeFormatter.compact(ui.dialValue))" : "Done") { finish(commit: true) }
                     .buttonStyle(QuietButtonStyle(prominent: true))
                     .keyboardShortcut(.defaultAction)
             }
@@ -1020,7 +1073,13 @@ private struct DialSection: View {
     }
 
     private func finish(commit: Bool) {
-        ui.closeDial(commit: commit, store: store)
+        if timer == nil {
+            let value = ui.dialValue
+            ui.idleDial = false
+            if commit { store.create(seconds: value) }
+        } else {
+            ui.closeDial(commit: commit, store: store)
+        }
         actions.releaseFocus()
     }
 
@@ -1376,7 +1435,7 @@ private struct BlockEditor: View {
         let skipped = block?.status[key] == .skipped
         let twoWay = block?.isRepeating == true && todayOcc != nil && draft.changedTime && !draft.changedRepeat
         VStack(alignment: .leading, spacing: 0) {
-            Text(draft.id != nil ? (draft.days == nil ? "EDIT" : "EDIT ROUTINE") : (draft.days == nil ? "PLAN LATER TODAY" : "NEW ROUTINE"))
+            Text(draft.id != nil ? (draft.days == nil ? "EDIT WORK SESSION" : "EDIT ROUTINE") : (draft.days == nil ? "PLAN A WORK SESSION" : "NEW ROUTINE"))
                 .font(.system(size: 10.5, weight: .semibold))
                 .kerning(0.4)
                 .foregroundStyle(Theme.accent)
