@@ -219,7 +219,7 @@
   .sw-tray div b { margin-left: auto; font: 500 13px var(--display); color: var(--cream); font-variant-numeric: tabular-nums; }
   .sw-tray div b.p { color: var(--faint); }
   .sw-tray div em { font-style: normal; color: var(--faint); }
-  /* Scheduled blocks */
+  /* Planned items and routines */
   .sw-prompt { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
   .s-widget.prompting .sw-prompt { grid-template-rows: 1fr; }
   .sw-prompt > div { overflow: hidden; min-height: 0; }
@@ -243,24 +243,49 @@
   .sw-today .r em { font-style: normal; font-size: 9.5px; font-weight: 650; padding: 1px 6px; border-radius: 8px; color: var(--faint); }
   .sw-today .r em.now { background: var(--ember-deep); color: #fff; }
   .sw-today .r em.next { background: rgba(242,163,110,0.16); color: var(--ember); }
+  .sw-today .r .x { width: 16px; height: 16px; flex: none; display: grid; place-items: center; border-radius: 50%; font-size: 12px; line-height: 1; color: var(--muted); opacity: 0; transition: opacity .15s, background .15s; }
+  .sw-today .r.hot .x { opacity: 1; }
+  .sw-today .r .x.hot { background: rgba(255,255,255,0.16); color: var(--cream); }
+  .sw-today .r.gone { animation: gone .3s ease-in forwards; }
+  @keyframes gone { to { opacity: 0; transform: translateX(-8px); } }
+  .cd.undo { display: flex; align-items: center; gap: 8px; padding: 7px 7px 7px 12px; background: rgba(255,255,255,0.08); font-size: 11.5px; color: var(--muted); }
+  .cd.undo b { color: var(--cream); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .cd.undo .bt { margin: 0 0 0 auto; }
+  .cd.undo .bt > * { color: var(--ember); background: transparent; }
+  .s-ctx { position: absolute; z-index: 8; width: auto; min-width: 150px; right: auto; }
+  .s-ctx div.del { color: #FF9C8A; }
+  .s-ctx div.del.hot { background: #B9533F; color: #fff; }
   .sw-next { display: none; align-items: center; gap: 5px; padding: 0 13px 8px 33px; margin-top: -4px; font-size: 11px; color: var(--muted); }
   .sw-next b { color: var(--cream); font-weight: 600; }
   .s-widget.has-next:not(.open):not(.prompting) .sw-next { display: flex; }
   .sw-blockbox { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .35s cubic-bezier(.2,.8,.2,1); }
   .s-widget.editing .sw-blockbox { grid-template-rows: 1fr; }
   .sw-blockbox > div { overflow: hidden; min-height: 0; }
-  .sw-blockbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 256px; }
+  .sw-blockbox .in { border-top: 0.5px solid rgba(255,255,255,0.1); padding: 10px 12px 12px; width: 300px; }
+  .sw-blockbox .lbx { font-size: 9.5px; font-weight: 700; letter-spacing: .05em; color: var(--ember); margin-bottom: 5px; }
   .sw-blockbox .nm { height: 24px; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 12px; font-weight: 650; padding: 0 8px; display: flex; align-items: center; }
   .sw-blockbox .rg { display: flex; justify-content: space-between; align-items: baseline; margin: 9px 1px 6px; }
   .sw-blockbox .rg b { font: 500 17px var(--display); font-variant-numeric: tabular-nums; }
-  .sw-blockbox .rg span { font-size: 10.5px; color: var(--muted); }
+  .sw-blockbox .rg b .tm { border-radius: 5px; padding: 0 3px; margin: 0 -1px; transition: background .15s; }
+  .sw-blockbox .rg b .tm.hot { background: rgba(255,255,255,0.12); }
+  .sw-blockbox .rg b .tm.typing { background: rgba(0,0,0,0.3); box-shadow: 0 0 0 1px var(--ember); }
+  .sw-blockbox .rg b .tm.typing::after { content: ""; display: inline-block; width: 1.5px; height: 15px; background: var(--ember); vertical-align: -2px; margin-left: 1px; animation: blink 1s steps(1) infinite; }
+  .sw-blockbox .rg > span { font-size: 10.5px; color: var(--muted); }
+  .sw-blockbox .er { display: flex; align-items: center; gap: 4px; margin-top: 7px; font-size: 10.5px; color: var(--muted); }
+  .sw-blockbox .er > em { width: 40px; font-style: normal; }
+  .sw-blockbox .er span { height: 20px; min-width: 20px; padding: 0 7px; border-radius: 5px; display: grid; place-items: center; background: rgba(255,255,255,0.08); color: var(--cream); font-size: 10.5px; font-weight: 600; font-variant-numeric: tabular-nums; transition: background .15s; }
+  .sw-blockbox .er span.sq { padding: 0; }
+  .sw-blockbox .er span.on { background: var(--ember-deep); color: #fff; }
+  .sw-blockbox .er span.hot { background: rgba(255,255,255,0.22); }
   .sw-tl { position: relative; height: 40px; border-radius: 7px; background: rgba(255,255,255,0.06); overflow: hidden; }
   .sw-tl .h { position: absolute; top: 0; bottom: 0; width: 1px; background: rgba(255,255,255,0.08); }
   .sw-tl .h span { position: absolute; left: 3px; top: 2px; font-size: 8.5px; color: var(--faint); }
+  .sw-tl .qh { position: absolute; bottom: 0; height: 6px; width: 1px; background: rgba(255,255,255,0.07); }
   .sw-tl .o { position: absolute; top: 16px; height: 18px; border-radius: 4px; background: rgba(255,255,255,0.12); }
   .sw-tl .b { white-space: nowrap; overflow: hidden; position: absolute; top: 14px; height: 22px; border-radius: 5px; background: var(--ember-deep); color: #fff; font-size: 9.5px; font-weight: 650; padding: 0 7px; display: flex; align-items: center; transition: left .12s linear; }
   .sw-blockbox .ft { display: flex; gap: 5px; justify-content: flex-end; margin-top: 10px; }
-  .sw-blockbox .ft span { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.08); transition: background .15s; }
+  .sw-blockbox .ft span { font-size: 11px; font-weight: 600; padding: 4px 9px; border-radius: 6px; background: rgba(255,255,255,0.08); white-space: nowrap; transition: background .15s; }
+  .sw-blockbox .ft span.del { color: #FF9C8A; margin-right: auto; }
   .sw-blockbox .ft span.pri { background: var(--ember-deep); color: #fff; }
   .sw-blockbox .ft span.hot { background: rgba(255,255,255,0.2); }
   .sw-blockbox .hint { margin-top: 8px; font-size: 10px; color: var(--faint); }
@@ -297,9 +322,17 @@
   .sc-steps span, .launcher .l-steps span { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; background: rgba(255,255,255,0.07); font-size: 11.5px; white-space: nowrap; }
   .sc-steps em, .launcher .l-steps em { font-style: normal; color: var(--faint); font-variant-numeric: tabular-nums; }
   .sc-steps i, .launcher .l-steps i { font-style: normal; color: var(--faint); font-size: 11px; align-self: center; }
-  .sc-when { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; padding: 0 16px 12px; font-size: 11.5px; color: var(--muted); }
-  .sc-when span.b, .launcher .l-when button { height: 22px; padding: 0 9px; border-radius: 6px; background: rgba(255,255,255,0.08); font: 600 11.5px/22px var(--sans); color: var(--cream); font-variant-numeric: tabular-nums; transition: background .15s, filter .15s; }
-  .sc-when span.b.on, .launcher .l-when button.on { background: var(--ember-deep); color: #fff; }
+  /* When: Start now · Later today · Routine, with At and On rows */
+  .sc-when { display: grid; justify-items: start; gap: 7px; padding: 0 16px 12px; font-size: 11.5px; color: var(--muted); }
+  .sc-when .wr, .launcher .l-when .wr { display: flex; align-items: center; flex-wrap: wrap; gap: 5px; }
+  .sc-when .wl, .launcher .l-when .wl { width: 22px; color: var(--muted); }
+  .sc-when .ms, .launcher .l-when .ms { display: inline-flex; gap: 2px; padding: 2px; border-radius: 8px; background: rgba(255,255,255,0.07); }
+  .sc-when .ms span, .launcher .l-when .ms button { height: 24px; padding: 0 11px; border-radius: 6px; background: transparent; font: 500 12px/24px var(--sans); color: var(--muted); white-space: nowrap; transition: background .15s, color .15s; }
+  .sc-when .ms span.on, .launcher .l-when .ms button.on { background: rgba(244,238,230,0.16); color: var(--cream); font-weight: 650; box-shadow: 0 1px 1px rgba(0,0,0,0.2); }
+  .sc-when .ms span.hot { background: rgba(255,255,255,0.2); color: var(--cream); }
+  .sc-when span.b, .launcher .l-when .wr button { height: 22px; min-width: 22px; padding: 0 9px; border-radius: 6px; background: rgba(255,255,255,0.08); font: 600 11.5px/22px var(--sans); color: var(--cream); text-align: center; font-variant-numeric: tabular-nums; white-space: nowrap; transition: background .15s, filter .15s; }
+  .sc-when span.b.sq, .launcher .l-when .wr button.sq { padding: 0; }
+  .sc-when span.b.on, .launcher .l-when .wr button.on { background: var(--ember-deep); color: #fff; }
   .sc-when span.b.hot { background: rgba(255,255,255,0.2); }
   .sc-when .q, .launcher .l-when .q { color: var(--faint); margin-left: 4px; }
   .s-composer.listening .sc-in .ed { animation: listen .5s ease-in-out infinite alternate; }
@@ -367,7 +400,7 @@
   .sw-sess .r.now .l { color: var(--ember); font-weight: 600; }
   .sw-sess .r.done b { color: var(--faint); text-decoration: line-through; }
 
-  /* Cards on the widget: scheduled, hand-off, time's up. Shared with the Try it widget. */
+  /* Cards on the widget: planned, hand-off, time's up, undo. Shared with the Try it widget. */
   .sw-card { width: 276px; }
   .sw-card:empty { display: none; }
   .cd { margin: 6px; padding: 10px 11px; border-radius: 10px; background: rgba(242,163,110,0.14); }
@@ -496,12 +529,17 @@
   .launcher .lx:hover { background: rgba(255,255,255,0.08); color: var(--cream); }
   .launcher .lx svg { width: 10px; height: 10px; fill: currentColor; }
   .launcher .lx[hidden] { display: none; }
-  .launcher .l-steps, .launcher .l-when { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 0 20px 12px; font-size: 12.5px; color: var(--muted); }
+  .launcher .l-steps { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 0 20px 12px; font-size: 12.5px; color: var(--muted); }
+  .launcher .l-when { display: grid; justify-items: start; gap: 8px; padding: 2px 20px 14px; font-size: 12.5px; color: var(--muted); }
   .launcher .l-steps[hidden], .launcher .l-when[hidden], .launcher .chips[hidden] { display: none; }
   .launcher .l-steps span { font-size: 12.5px; height: 26px; color: var(--cream); }
-  .launcher .l-when button { cursor: pointer; border: 0; height: 28px; padding: 0 11px; font-size: 13px; line-height: 28px; }
-  .launcher .l-when button:hover { background: rgba(255,255,255,0.14); }
-  .launcher .l-when button.on:hover { background: var(--ember-deep); }
+  .launcher .l-when button { cursor: pointer; border: 0; }
+  .launcher .l-when .ms button { height: 30px; padding: 0 12px; font-size: 13px; line-height: 30px; }
+  .launcher .l-when .ms button:hover { color: var(--cream); }
+  .launcher .l-when .wl { width: 24px; }
+  .launcher .l-when .wr button { height: 28px; min-width: 28px; padding: 0 10px; font-size: 13px; line-height: 28px; }
+  .launcher .l-when .wr button:hover { background: rgba(255,255,255,0.14); }
+  .launcher .l-when .wr button.on:hover { background: var(--ember-deep); }
   .launcher .chips .hint { margin-left: auto; align-self: center; font-size: 12.5px; color: var(--faint); }
   .launcher .pre { display: flex; align-items: center; flex-wrap: wrap; gap: 6px 10px; min-height: 42px; padding: 8px 20px; border-top: 1px solid var(--line); font-size: 14px; font-weight: 500; }
   .launcher .mini { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
@@ -629,7 +667,7 @@
         <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
       </div>
     </div>
-    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Line up a few blocks to run back to back, or schedule them and Drift starts each one on time.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Line up a few blocks to run back to back. Start now, plan it for later today, or make it a routine, and Drift starts each one on time.</p>
     <div class="actions">
       <a class="btn btn-ember" href="#install">Get Drift</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
@@ -704,11 +742,15 @@
               <div class="sw-presets" id="dl-presets"><span>5m</span><span>10m</span><span>15m</span><span>20m</span><span>25m</span><span>30m</span><span>45m</span><span>1h</span><span>2h</span></div>
             </div></div></div>
             <div class="sw-blockbox"><div><div class="in">
-              <div class="nm">Deep work</div>
-              <div class="rg"><b id="be-range">9:00–10:30 AM</b><span>1h 30m</span></div>
+              <div class="lbx" id="be-lb">EDIT ROUTINE</div>
+              <div class="nm" id="be-nm">Deep work</div>
+              <div class="rg"><b><span class="tm" id="be-s">9:00</span>–<span class="tm" id="be-e">10:30 AM</span></b><span id="be-len">1h 30m</span></div>
               <div class="sw-tl" id="be-tl"></div>
-              <div class="hint" id="be-hint">Drag the block to move it, its right edge to change the length.</div>
-              <div class="ft" id="be-ft"><span>Cancel</span><span class="pri">Save</span></div>
+              <div class="er"><em>Start</em><span>−5</span><span>−1</span><span>+1</span><span>+5</span></div>
+              <div class="er" id="be-rep"></div>
+              <div class="er" id="be-days"></div>
+              <div class="hint" id="be-hint">Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it.</div>
+              <div class="ft" id="be-ft"></div>
             </div></div></div>
           </div>
           <div class="waves" id="waves"><i></i><i></i><i></i><i></i><i></i><span>Rain</span></div>
@@ -739,6 +781,7 @@
             <div><span class="chk"></span>Settings…<b class="k">⌘,</b></div>
           </div>
           <div class="s-menu s-sub" id="s-sub"></div>
+          <div class="s-menu s-ctx" id="s-ctx"></div>
 
           <div class="s-note" id="s-note"><img src="icon.png" alt=""><div><b id="note-t">Time’s up: Reply to emails</b><span id="note-b">25 minutes complete.</span></div></div>
           <div class="s-keys" id="s-keys"></div>
@@ -752,16 +795,17 @@
         <li><button data-scene="2"><b>Or just say it</b><span>Press ⌥ Space twice and talk. Sessions work too: “ten minutes of inbox, then ten minutes to plan the day, starting at 8”.</span><i></i></button></li>
         <li><button data-scene="3"><b>Turn the dial</b><span>Click the time. Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h.</span><i></i></button></li>
         <li><button data-scene="4"><b>Line up a session</b><span>Several time blocks in one timer. Each starts when the one before ends, and you see the clock time of each as you type.</span><i></i></button></li>
-        <li><button data-scene="5"><b>Start it later</b><span>Tap a start time, or type “at 3pm”. A card confirms what's scheduled and when.</span><i></i></button></li>
+        <li><button data-scene="5"><b>Plan it for later today</b><span>Under what you type: Start now · Later today · Routine. Tap Later today and a time, and a Planned card confirms it.</span><i></i></button></li>
         <li><button data-scene="6"><b>One block to the next</b><span>A card says what's next and starts it in 10 seconds. Blocks don't stretch unless you allow it.</span><i></i></button></li>
-        <li><button data-scene="7"><b>Schedule your day</b><span>“Deep work 9–10:30 weekdays”, “Client call at 2pm for 30m”. Each one is confirmed at the top of the widget.</span><i></i></button></li>
+        <li><button data-scene="7"><b>Routines for your week</b><span>“Deep work 9–10:30 weekdays” becomes a routine; “Client call at 2pm for 30m” is planned for later today. Drift picks from your words.</span><i></i></button></li>
         <li><button data-scene="8"><b>Starts on time</b><span>When it's time, Drift asks. Ignore it and it starts by itself after a minute.</span><i></i></button></li>
-        <li><button data-scene="9"><b>Move it, just for today</b><span>Drag a block on its timeline. Change today only, or every day it repeats.</span><i></i></button></li>
-        <li><button data-scene="10"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
-        <li><button data-scene="11"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
-        <li><button data-scene="12"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
-        <li><button data-scene="13"><b>Time's up, hard to miss</b><span>The widget shakes until you touch it, with a big Done button. Handy when your sound is off.</span><i></i></button></li>
-        <li><button data-scene="14"><b>A short menu</b><span>Quick lengths up top. Pomodoro, voice and scheduling under More Ways to Start. Focus sounds made on your Mac.</span><i></i></button></li>
+        <li><button data-scene="9"><b>Move it to the minute</b><span>Drag in 5-minute steps (hold ⌥ for single minutes), or click a time and type it. Today only, or every day it repeats.</span><i></i></button></li>
+        <li><button data-scene="10"><b>Delete, with Undo</b><span>Hover a row and click ×, or right-click it. An Undo bar stays for a few seconds.</span><i></i></button></li>
+        <li><button data-scene="11"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
+        <li><button data-scene="12"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
+        <li><button data-scene="13"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
+        <li><button data-scene="14"><b>Time's up, hard to miss</b><span>The widget shakes until you touch it, with a big Done button. Handy when your sound is off.</span><i></i></button></li>
+        <li><button data-scene="15"><b>A short menu</b><span>Quick lengths up top. Pomodoro, voice, Plan Later Today… and New Routine… under More Ways to Start.</span><i></i></button></li>
       </ol>
     </div>
   </section>
@@ -770,16 +814,17 @@
     <div class="try">
       <div>
         <h2>Write it the way you'd say it.</h2>
-        <p class="sub">What you're working on, then how long or when. List a few and they run back to back. How long lights up in orange and when in blue, so you can see Drift understood.</p>
+        <p class="sub">What you're working on, then how long, and when if it isn't now. List a few and they run back to back. How long lights up in orange and when in blue. Underneath, <b>Start now · Later today · Routine</b> shows what Return will do; tap one and the text changes to match.</p>
         <div class="phrasebook">
-          <div class="phrase"><code>Reply to emails 25m</code><span>Reply to emails <b>25:00</b></span></div>
+          <div class="phrase"><code>Reply to emails 25m</code><span>Start now, <b>25:00</b></span></div>
           <div class="phrase"><code>Draft proposal</code><span>Draft proposal <b>25:00</b>, your default</span></div>
           <div class="phrase"><code>Code review for half an hour</code><span>Code review <b>30:00</b></span></div>
           <div class="phrase"><code>10</code><span><b>10:00</b>, name it later</span></div>
           <div class="phrase"><code>Morning startup: inbox 10m, plan the day 10m, review calendar 5m</code><span>3 time blocks, <b>25:00</b> in all</span></div>
-          <div class="phrase"><code>Code review 30m, then reply to emails 15m at 2pm</code><span>2 time blocks from <b>2:00 PM</b></span></div>
-          <div class="phrase"><code>Deep work 9-10:30 weekdays</code><span>Every weekday, <b>9:00–10:30</b></span></div>
-          <div class="phrase"><code>Client call at 2pm for 30m</code><span>Once, <b>2:00–2:30 PM</b></span></div>
+          <div class="phrase"><code>Client call at 2pm for 30m</code><span>Later today, <b>2:00–2:30 PM</b></span></div>
+          <div class="phrase"><code>Code review 30m, then reply to emails 15m at 2pm</code><span>Later today, 2 time blocks from <b>2:00 PM</b></span></div>
+          <div class="phrase"><code>Deep work 9-10:30 weekdays</code><span>Routine, every weekday, <b>9:00–10:30</b></span></div>
+          <div class="phrase"><code>Weekly planning 30m fri at 4pm</code><span>Routine, Fridays, <b>4:00–4:30 PM</b></span></div>
           <div class="phrase"><code>pomodoro</code><span><b>25:00</b> focus, then a break</span></div>
           <div class="phrase"><code>add 5 minutes</code><span>to the timer that's running</span></div>
         </div>
@@ -793,7 +838,7 @@
           </label>
           <div class="pre" aria-live="polite" id="what"></div>
           <div class="l-steps" id="q-steps" hidden></div>
-          <div class="l-when" id="q-when" role="group" aria-label="Start time" hidden></div>
+          <div class="l-when" id="q-when" role="group" aria-label="When: start now, later today, or a routine" hidden></div>
           <div class="chips" id="q-chips">
             <button type="button" data-q="10s">10s</button>
             <button type="button" data-q="5m">5m</button>
@@ -805,7 +850,7 @@
             <span class="hint">esc to clear</span>
           </div>
         </form>
-        <p class="try-note">Press Return and watch the top-left corner of this page. Tab takes the suggested time. The 10s chip shows what happens when time's up.</p>
+        <p class="try-note">Press Return and watch the top-left corner of this page. Tab takes the suggested time. The 10s chip shows what happens when time's up. Try Later today or Routine to see the card Drift shows when you plan something.</p>
       </div>
     </div>
   </section>
@@ -1097,9 +1142,9 @@
       case 'start': return `${mini(m.name, m.secs)}<span class="h">${m.ghost ? 'Tab for 25m, or type a time' : m.name ? 'Return to start' : 'Return to start, name it later'}</span><kbd>return</kbd>`;
       case 'session': {
         const s = m.ss, when = s.sched ? `${dayWord(s.sched.start, s.sched.days, s.sched.dayOff, ctx)} · ${fmtR(s.sched.start, s.total)}` : `${s.steps.length} time blocks · ${compact(s.total)} · ends ${fmtT(ctx.now + s.total / 60)}`;
-        return `<span class="mini sess">${BLOCKS}${esc(s.name)} <span class="num">${when}</span></span><span class="h">${s.sched ? 'Return to schedule' : 'Return to start'}</span><kbd>return</kbd>`;
+        return `<span class="mini sess">${BLOCKS}${esc(s.name)} <span class="num">${when}</span></span><span class="h">${returnHint(s.sched)}</span><kbd>return</kbd>`;
       }
-      case 'sched': return `<span class="mini sched">${CAL}${esc(m.spec.name)} <span class="num">${dayWord(m.spec.start, m.spec.days, m.spec.dayOff, ctx)} · ${fmtR(m.spec.start, m.spec.dur)}</span></span><span class="h">Return to schedule</span><kbd>return</kbd>`;
+      case 'sched': return `<span class="mini sched">${CAL}${esc(m.spec.name)} <span class="num">${dayWord(m.spec.start, m.spec.days, m.spec.dayOff, ctx)} · ${fmtR(m.spec.start, m.spec.dur)}</span></span><span class="h">${returnHint(m.spec)}</span><kbd>return</kbd>`;
       case 'pomo': return `<span>Pomodoro</span><span class="h" style="margin-left:6px">25m focus, then a 5m break</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
       case 'add': return `<span>Add ${clockText(m.secs)}</span><span class="h" style="margin-left:6px">to the running timer</span><span style="margin-left:auto"></span><kbd>return</kbd>`;
       default: return `<span class="h" style="margin-left:0">Write a task and a time, like “Draft proposal 25m”</span>`;
@@ -1110,26 +1155,87 @@
     let at = ss.sched ? ss.sched.start : ctx.now;
     return ss.steps.map((x, i) => { const tm = i === 0 && !ss.sched ? 'now' : fmtT(at, false); at += x.secs / 60; return `${i ? '<i>›</i>' : ''}<span><em>${tm}</em>${esc(x.name)} <em>${compact(x.secs)}</em></span>`; }).join('');
   }
-  // "Starts: Now / 2:00 PM / 2:30 PM / 3:00 PM"
-  const startChoices = now => { const a = Math.ceil((now + 10) / 30) * 30; return [a, a + 30, a + 60].map(m => m % 1440); };
-  const atText = m => fmtT(m).toLowerCase().replace(' ', '').replace(':00', '');
-  const START_RE = /[,\s]*(?:(?:starting|start|beginning|begin)\s+)?(?:at|from|@)\s*\d{1,2}(?::\d{2})?\s*(?:am|pm)?(?:\s+today)?\s*$/i;
-  function whenHTML(ss, ctx, tag) {
-    const cur = ss.sched && !ss.sched.days ? ss.sched.start : null;
-    const b = (label, val, on) => tag === 'button' ? `<button type="button" data-at="${val}" class="${on ? 'on' : ''}" aria-pressed="${on}">${label}</button>` : `<span class="b ${on ? 'on' : ''}">${label}</span>`;
-    return `<span>Starts</span>${b('Now', '', !ss.sched)}${startChoices(ctx.now).map(m => b(fmtT(m), atText(m), cur === m)).join('')}<span class="q">or type “at 3pm”</span>`;
+  // "Return to start" / "Return to plan it" / "Return to add routine"
+  const returnHint = when => !when ? 'Return to start' : when.days ? 'Return to add routine' : 'Return to plan it';
+
+  /* When: Start now · Later today · Routine. Picked from your words; tapping one
+     rewrites the text, so the text always says what will happen. */
+  // What the text says about when, or null when there's nothing to start or plan.
+  function whenInfo(m) {
+    const of = (w, spans, dur) => ({ mode: !w ? 'now' : w.days ? 'routine' : 'today', minute: w ? w.start : null, days: w ? w.days : null, spans: w ? spans.filter(x => x[2] === 'when') : [], dur });
+    if (m.kind === 'start') return of(null, [], m.secs);
+    if (m.kind === 'session') return of(m.ss.sched, m.ss.spans, m.ss.total);
+    if (m.kind === 'sched') return of(m.spec, m.spec.spans, m.spec.dur);
+    return null;
   }
-  // The "Scheduled" card at the top of the widget.
-  function schedCardHTML(m, ctx, tag) {
+  // The next three half hours, at least ten minutes away.
+  const laterToday = now => { const a = Math.ceil((now + 10) / 30) * 30; return [a, a + 30, a + 60].filter(x => x < 1440); };
+  function timeChoices(info, ctx) {
+    const list = info.mode === 'routine' ? [480, 540, 780] : laterToday(ctx.now);
+    if (info.minute != null && !list.includes(info.minute)) list.unshift(info.minute);
+    return list.slice(0, 4);
+  }
+  const atText = m => fmtT(m).toLowerCase().replace(' ', '').replace(':00', '');
+  function daysText(days) {
+    const k = days.slice().sort().join('');
+    if (k === '0123456') return 'every day'; if (k === '12345') return 'weekdays'; if (k === '06') return 'weekends';
+    return days.slice().sort((a, b) => (a + 6) % 7 - (b + 6) % 7).map(d => DAYN[d].toLowerCase()).join(' ');
+  }
+  const LEFTOVER_RE = /(?:,\s*)?\b(?:starting|start|beginning|begin|from)\s*$|[,\s]+$/i;
+  // Takes the old "when" words out, keeps the task and lengths, adds the new time and days (or nothing, for now).
+  function setWhen(text, info, days, minute) {
+    let out = text.replace(/[–—]/g, '-');
+    for (const [a, b] of info.spans.slice().sort((x, y) => y[0] - x[0])) out = out.slice(0, a) + out.slice(b);
+    for (let i = 0; i < 3; i++) out = out.replace(LEFTOVER_RE, '');
+    out = out.replace(/\s{2,}/g, ' ').replace(/\s+,/g, ',').trim();
+    // A range like 9-10:30 was the length too: keep it as a length.
+    if (info.spans.length && !/[,;]|\bthen\b/i.test(out) && !parse(out)) out += ' ' + compact(info.dur);
+    if (minute != null) out += days ? ` ${daysText(days)} at ${atText(minute)}` : ` at ${atText(minute)} today`;
+    return out;
+  }
+  // What tapping a mode, a time or a day does to the text.
+  function whenAction(text, ctx, kind, val) {
+    const info = whenInfo(model(text)); if (!info) return text;
+    if (kind === 'mode') {
+      if (val === 'now') return setWhen(text, info, null, null);
+      if (val === 'today') { const keep = info.minute != null && info.minute > ctx.now ? info.minute : laterToday(ctx.now)[0]; return setWhen(text, info, null, keep); }
+      return setWhen(text, info, info.days || [1, 2, 3, 4, 5], info.minute ?? 540);
+    }
+    if (kind === 'at') return setWhen(text, info, info.days, +val);
+    if (kind === 'days') return setWhen(text, info, val.split(',').map(Number), info.minute);
+    const set = new Set(info.days || []), d = +val;
+    set.has(d) ? set.delete(d) : set.add(d);
+    return setWhen(text, info, set.size ? [...set].sort() : [d], info.minute);
+  }
+  // The switch and its rows, as buttons (Try it) or spans (the demo).
+  function whenHTML(info, ctx, tag) {
+    const B = (label, kind, val, on, extra = '', cls = '') => tag === 'button'
+      ? `<button type="button" data-k="${kind}" data-v="${val}" class="${on ? 'on' : ''} ${cls}" aria-pressed="${on}"${extra}>${label}</button>`
+      : `<span class="b ${on ? 'on' : ''} ${cls}" data-k="${kind}" data-v="${val}">${label}</span>`;
+    const modes = [['Start now', 'now'], ['Later today', 'today'], ['Routine', 'routine']];
+    let h = `<div class="ms">${modes.map(([l, v]) => B(l, 'mode', v, info.mode === v).replace(/class="b /, 'class="')).join('')}</div>`;
+    if (info.mode !== 'now') h += `<div class="wr"><span class="wl">At</span>${timeChoices(info, ctx).map(x => B(fmtT(x), 'at', x, info.minute === x)).join('')}<span class="q">or type “at 3:15pm”</span></div>`;
+    if (info.mode === 'routine') {
+      const set = new Set(info.days), k = [...set].sort().join('');
+      h += `<div class="wr"><span class="wl">On</span>${B('Weekdays', 'days', '1,2,3,4,5', k === '12345')}${B('Every day', 'days', '0,1,2,3,4,5,6', k === '0123456')}` +
+        [1, 2, 3, 4, 5, 6, 0].map(d => B(DAYN[d][0], 'day', d, set.has(d), ` aria-label="${DAYL[d]}" title="${DAYL[d]}"`, 'sq')).join('') + '</div>';
+    }
+    return h;
+  }
+  // The card at the top of the widget: Planned, Routine added, or Updated after editing.
+  function schedCardHTML(m, ctx, tag, updated = false) {
     const s = m.kind === 'session' ? { name: m.ss.name, start: m.ss.sched.start, dur: m.ss.total, days: m.ss.sched.days, dayOff: m.ss.sched.dayOff, steps: m.ss.steps } : { ...m.spec, steps: null };
     const nx = nextOcc(s.start, s.days, s.dayOff, ctx);
     let bl = '';
     if (s.steps) { let at = s.start; bl = `<div class="bl">${s.steps.map(x => { const r = `<div><em>${fmtT(at, false)}</em>${esc(x.name)}<span>${compact(x.secs)}</span></div>`; at += x.secs / 60; return r; }).join('')}</div>`; }
     const B = (cls, a, label) => `<${tag} class="${cls}" data-a="${a}"${tag === 'button' ? ' type="button"' : ''}>${label}</${tag}>`;
-    return `<div class="cd" role="status"><div class="lb">${CAL}Scheduled</div><div class="nm">${esc(s.name)}</div><div class="sb">${esc(dayWord(s.start, s.days, s.dayOff, ctx))} · ${fmtR(s.start, s.dur)}</div>${bl}
+    const label = updated ? 'Updated' : s.days ? 'Routine added' : 'Planned';
+    return `<div class="cd" role="status"><div class="lb">${CAL}${label}</div><div class="nm">${esc(s.name)}</div><div class="sb">${esc(dayWord(s.start, s.days, s.dayOff, ctx))} · ${fmtR(s.start, s.dur)}</div>${bl}
       <div class="ex">${nx} at ${fmtT(s.start)}, Drift checks in and starts it for you.${s.steps ? ' Each block starts when the one before it ends.' : ''}</div>
-      <div class="bt">${B('pri', 'ok', 'Got it')}${B('', 'edit', 'Edit')}${B('', 'undo', 'Undo')}</div></div>`;
+      <div class="bt">${B('pri', 'ok', 'Got it')}${B('', 'edit', 'Edit')}${updated ? B('', 'delete', 'Delete') : B('', 'undo', 'Undo')}</div></div>`;
   }
+  // "Deleted “Deep work” · Undo", for a few seconds after deleting.
+  const undoHTML = (name, tag) => `<div class="cd undo" role="status"><span>Deleted <b>“${esc(name)}”</b></span><div class="bt"><${tag} data-a="restore"${tag === 'button' ? ' type="button"' : ''}>Undo</${tag}></div></div>`;
 
   /* ---------------- Stage scaling ---------------- */
   const wrap = $('stage-wrap'), screen = $('screen');
@@ -1141,7 +1247,7 @@
   const sw = $('sw'), swName = $('sw-name'), swTime = $('sw-time'), swChip = $('sw-chip'), swTray = $('sw-tray'), swProg = $('sw-prog');
   const swCard = $('sw-card'), swSeg = $('sw-seg'), swSess = $('sw-sess'), swCtrls = $('sw-ctrls'), CTRL_DEFAULT = swCtrls.innerHTML;
   const sc = $('sc'), scText = $('sc-text'), scPre = $('sc-pre'), scGhost = $('sc-ghost'), scSteps = $('sc-steps'), scWhen = $('sc-when'), scChips = $('sc-chips');
-  const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), sub = $('s-sub'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
+  const keys = $('s-keys'), cursor = $('cursor'), menu = $('s-menu'), sub = $('s-sub'), ctxm = $('s-ctx'), mb = $('s-mb'), mbTime = $('s-mb-time'), note = $('s-note'), waves = $('waves');
   const CANCEL = Symbol('cancel');
   let run = 0;
   // The demo's own clock (minutes since midnight, weekday), shown in its menu bar.
@@ -1209,8 +1315,11 @@
     scGhost.innerHTML = ghostHTML(text, m);
     scPre.innerHTML = preHTML(m, stage);
     sc.classList.toggle('long', text.length > 40);
-    scSteps.hidden = scWhen.hidden = m.kind !== 'session';
-    if (m.kind === 'session') { scSteps.innerHTML = stepsHTML(m.ss, stage); scWhen.innerHTML = whenHTML(m.ss, stage, 'span'); }
+    scSteps.hidden = m.kind !== 'session';
+    if (m.kind === 'session') scSteps.innerHTML = stepsHTML(m.ss, stage);
+    const info = whenInfo(m);
+    scWhen.hidden = !info || sc.classList.contains('listening');
+    if (info) scWhen.innerHTML = whenHTML(info, stage, 'span');
     scChips.hidden = !(m.kind === 'empty' || m.ghost);
     return m;
   }
@@ -1260,16 +1369,35 @@
   const swToday = $('sw-today');
   function renderToday(rows) {
     if (!rows) { swToday.innerHTML = ''; return; }
-    swToday.innerHTML = `<div class="th">TODAY<span>+ Schedule</span></div>` + rows.map(([s0, d, n, tag, rep, ed]) =>
-      `<div class="r"><span class="t">${fmtR(s0, d)}</span><b>${n}</b>${ed ? '<em>today</em>' : rep ? '<em>↻</em>' : ''}${tag ? `<em class="${tag.toLowerCase()}">${tag}</em>` : ''}</div>`).join('');
+    swToday.innerHTML = `<div class="th">TODAY<span>+ Plan</span></div>` + rows.map(([s0, d, n, tag, rep, ed]) =>
+      `<div class="r"><span class="t">${fmtR(s0, d)}</span><b>${n}</b>${ed ? '<em>today</em>' : rep ? '<em>↻</em>' : ''}${tag ? `<em class="${tag.toLowerCase()}">${tag}</em>` : ''}<span class="x" aria-hidden="true">×</span></div>`).join('');
   }
-  function drawTimeline(startMin, win = 360) {
-    const tl = $('be-tl'), W = 232, span = 480, x = m => (m - win) / span * W;
+  // The editor's timeline: 4 hours, snapping to 5 minutes.
+  const TL = { W: 276, span: 240, win: 480 };
+  const tlX = m => (m - TL.win) / TL.span * TL.W;
+  function drawTimeline(startMin, dur = 90, win = 480) {
+    TL.win = win;
     let h = '';
-    for (let hr = Math.ceil(win / 60); hr * 60 <= win + span; hr++) h += `<div class="h" style="left:${x(hr * 60)}px"><span>${fmtT(hr * 60).replace(':00', '').replace(' ', '')}</span></div>`;
-    h += `<div class="o" style="left:${x(840)}px;width:${30 / span * W}px"></div>`;
-    h += `<div class="b" id="be-b" style="left:${x(startMin)}px;width:${90 / span * W}px">Deep work</div>`;
-    tl.innerHTML = h;
+    for (let q = Math.ceil(win / 15) * 15; q <= win + TL.span; q += 15) if (q % 60) h += `<div class="qh" style="left:${tlX(q)}px"></div>`;
+    for (let hr = Math.ceil(win / 60); hr * 60 <= win + TL.span; hr++) h += `<div class="h" style="left:${tlX(hr * 60)}px"><span>${fmtT(hr * 60).replace(':00', '').replace(' ', '')}</span></div>`;
+    h += `<div class="b" id="be-b" style="left:${tlX(startMin)}px;width:${dur / TL.span * TL.W}px">Deep work</div>`;
+    $('be-tl').innerHTML = h;
+  }
+  // The editor for something planned: header, times you can click and type, Repeat and days, buttons.
+  function openEditor({ label, name, start, dur, days, buttons }) {
+    $('be-lb').textContent = label; $('be-nm').textContent = name;
+    setEditorTime(start, dur);
+    drawTimeline(start, dur);
+    const set = new Set(days || []), k = [...set].sort().join('');
+    $('be-rep').innerHTML = `<em>Repeat</em><span class="${days ? '' : 'on'}">Today</span><span class="${k === '12345' ? 'on' : ''}">Weekdays</span><span class="${k === '0123456' ? 'on' : ''}">Every day</span>`;
+    $('be-days').innerHTML = '<em></em>' + [1, 2, 3, 4, 5, 6, 0].map(d => `<span class="sq ${set.has(d) ? 'on' : ''}">${DAYN[d][0]}</span>`).join('');
+    $('be-hint').textContent = 'Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it.';
+    $('be-ft').innerHTML = buttons;
+  }
+  function setEditorTime(start, dur) {
+    const e = start + dur, same = (start < 720) === (e < 720);
+    $('be-s').textContent = fmtT(start, !same); $('be-e').textContent = fmtT(e); $('be-len').textContent = compact(dur * 60);
+    const b = $('be-b'); if (b) b.style.left = tlX(start) + 'px';
   }
 
   // A session in the demo widget: its time blocks, the one it's on, when it started.
@@ -1297,7 +1425,7 @@
     sw.dataset.run = '1';
     swName.textContent = ''; swName.classList.remove('add', 'editing'); chip('down'); swTray.innerHTML = '';
     sc.classList.remove('on', 'listening', 'long'); scText.textContent = ''; scGhost.textContent = ''; scSteps.hidden = scWhen.hidden = true; scChips.hidden = false;
-    menu.classList.remove('on'); sub.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
+    menu.classList.remove('on'); sub.classList.remove('on'); ctxm.classList.remove('on'); mb.classList.remove('open'); mbTime.classList.remove('on');
     menu.querySelectorAll('.hot').forEach(e => e.classList.remove('hot')); $('m-fs').textContent = 'Off';
     note.classList.remove('on'); waves.classList.remove('on');
     keys.innerHTML = '';
@@ -1322,6 +1450,19 @@
   async function pressCard(a, id) {
     const b = swCard.querySelector(`[data-a="${a}"]`);
     await cursorTo(b, id, 2, 4); await click(b, id);
+  }
+  // Tap Start now / Later today / Routine, a time or a day in the launcher; returns the rewritten text.
+  async function tapWhen(t, k, v, id) {
+    const el = scWhen.querySelector(`[data-k="${k}"][data-v="${v}"]`);
+    await cursorTo(el, id, 2, 4); await click(el, id);
+    t = whenAction(t, stage, k, String(v)); renderSc(t);
+    return t;
+  }
+  // A right-click menu where the cursor is.
+  function openCtx(html) {
+    ctxm.innerHTML = html;
+    ctxm.style.left = (parseFloat(cursor.style.left) + 4) + 'px'; ctxm.style.top = (parseFloat(cursor.style.top) + 4) + 'px';
+    ctxm.classList.add('on');
   }
 
   const scenes = [
@@ -1361,7 +1502,7 @@
     },
     // Voice: ⌥ Space twice, then talk
     async id => {
-      setClock(4, 1001); showIdle();
+      setClock(4, 451); showIdle();
       await wait(600, id);
       await pressKeys(['⌥', 'Space'], id, 260);
       await pressKeys(['⌥', 'Space'], id, 260);
@@ -1421,25 +1562,24 @@
       sw.classList.add('open'); chip('up'); cursor.style.opacity = 0;
       await wait(2800, id);
     },
-    // Start it later
+    // Plan it for later today: Start now · Later today · Routine
     async id => {
       setClock(5, 821); showIdle();
       await wait(500, id);
       await openSc(id);
       let t = await typeSc('Code review 30m, then reply to emails 15m', id, '', 45);
+      await wait(1100, id);
+      t = await tapWhen(t, 'mode', 'today', id);
       await wait(1300, id);
-      const two = [...scWhen.querySelectorAll('.b')].find(e => e.textContent === '2:00 PM');
-      await cursorTo(two, id, 2, 4);
-      await click(two, id);
-      t = t.replace(START_RE, '') + ', starting at 2pm today'; renderSc(t);
+      t = await tapWhen(t, 'at', 870, id);
       cursor.style.opacity = 0;
-      await wait(2200, id);
+      await wait(1900, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
       showCard(schedCardHTML(model(t), stage, 'span'));
       await wait(2800, id);
       await pressCard('ok', id);
-      showCard(''); setNext('Code review, Reply to emails', 'at 2:00 PM'); cursor.style.opacity = 0;
+      showCard(''); setNext('Code review, Reply to emails', 'at 2:30 PM'); cursor.style.opacity = 0;
       await wait(1600, id);
     },
     // From one block to the next
@@ -1460,13 +1600,13 @@
       sw.classList.add('open'); chip('up');
       await wait(2600, id);
     },
-    // Schedule your day
+    // Routines, and planning later today, picked from your words
     async id => {
       setClock(4, 701); showIdle();
       await wait(500, id);
       await openSc(id);
       let t = await typeSc('Deep work 9-10:30 weekdays', id);
-      await wait(1300, id);
+      await wait(1900, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
       showCard(schedCardHTML(model(t), stage, 'span'));
@@ -1476,7 +1616,7 @@
       await wait(800, id);
       await openSc(id);
       t = await typeSc('Client call at 2pm for 30m', id);
-      await wait(1100, id);
+      await wait(1700, id);
       await pressKeys(['return'], id, 300);
       sc.classList.remove('on');
       setNext('Client call', 'at 2:00 PM');
@@ -1504,7 +1644,7 @@
       renderToday([[540, 5400, 'Deep work', 'Now', true], [840, 1800, 'Client call', 'Next', false]]);
       await wait(2200, id);
     },
-    // Move it, just for today
+    // Move it to the minute: 5-minute snaps, or click a time and type it
     async id => {
       setClock(5, 500);
       showWidget('Reply to emails', 1500, 1500);
@@ -1515,28 +1655,75 @@
       await cursorTo(row, id, 30, 4);
       await click(row, id);
       sw.classList.remove('open'); sw.classList.add('editing');
-      let st = 540; drawTimeline(st); $('be-range').textContent = fmtR(st, 5400);
-      $('be-hint').textContent = 'Drag the block to move it, its right edge to change the length.';
-      $('be-ft').innerHTML = '<span>Cancel</span><span class="pri">Save</span>';
-      await wait(800, id);
+      let st = 540;
+      openEditor({ label: 'EDIT ROUTINE', name: 'Deep work', start: st, dur: 90, days: [1, 2, 3, 4, 5], buttons: '<span class="del">Delete routine</span><span>Cancel</span><span class="pri">Save</span>' });
+      await wait(900, id);
       const blk = $('be-b');
-      await cursorTo(blk, id, 0, 4);
+      await cursorTo(blk, id, -20, 4);
       cursor.style.transition = 'left .12s linear, top .12s linear, opacity .3s';
-      for (let k = 0; k < 6; k++) {
-        st += 5; blk.style.left = ((st - 360) / 480 * 232) + 'px'; $('be-range').textContent = fmtR(st, 5400);
-        cursor.style.left = (parseFloat(cursor.style.left) + 2.4) + 'px';
-        await wait(140, id);
+      for (let k = 0; k < 4; k++) {
+        st += 5; setEditorTime(st, 90);
+        cursor.style.left = (parseFloat(cursor.style.left) + 5 / TL.span * TL.W) + 'px';
+        await wait(280, id);
       }
       cursor.style.transition = '';
+      await wait(500, id);
+      const s0 = $('be-s');
+      await cursorTo(s0, id, 2, 4);
+      await click(s0, id);
+      s0.classList.add('typing'); s0.textContent = '';
+      await typeInto(s0, '9:35', id, 130);
+      await wait(300, id);
+      await pressKeys(['return'], id, 300);
+      s0.classList.remove('typing'); st = 575; setEditorTime(st, 90);
       $('be-hint').textContent = 'Save this change for today only, or for all weekdays.';
-      $('be-ft').innerHTML = '<span>Cancel</span><span id="be-today">Just today</span><span class="pri">All weekdays</span>';
-      await wait(1200, id);
+      $('be-ft').innerHTML = '<span class="del">Delete routine</span><span>Cancel</span><span id="be-today">Just today</span><span class="pri">All weekdays</span>';
+      await wait(1300, id);
       const jt = $('be-today');
       await cursorTo(jt, id, 2, 4);
       await click(jt, id);
       sw.classList.remove('editing'); sw.classList.add('open'); cursor.style.opacity = 0;
-      renderToday([[570, 5400, 'Deep work', 'Next', true, true], [840, 1800, 'Client call', '', false]]);
+      renderToday([[575, 5400, 'Deep work', 'Next', true, true], [840, 1800, 'Client call', '', false]]);
       await wait(2400, id);
+    },
+    // Delete, with Undo: hover ×, or right-click
+    async id => {
+      setClock(5, 500);
+      showWidget('Reply to emails', 1500, 1320);
+      sw.classList.add('open'); chip('up');
+      const rows = [[540, 5400, 'Deep work', 'Next', true], [840, 1800, 'Client call', '', false], [960, 1800, 'Weekly planning', '', true]];
+      renderToday(rows);
+      await wait(700, id);
+      let r = swToday.querySelectorAll('.r')[1];
+      await cursorTo(r, id, 10, 4);
+      r.classList.add('hot');
+      await wait(500, id);
+      const x = r.querySelector('.x');
+      await cursorTo(x, id, 2, 4);
+      x.classList.add('hot'); await click(x, id);
+      r.classList.add('gone');
+      await wait(300, id);
+      renderToday([rows[0], rows[2]]);
+      showCard(undoHTML('Client call', 'span'));
+      await wait(1700, id);
+      await pressCard('restore', id);
+      showCard(''); renderToday(rows);
+      await wait(900, id);
+      r = swToday.querySelectorAll('.r')[2];
+      await cursorTo(r, id, 10, 4);
+      r.classList.add('hot');
+      cursor.classList.add('click'); await wait(160, id); cursor.classList.remove('click');
+      openCtx('<div>Edit…</div><div>Skip Today</div><div class="del" id="ctx-del">Delete Routine</div>');
+      await wait(1000, id);
+      const del = $('ctx-del');
+      await cursorTo(del, id, -10, 2);
+      del.classList.add('hot');
+      await wait(300, id);
+      await click(del, id);
+      ctxm.classList.remove('on'); r.classList.add('gone');
+      await wait(300, id);
+      renderToday(rows.slice(0, 2)); showCard(undoHTML('Weekly planning', 'span')); cursor.style.opacity = 0;
+      await wait(2600, id);
     },
     // Several timers
     async id => {
@@ -1615,7 +1802,7 @@
       const more = $('m-more');
       await cursorTo(more, id, -40, 2);
       more.classList.add('hot');
-      openSub(more, '<div><span class="chk"></span>Pomodoro (25 min focus, 5 min break)</div><div><span class="chk"></span>Voice Command…<b class="k">⌥V</b></div><div><span class="chk"></span>Schedule a Session…</div>');
+      openSub(more, '<div><span class="chk"></span>Pomodoro (25 min focus, 5 min break)</div><div><span class="chk"></span>Voice Command…<b class="k">⌥V</b></div><div class="sep"></div><div><span class="chk"></span>Plan Later Today…</div><div><span class="chk"></span>New Routine…</div>');
       await wait(1900, id);
       more.classList.remove('hot'); sub.classList.remove('on');
       const focus = $('m-focus');
@@ -1638,7 +1825,7 @@
 
   const items = [...document.querySelectorAll('#features-list button')];
   // Roughly how long each scene runs, for its progress bar.
-  const EST = [9000, 8500, 10700, 7800, 14000, 15000, 12100, 18400, 8000, 9100, 8200, 5800, 9300, 10400, 10400];
+  const EST = [9000, 8500, 10700, 7800, 14000, 16500, 12100, 19600, 8000, 12600, 13000, 8200, 5800, 9300, 10400, 10400];
   let current = 0, progressAnim;
   async function play(i, auto = true) {
     const id = ++run;
@@ -1707,6 +1894,7 @@
         <div class="bt"><button type="button" class="pri" data-a="go">Start now</button>${held ? '' : '<button type="button" data-a="hold">Pause</button>'}</div></div>`];
     }
     if (F.sched) return [`sched${F.sched.n}`, F.sched.html];
+    if (F.undo && Date.now() < F.undo.until) return [`undo${F.undo.n}`, undoHTML(F.undo.name, 'button')];
     return ['', ''];
   }
   function fRender() {
@@ -1729,14 +1917,23 @@
     if (!fSeg.hidden) fSeg.innerHTML = F.steps.map((x, i) => `<i style="--f:${x.secs}" class="${i < F.idx ? 'done' : i === F.idx ? 'now' : ''}"></i>`).join('');
     if (F.state === 'run') F.t = setTimeout(fRender, ((F.left % 1) * 1000 || 1000) + 5);
     else if (F.state === 'wait' || fl.classList.contains('shake')) F.t = setTimeout(fRender, 250);
+    else if (F.undo) {
+      // The Undo bar goes after ~6 seconds, and the widget with it if nothing else is showing.
+      if (now >= F.undo.until) { F.undo = null; if (F.state === 'off' && !F.sched) fShow(false); }
+      else F.t = setTimeout(fRender, F.undo.until - now + 20);
+    }
   }
   let schedN = 0;
+  // Edit sends the text back to the launcher; planning it again shows "Updated".
+  let editing = null;
   function fSchedule(m, text) {
-    F.sched = { html: schedCardHTML(m, realCtx(), 'button'), text, n: ++schedN };
+    const updated = editing !== null;
+    editing = null; F.undo = null;
+    F.sched = { html: schedCardHTML(m, realCtx(), 'button', updated), text, name: m.kind === 'session' ? m.ss.name : m.spec.name, n: ++schedN };
     if (F.state === 'done') { F.state = 'off'; fl.classList.remove('shake'); }
     fShow(true); fRender();
   }
-  function fClear() { F.state = 'off'; F.sched = null; F.steps = null; fShow(false); fRender(); }
+  function fClear() { F.state = 'off'; F.sched = null; F.steps = null; F.undo = null; fShow(false); fRender(); }
   fToggle.addEventListener('click', () => {
     if (F.state === 'run') { F.left = (F.end - Date.now()) / 1000; F.state = 'pause'; }
     else if (F.state === 'pause') fRun(F.left);
@@ -1753,9 +1950,14 @@
     else if (a === 'again') { fl.classList.remove('shake'); if (F.steps) { F.idx = 0; F.dur = F.steps[0].secs; fRun(F.dur); } else fRun(F.dur); }
     else if (a === 'go') fRun(F.left);
     else if (a === 'hold') F.wait = Infinity;
-    else if (a === 'ok' || a === 'undo' || a === 'edit') {
-      if (a === 'edit') { q.value = F.sched.text; preview(); q.focus(); }
-      F.sched = null; if (F.state === 'off') fShow(false);
+    else if (a === 'ok' || a === 'undo' || a === 'edit' || a === 'delete') {
+      if (a === 'edit') { editing = F.sched; q.value = F.sched.text; preview(); q.focus(); }
+      if (a === 'delete') F.undo = { ...F.sched, until: Date.now() + 6000, n: ++schedN };
+      F.sched = null; if (F.state === 'off' && !F.undo) fShow(false);
+    }
+    else if (a === 'restore' && F.undo) {
+      const u = F.undo; F.undo = null;
+      F.sched = { ...u, html: schedCardHTML(model(u.text), realCtx(), 'button'), n: ++schedN };
     }
     fRender();
   });
@@ -1766,11 +1968,15 @@
     qMirror.innerHTML = markedText(q.value, m) + (m.ghost ? `<span class="ghost">${ghostHTML(q.value, m)}</span>` : '') + '​';
     form.classList.toggle('long', q.value.length > 40);
     what.innerHTML = preHTML(m, ctx);
-    qSteps.hidden = qWhen.hidden = m.kind !== 'session';
-    if (m.kind === 'session') { qSteps.innerHTML = stepsHTML(m.ss, ctx); qWhen.innerHTML = whenHTML(m.ss, ctx, 'button'); }
+    qSteps.hidden = m.kind !== 'session';
+    if (m.kind === 'session') qSteps.innerHTML = stepsHTML(m.ss, ctx);
+    const info = whenInfo(m);
+    qWhen.hidden = !info;
+    if (info) qWhen.innerHTML = whenHTML(info, ctx, 'button');
     // Quick lengths only while there's nothing to start yet.
     qChips.hidden = !(m.kind === 'empty' || m.ghost);
     qClear.hidden = !q.value;
+    if (!q.value) editing = null;
   }
   q.addEventListener('input', () => {
     // A list pasted (or typed) one per line: each line is a time block.
@@ -1787,11 +1993,15 @@
   });
   form.querySelector('label').addEventListener('click', e => { if (!e.target.closest('button')) q.focus(); });
   qClear.addEventListener('click', () => { q.value = ''; preview(); q.focus(); });
-  // "Starts": rewrites the start time at the end of the text, so what you see is what runs.
+  // Start now · Later today · Routine, a time or a day: rewrites the text, so what you see is what happens.
   qWhen.addEventListener('click', e => {
-    const b = e.target.closest('button[data-at]'); if (!b) return;
-    q.value = q.value.replace(START_RE, '') + (b.dataset.at ? `, starting at ${b.dataset.at} today` : '');
-    preview(); q.focus(); q.setSelectionRange(q.value.length, q.value.length);
+    const b = e.target.closest('button[data-k]'); if (!b) return;
+    const k = b.dataset.k, v = b.dataset.v;
+    q.value = whenAction(q.value, realCtx(), k, v);
+    preview();
+    // Keep focus on the same control so keyboard users can keep going.
+    const again = qWhen.querySelector(`button[data-k="${k}"][data-v="${v}"]`);
+    if (again && e.detail === 0) again.focus(); else { q.focus(); q.setSelectionRange(q.value.length, q.value.length); }
   });
   form.addEventListener('submit', e => {
     e.preventDefault();
