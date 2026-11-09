@@ -34,6 +34,8 @@ final class WidgetUIState: ObservableObject {
     @Published var nudgeStep = 5
     /// Typing a value into the dial's centre (double-click it).
     @Published var dialTyping = false
+    /// Where pressing shouldn't drag the widget, in window coordinates (top-left origin).
+    var noDragZones: [String: CGRect] = [:]
     /// The dial's limit when a grace period (or a session) caps extra time.
     var dialMax: TimeInterval = WidgetUIState.dialMaximum
     var dialBaseExtra: TimeInterval = 0
@@ -1045,6 +1047,7 @@ private struct DialSection: View {
             }
             DialFace(value: ui.dialValue, typing: ui.dialTyping)
                 .frame(width: Self.diameter, height: Self.diameter)
+                .noWindowDrag("dial", ui)
                 .contentShape(Circle())
                 .gesture(turn)
                 .overlay {
@@ -1498,6 +1501,7 @@ private struct BlockEditor: View {
             }
             .padding(.bottom, 4)
             TextField("What is it for?", text: binding(\.name, ""))
+                .noWindowDrag("planner-name", ui)
                 .textFieldStyle(.plain)
                 .font(.system(size: 13.5, weight: .semibold))
                 .focused($nameFocused)
@@ -1675,6 +1679,7 @@ private struct BlockEditor: View {
             .buttonStyle(QuietButtonStyle(prominent: true))
             .help("Adds 15 minutes at the end. Or hover the timeline and click +.")
             TextField("Or type them: inbox 10m, plan 20m, review 10m", text: $splitText)
+                .noWindowDrag("planner-split", ui)
                 .textFieldStyle(.plain)
                 .font(.system(size: 11.5))
                 .padding(.horizontal, 8)
@@ -1917,6 +1922,7 @@ struct BlockTimeline: View {
             .frame(width: width, height: height, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
             .coordinateSpace(name: "timeline")
+            .noWindowDrag("timeline", ui)
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Time")
             .accessibilityValue(Schedule.range(startMinute: draft.startMinute, duration: draft.duration))
@@ -2083,7 +2089,29 @@ struct BlockTimeline: View {
     }
 }
 
+/// Marks a view as a place where pressing shouldn't drag the widget.
+private struct NoWindowDrag: ViewModifier {
+    let key: String
+    let ui: WidgetUIState
+
+    func body(content: Content) -> some View {
+        content
+            .background(
+                GeometryReader { g in
+                    Color.clear
+                        .onAppear { ui.noDragZones[key] = g.frame(in: .global) }
+                        .onChange(of: g.frame(in: .global)) { ui.noDragZones[key] = $0 }
+                }
+            )
+            .onDisappear { ui.noDragZones[key] = nil }
+    }
+}
+
 extension View {
+    func noWindowDrag(_ key: String, _ ui: WidgetUIState) -> some View {
+        modifier(NoWindowDrag(key: key, ui: ui))
+    }
+
     /// Shows this pointer while hovering: a hand to move, ⟷ to resize.
     func pointer(_ cursor: NSCursor) -> some View {
         onHover { inside in

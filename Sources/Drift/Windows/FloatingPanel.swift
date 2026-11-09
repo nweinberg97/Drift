@@ -12,6 +12,9 @@ class FloatingPanel: NSPanel {
     var keyHandler: ((NSEvent) -> Bool)?
     var onEscape: (() -> Void)?
     var draggable = true
+    /// False where a press shouldn't move the window (a timeline or dial that
+    /// has its own drag). Takes the point in window coordinates.
+    var canStartDrag: ((NSPoint) -> Bool)?
     var onDragEnded: (() -> Void)?
 
     private var mouseDownEvent: NSEvent?
@@ -56,7 +59,11 @@ class FloatingPanel: NSPanel {
         guard draggable else { return super.sendEvent(event) }
         switch event.type {
         case .leftMouseDown:
-            mouseDownEvent = event
+            if let canStartDrag, !canStartDrag(event.locationInWindow) {
+                mouseDownEvent = nil
+            } else {
+                mouseDownEvent = event
+            }
             super.sendEvent(event)
         case .leftMouseDragged:
             if let down = mouseDownEvent {

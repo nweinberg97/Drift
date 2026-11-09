@@ -90,10 +90,14 @@ final class WidgetController: NSObject, NSWindowDelegate {
             .store(in: &cancellables)
 
         // Dragging on the dial turns it; it mustn't move the widget.
-        ui.$dialID
-            .combineLatest(ui.$blockDraft.map { $0 != nil }.removeDuplicates(), ui.$idleDial)
-            .sink { [weak self] id, editing, idle in self?.panel.draggable = (id == nil && !editing && !idle) }
-            .store(in: &cancellables)
+        // The widget can always be dragged out of the way, except from parts
+        // with a drag of their own (the planner's timeline, the dial, text boxes).
+        panel.draggable = true
+        panel.canStartDrag = { [weak self] location in
+            guard let self, let height = self.panel.contentView?.bounds.height else { return true }
+            let point = CGPoint(x: location.x, y: height - location.y)
+            return !self.ui.noDragZones.values.contains { $0.contains(point) }
+        }
 
         // Touching the widget stops the shake and the chime; the card stays until Done.
         mouseMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self] event in
