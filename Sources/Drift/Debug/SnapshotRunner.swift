@@ -157,6 +157,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                      editChange: { $0.startMinute += 30 }),
             Scenario(name: "35-plan-dark-expanded", timers: [], expanded: true, blocks: plan(), dark: true),
             Scenario(name: "33b-plan-editor-routine", timers: [], blocks: plan(), editBlock: -1, routine: true),
+            Scenario(name: "33c-plan-editor-blocks", timers: [], blocks: plan(), editBlock: 3),
             Scenario(name: "36-plan-scheduled-card", timers: [], blocks: plan(), confirmFor: 0),
             Scenario(name: "39-plan-undo-delete", timers: [], expanded: true, blocks: plan(), deletedFor: 1),
             Scenario(name: "37-plan-scheduled-session", timers: [writing], primary: writing.id, blocks: plan(), confirmFor: 3),

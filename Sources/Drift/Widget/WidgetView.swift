@@ -1621,7 +1621,7 @@ private struct BlockEditor: View {
         .overlay(alignment: .top) { Rectangle().fill(Theme.hairline).frame(height: 0.5) }
     }
 
-    /// Split the session into time blocks: type them, or 2/3/4 equal parts.
+    /// Time blocks: the steps of this work session, run back to back.
     @ViewBuilder
     private func splitSection(_ draft: BlockDraft) -> some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -1633,7 +1633,9 @@ private struct BlockEditor: View {
                 if draft.steps != nil {
                     Button("Don’t split") { ui.blockDraft?.steps = nil }
                         .buttonStyle(PillButtonStyle())
+                        .help("Run it as one timer")
                 } else {
+                    Text("Split evenly").font(.system(size: 11)).foregroundStyle(Theme.tertiaryText)
                     ForEach([2, 3, 4], id: \.self) { n in
                         Button("\(n)") { splitEvenly(n, draft) }
                             .buttonStyle(PillButtonStyle(square: true))
@@ -1641,29 +1643,32 @@ private struct BlockEditor: View {
                     }
                 }
             }
+            Text("Split this work session into steps that run back to back, like inbox → plan → review.")
+                .font(.system(size: 11))
+                .foregroundStyle(Theme.tertiaryText)
+                .fixedSize(horizontal: false, vertical: true)
             if let steps = draft.steps {
-                VStack(alignment: .leading, spacing: 2) {
+                VStack(alignment: .leading, spacing: 3) {
                     ForEach(Array(steps.enumerated()), id: \.offset) { item in
-                        HStack(spacing: 6) {
-                            Text(Schedule.time(draft.startMinute + Int(steps.prefix(item.offset).reduce(0) { $0 + $1.seconds } / 60), suffix: false))
-                                .foregroundStyle(Theme.tertiaryText)
-                                .frame(width: 34, alignment: .leading)
-                            Text(item.element.name).foregroundStyle(Theme.secondaryText).lineLimit(1)
-                            Spacer()
-                            Text(TimeFormatter.compact(item.element.seconds)).foregroundStyle(Theme.tertiaryText)
-                            Button { removeStep(item.offset) } label: { Image(systemName: "xmark") }
-                                .buttonStyle(IconButtonStyle(size: 18))
-                                .help("Remove this time block")
-                        }
-                        .font(.system(size: 11.5).monospacedDigit())
+                        stepRow(item.offset, item.element, draft: draft, steps: steps)
                     }
                 }
             }
-            TextField(draft.steps == nil ? "Or type them: outline 30m, write 1h, edit 30m" : "Retype them: outline 30m, write 1h", text: $splitText)
+            Button {
+                addStep(draft)
+            } label: {
+                HStack(spacing: 5) {
+                    Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                    Text(draft.steps == nil ? "Add a time block" : "Add another")
+                }
+            }
+            .buttonStyle(QuietButtonStyle(prominent: true))
+            .help("Adds 15 minutes at the end. Or hover the timeline and click +.")
+            TextField("Or type them: inbox 10m, plan 20m, review 10m", text: $splitText)
                 .textFieldStyle(.plain)
-                .font(.system(size: 12))
+                .font(.system(size: 11.5))
                 .padding(.horizontal, 8)
-                .frame(height: 26)
+                .frame(height: 24)
                 .background(RoundedRectangle(cornerRadius: 7, style: .continuous).fill(Theme.control))
                 .onSubmit {
                     guard var d = ui.blockDraft else { return }
@@ -1674,6 +1679,56 @@ private struct BlockEditor: View {
         .padding(.top, 12)
     }
 
+    /// One time block: when it starts, a name you can type over, − / + length, ×.
+    private func stepRow(_ i: Int, _ step: TimeBlock, draft: BlockDraft, steps: [TimeBlock]) -> some View {
+        let start = draft.startMinute + Int(steps.prefix(i).reduce(0) { $0 + $1.seconds } / 60)
+        return HStack(spacing: 5) {
+            Text(Schedule.time(start, suffix: false))
+                .font(.system(size: 11).monospacedDigit())
+                .foregroundStyle(Theme.tertiaryText)
+                .frame(width: 34, alignment: .leading)
+            TextField("Name", text: Binding(
+                get: { ui.blockDraft?.steps.flatMap { $0.indices.contains(i) ? $0[i].name : nil } ?? "" },
+                set: { v in if ui.blockDraft?.steps?.indices.contains(i) == true { ui.blockDraft?.steps?[i].name = v } }
+            ))
+            .textFieldStyle(.plain)
+            .font(.system(size: 12))
+            .padding(.horizontal, 6)
+            .frame(height: 22)
+            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+            Button("−") { resizeStep(i, by: -ui.nudgeStep) }
+                .buttonStyle(PillButtonStyle(square: true))
+                .help("\(ui.nudgeStep) min shorter")
+            Text(TimeFormatter.compact(step.seconds))
+                .font(.system(size: 11.5, weight: .medium).monospacedDigit())
+                .foregroundStyle(Theme.secondaryText)
+                .frame(minWidth: 40)
+            Button("+") { resizeStep(i, by: ui.nudgeStep) }
+                .buttonStyle(PillButtonStyle(square: true))
+                .help("\(ui.nudgeStep) min longer")
+            Button { removeStep(i) } label: { Image(systemName: "xmark") }
+                .buttonStyle(IconButtonStyle(size: 18))
+                .help("Remove this time block")
+        }
+    }
+
+    /// A time block's length changes; the session grows or shrinks with it.
+    private func resizeStep(_ i: Int, by minutes: Int) {
+        guard var steps = ui.blockDraft?.steps, steps.indices.contains(i) else { return }
+        let next = max(60, steps[i].seconds + TimeInterval(minutes * 60))
+        let change = next - steps[i].seconds
+        steps[i].seconds = next
+        ui.blockDraft?.steps = steps
+        ui.blockDraft?.duration += change
+    }
+
+    private func addStep(_ draft: BlockDraft) {
+        var steps = draft.steps ?? [TimeBlock(name: draft.name.isEmpty ? "Part 1" : draft.name, seconds: draft.duration)]
+        steps.append(TimeBlock(name: "Block \(steps.count + 1)", seconds: 900))
+        ui.blockDraft?.steps = steps
+        ui.blockDraft?.duration = draft.duration + 900
+    }
+
     private func splitEvenly(_ n: Int, _ draft: BlockDraft) {
         let each = max(60, (draft.duration / Double(n) / 60).rounded(.down) * 60)
         let base = draft.name.isEmpty ? "Part" : draft.name
@@ -1682,15 +1737,12 @@ private struct BlockEditor: View {
         }
     }
 
+    /// Removing a time block takes its time with it.
     private func removeStep(_ i: Int) {
         guard var steps = ui.blockDraft?.steps, steps.indices.contains(i) else { return }
         let gone = steps.remove(at: i)
-        if steps.count < 2 {
-            ui.blockDraft?.steps = nil
-        } else {
-            steps[max(0, i - 1)].seconds += gone.seconds
-            ui.blockDraft?.steps = steps
-        }
+        ui.blockDraft?.duration = max(300, (ui.blockDraft?.duration ?? 0) - gone.seconds)
+        ui.blockDraft?.steps = steps.count < 2 ? nil : steps
     }
 
     private func onceTitle(_ draft: BlockDraft, _ key: String) -> String {
@@ -1710,7 +1762,7 @@ private struct BlockEditor: View {
     private func stepTitle(_ d: Int) -> String { d > 0 ? "+\(d)" : "−\(-d)" }
 
     private func hint(twoWay: Bool, block: ScheduledBlock?) -> String {
-        guard twoWay, let block else { return "Hover the timeline and scroll to nudge the start (⇧ scroll for the length), drag it, or click a time to type it." }
+        guard twoWay, let block else { return "Drag either end to change the time, the middle to move it. Hover the timeline and scroll to nudge; click a time to type it." }
         let all = allLabel(block)
         return "Save this change for today only, or for " + all.prefix(1).lowercased() + all.dropFirst() + "."
     }
@@ -1780,12 +1832,19 @@ struct BlockTimeline: View {
         if let current, minute >= current + 15, minute <= current + span - 45 { return current }
         return max(0, min(1_440 - span, (minute - 60) / 30 * 30))
     }
+
     @ObservedObject var ui: WidgetUIState
     @ObservedObject var schedule: ScheduleStore
-    @State private var dragOrigin: (start: Int, duration: TimeInterval)?
+    /// The draft as it was when the drag began. Every change is worked out from
+    /// here and the pointer's total travel, so the block never jitters.
+    @State private var origin: BlockDraft?
+    @State private var hoverSegment: Int?
+
+    private enum Handle: Equatable { case move, start, end, divider(Int) }
 
     private let width: CGFloat = 320
-    private let height: CGFloat = 46
+    private let height: CGFloat = 54
+    private let barHeight: CGFloat = 30
 
     var body: some View {
         if let draft = ui.blockDraft {
@@ -1806,8 +1865,8 @@ struct BlockTimeline: View {
                 ForEach(others) { o in
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(Theme.controlHover)
-                        .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(Self.span) * width), height: 22)
-                        .offset(x: x(o.occurrence.startMinute), y: 18)
+                        .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(Self.span) * width), height: barHeight - 6)
+                        .offset(x: x(o.occurrence.startMinute), y: 19)
                 }
                 if nowMinute >= w0 && nowMinute <= w0 + Self.span {
                     Rectangle().fill(Theme.accent.opacity(0.7)).frame(width: 1.5, height: height).offset(x: x(nowMinute))
@@ -1816,69 +1875,177 @@ struct BlockTimeline: View {
             }
             .frame(width: width, height: height, alignment: .topLeading)
             .clipShape(RoundedRectangle(cornerRadius: 8, style: .continuous))
+            .coordinateSpace(name: "timeline")
             .accessibilityElement(children: .ignore)
             .accessibilityLabel("Time")
             .accessibilityValue(Schedule.range(startMinute: draft.startMinute, duration: draft.duration))
             .accessibilityAdjustableAction { direction in
-                let d = direction == .increment ? 5 : -5
-                ui.blockDraft?.startMinute = max(0, min(1_435, draft.startMinute + d))
+                ui.nudge(direction == .increment ? 1 : -1, length: false)
             }
         }
     }
 
     private func block(_ draft: BlockDraft, x: CGFloat) -> some View {
-        let w = max(18, CGFloat(draft.duration / 60) / CGFloat(Self.span) * width)
-        return ZStack(alignment: .trailing) {
-            RoundedRectangle(cornerRadius: 6, style: .continuous)
-                .fill(Theme.accent)
-                .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-            Text(draft.name.isEmpty ? "Block" : draft.name)
-                .font(.system(size: 10.5, weight: .semibold))
-                .foregroundStyle(.white)
-                .lineLimit(1)
-                .padding(.horizontal, 8)
-                .frame(maxWidth: .infinity, alignment: .leading)
-            // Resize grip.
-            Capsule()
-                .fill(Color.white.opacity(0.75))
-                .frame(width: 2, height: 10)
-                .padding(.trailing, 4)
-                .frame(width: 12, height: 26)
-                .contentShape(Rectangle())
-                .highPriorityGesture(drag(resizing: true))
-        }
-        .frame(width: w, height: 26)
-        .contentShape(Rectangle())
-        .gesture(drag(resizing: false))
-        .offset(x: x, y: 16)
-    }
-
-    private func drag(resizing: Bool) -> some Gesture {
-        DragGesture(minimumDistance: 1)
-            .onChanged { g in
-                guard let draft = ui.blockDraft else { return }
-                if dragOrigin == nil { dragOrigin = (draft.startMinute, draft.duration) }
-                guard let origin = dragOrigin else { return }
-                // Snaps to 5 minutes; hold ⌥ for single minutes.
-                let step = NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep
-                let raw = Double(g.translation.width / width * CGFloat(Self.span))
-                if resizing {
-                    let end = Int(origin.duration / 60) + Int(raw.rounded())
-                    let snapped = step == 1 ? end : Int((Double(end) / Double(step)).rounded()) * step
-                    ui.blockDraft?.duration = TimeInterval(max(5, min(8 * 60, snapped)) * 60)
-                } else {
-                    let start = origin.start + Int(raw.rounded())
-                    let snapped = step == 1 ? start : Int((Double(start) / Double(step)).rounded()) * step
-                    ui.blockDraft?.startMinute = max(0, min(1_440 - 5, snapped))
+        let perMinute = width / CGFloat(Self.span)
+        let w = max(26, CGFloat(draft.duration / 60) * perMinute)
+        let steps = draft.steps ?? [TimeBlock(name: draft.name.isEmpty ? "Work session" : draft.name, seconds: draft.duration)]
+        let total = max(1, steps.reduce(0) { $0 + $1.seconds })
+        let dragging = origin != nil
+        return ZStack(alignment: .topLeading) {
+            // The session, one section per time block. Drag the middle to move it.
+            HStack(spacing: 0) {
+                ForEach(Array(steps.enumerated()), id: \.offset) { item in
+                    let sw = w * CGFloat(item.element.seconds / total)
+                    ZStack(alignment: .trailing) {
+                        Rectangle().fill(Theme.accent.opacity(item.offset % 2 == 0 ? 1 : 0.8))
+                        Text(item.element.name)
+                            .font(.system(size: 10.5, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .lineLimit(1)
+                            .padding(.leading, 8)
+                            .padding(.trailing, 14)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                        // Hover a section: + adds a time block right after it.
+                        if hoverSegment == item.offset && !dragging && sw >= 34 {
+                            Button { addBlock(after: item.offset) } label: {
+                                Image(systemName: "plus")
+                                    .font(.system(size: 8.5, weight: .heavy))
+                                    .foregroundStyle(Theme.accent)
+                                    .frame(width: 16, height: 16)
+                                    .background(Circle().fill(Color.white))
+                                    .shadow(color: .black.opacity(0.2), radius: 1, y: 0.5)
+                            }
+                            .buttonStyle(.plain)
+                            .padding(.trailing, 9)
+                            .help("Add a time block after “\(item.element.name)”")
+                            .accessibilityLabel("Add a time block after \(item.element.name)")
+                        }
+                    }
+                    .frame(width: sw, height: barHeight)
+                    .contentShape(Rectangle())
+                    .onHover { inside in
+                        if inside { hoverSegment = item.offset } else if hoverSegment == item.offset { hoverSegment = nil }
+                    }
                 }
             }
+            .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
+            .pointer(.openHand)
+            .gesture(drag(.move))
+
+            // Between two time blocks: drag to move time from one to the other.
+            ForEach(0..<max(0, steps.count - 1), id: \.self) { i in
+                let edge = w * CGFloat(steps.prefix(i + 1).reduce(0) { $0 + $1.seconds } / total)
+                Capsule()
+                    .fill(Color.white.opacity(0.95))
+                    .frame(width: 2, height: 18)
+                    .frame(width: 10, height: barHeight)
+                    .contentShape(Rectangle())
+                    .pointer(.resizeLeftRight)
+                    .highPriorityGesture(drag(.divider(i)))
+                    .offset(x: edge - 5)
+                    .help("Drag to move time between “\(steps[i].name)” and “\(steps[i + 1].name)”")
+            }
+
+            // Both ends: drag to start earlier or later, or to end earlier or later.
+            grip.highPriorityGesture(drag(.start))
+                .help("Drag to change when it starts")
+            grip.highPriorityGesture(drag(.end))
+                .offset(x: w - 10)
+                .help("Drag to change when it ends")
+        }
+        .frame(width: w, height: barHeight, alignment: .topLeading)
+        .offset(x: x, y: 18)
+    }
+
+    private var grip: some View {
+        HStack(spacing: 1.5) {
+            Capsule().fill(Color.white.opacity(0.9)).frame(width: 1.5, height: 12)
+            Capsule().fill(Color.white.opacity(0.9)).frame(width: 1.5, height: 12)
+        }
+        .frame(width: 10, height: barHeight)
+        .contentShape(Rectangle())
+        .pointer(.resizeLeftRight)
+    }
+
+    private func drag(_ handle: Handle) -> some Gesture {
+        DragGesture(minimumDistance: 1, coordinateSpace: .named("timeline"))
+            .onChanged { g in
+                guard let current = ui.blockDraft else { return }
+                if origin == nil { origin = current }
+                guard let o = origin else { return }
+                ui.blockDraft = Self.apply(handle, to: o, minutes: Double(g.translation.width / width) * Double(Self.span),
+                                           step: NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep)
+            }
             .onEnded { _ in
-                dragOrigin = nil
+                origin = nil
                 // Keep the block in view after a long drag.
                 if let d = ui.blockDraft {
                     ui.blockDraft?.windowStart = BlockTimeline.window(around: d.startMinute, current: d.windowStart)
                 }
             }
+    }
+
+    /// The draft after dragging `handle` by `minutes`, snapped to `step`.
+    private static func apply(_ handle: Handle, to o: BlockDraft, minutes: Double, step: Int) -> BlockDraft {
+        let snap: (Int) -> Int = { v in step <= 1 ? v : Int((Double(v) / Double(step)).rounded()) * step }
+        let move = Int(minutes.rounded())
+        let length = Int(o.duration / 60)
+        let end = o.startMinute + length
+        var d = o
+        switch handle {
+        case .move:
+            d.startMinute = max(0, min(1_435, snap(o.startMinute + move)))
+        case .start:
+            // The end stays put; the first time block gives or takes the minutes.
+            var latest = end - 5
+            if let first = o.steps?.first { latest = o.startMinute + Int(first.seconds / 60) - 1 }
+            let start = max(0, min(latest, snap(o.startMinute + move)))
+            d.startMinute = start
+            d.duration = TimeInterval((end - start) * 60)
+            if var st = o.steps, !st.isEmpty {
+                st[0].seconds += TimeInterval((o.startMinute - start) * 60)
+                d.steps = st
+            }
+        case .end:
+            var shortest = 5
+            if let st = o.steps, let last = st.last { shortest = length - Int(last.seconds / 60) + 1 }
+            let newEnd = snap(end + move)
+            let newLength = max(shortest, min(16 * 60, newEnd - o.startMinute))
+            d.duration = TimeInterval(newLength * 60)
+            if var st = o.steps, !st.isEmpty {
+                st[st.count - 1].seconds += TimeInterval((newLength - length) * 60)
+                d.steps = st
+            }
+        case let .divider(i):
+            guard var st = o.steps, st.indices.contains(i + 1) else { return o }
+            let a = Int(st[i].seconds / 60), b = Int(st[i + 1].seconds / 60)
+            let boundary = o.startMinute + Int(st.prefix(i + 1).reduce(0) { $0 + $1.seconds } / 60)
+            let delta = max(1 - a, min(b - 1, snap(boundary + move) - boundary))
+            st[i].seconds = TimeInterval((a + delta) * 60)
+            st[i + 1].seconds = TimeInterval((b - delta) * 60)
+            d.steps = st
+        }
+        return d
+    }
+
+    /// A new 15-minute time block right after `index`; the session grows to fit.
+    private func addBlock(after index: Int) {
+        guard var d = ui.blockDraft else { return }
+        var st = d.steps ?? [TimeBlock(name: d.name.isEmpty ? "Part 1" : d.name, seconds: d.duration)]
+        st.insert(TimeBlock(name: "Block \(st.count + 1)", seconds: 900), at: min(st.count, index + 1))
+        d.steps = st
+        d.duration += 900
+        ui.blockDraft = d
+    }
+}
+
+extension View {
+    /// Shows this pointer while hovering: a hand to move, ⟷ to resize.
+    func pointer(_ cursor: NSCursor) -> some View {
+        onHover { inside in
+            if inside { cursor.push() } else { NSCursor.pop() }
+        }
     }
 }
 
