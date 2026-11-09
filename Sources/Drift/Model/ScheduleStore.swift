@@ -165,11 +165,23 @@ final class ScheduleStore: ObservableObject {
 
     // MARK: - Changing
 
+    /// A one-off whose time is already over today moves to tomorrow, rather
+    /// than being saved straight into the past.
+    private func rollForward(_ block: inout ScheduledBlock) {
+        guard block.days == nil, block.date == dayKey,
+              let occ = Schedule.occurrence(of: block, on: now, calendar: calendar),
+              now >= occ.end.addingTimeInterval(-60),
+              let tomorrow = calendar.date(byAdding: .day, value: 1, to: now) else { return }
+        block.date = Schedule.dayKey(tomorrow, calendar: calendar)
+    }
+
     @discardableResult
     func add(_ spec: ScheduleSpec) -> ScheduledBlock {
         var block = ScheduledBlock(spec: spec)
-        // Already under way today: don't jump at you about it.
-        if let occ = Schedule.occurrence(of: block, on: now, calendar: calendar), now >= occ.start {
+        rollForward(&block)
+        // A routine already under way today: don't jump at you about it. A
+        // one-off under way right now is what you meant, so it asks to start.
+        if block.days != nil, let occ = Schedule.occurrence(of: block, on: now, calendar: calendar), now >= occ.start {
             block.status[occ.dayKey] = .missed
         }
         blocks.append(block)
@@ -269,6 +281,7 @@ final class ScheduleStore: ObservableObject {
             blocks[i].date = draft.days == nil ? draft.date : nil
             blocks[i].overrides[key] = nil
             blocks[i].steps = (draft.steps?.count ?? 0) > 1 ? draft.steps : nil
+            rollForward(&blocks[i])
         }
         // Moved later than now: it can come due again today.
         if let occ = occurrenceToday(id) {

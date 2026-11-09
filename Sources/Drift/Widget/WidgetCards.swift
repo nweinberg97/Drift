@@ -47,7 +47,20 @@ struct IdleRow: View {
                 .help(mode == 2 ? "Set up a work session" : "Write the task and how long")
                 .accessibilityLabel(question)
                 Spacer(minLength: 4)
-                if hasPlan {
+                if ui.blockDraft != nil || ui.idleDial {
+                    // Something's open: the arrow puts it away and shrinks the widget.
+                    Button {
+                        ui.blockDraft = nil
+                        ui.idleDial = false
+                        ui.expanded = false
+                        actions.releaseFocus()
+                    } label: {
+                        Image(systemName: "chevron.up").font(.system(size: 10 * scale, weight: .bold))
+                    }
+                    .buttonStyle(ExpandButtonStyle(scale: scale, highlighted: false))
+                    .help("Collapse")
+                    .accessibilityLabel("Collapse")
+                } else if hasPlan {
                     Button { ui.expanded.toggle() } label: {
                         Image(systemName: ui.expanded ? "chevron.up" : "chevron.down")
                             .font(.system(size: 10 * scale, weight: .bold))

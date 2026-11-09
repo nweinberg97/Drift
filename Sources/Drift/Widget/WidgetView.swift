@@ -1532,6 +1532,12 @@ private struct BlockEditor: View {
             .padding(.top, 11)
             .padding(.bottom, 6)
 
+            if passedToday(draft) {
+                Text("That time has passed today, so it’ll be planned for tomorrow.")
+                    .font(.system(size: 11.5, weight: .medium))
+                    .foregroundStyle(Theme.accent)
+                    .padding(.bottom, 6)
+            }
             BlockTimeline(ui: ui, schedule: schedule)
 
             // − and + move by the step; dragging and scrolling use it too.
@@ -1750,6 +1756,14 @@ private struct BlockEditor: View {
             d.duration = seconds
         }
         ui.blockDraft = d
+    }
+
+    /// A one-off for today that has already ended.
+    private func passedToday(_ draft: BlockDraft) -> Bool {
+        guard draft.days == nil, draft.date == schedule.dayKey else { return false }
+        let cal = Calendar.current
+        let nowMinute = cal.component(.hour, from: schedule.now) * 60 + cal.component(.minute, from: schedule.now)
+        return draft.startMinute + Int(draft.duration / 60) <= nowMinute + 1
     }
 
     private func reframe() {
