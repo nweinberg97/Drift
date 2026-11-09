@@ -80,7 +80,7 @@ extension WidgetUIState {
             draft = BlockDraft(id: nil, name: "", startMinute: start, duration: 3_600, days: routine ? (days ?? [1, 2, 3, 4, 5]) : nil,
                                date: date, original: nil, windowStart: 0)
         }
-        draft.windowStart = BlockTimeline.window(around: draft.startMinute)
+        BlockTimeline.frame(&draft, force: true)
         blockDraft = draft
     }
 
@@ -89,12 +89,22 @@ extension WidgetUIState {
         guard let d = blockDraft else { return }
         let delta = steps * nudgeStep
         if length {
-            let m = Int(d.duration / 60) + delta
-            blockDraft?.duration = TimeInterval(max(5, min(16 * 60, m)) * 60)
+            let m = max(5, min(16 * 60, Int(d.duration / 60) + delta))
+            var next = d
+            if var st = d.steps, !st.isEmpty {
+                let others = Int(st.dropLast().reduce(0) { $0 + $1.seconds } / 60)
+                st[st.count - 1].seconds = TimeInterval(max(1, m - others) * 60)
+                next.steps = st
+                next.duration = TimeInterval((others + max(1, m - others)) * 60)
+            } else {
+                next.duration = TimeInterval(m * 60)
+            }
+            BlockTimeline.frame(&next)
+            blockDraft = next
         } else {
             let m = max(0, min(1_439, d.startMinute + delta))
             blockDraft?.startMinute = m
-            blockDraft?.windowStart = BlockTimeline.window(around: m, current: d.windowStart)
+            if var next = blockDraft { BlockTimeline.frame(&next); blockDraft = next }
         }
     }
 
@@ -1502,7 +1512,7 @@ private struct BlockEditor: View {
             HStack(alignment: .firstTextBaseline, spacing: 4) {
                 TimeEntry(minute: draft.startMinute, label: "Start time") { m in
                     ui.blockDraft?.startMinute = m
-                    ui.blockDraft?.windowStart = BlockTimeline.window(around: m)
+                    if var next = ui.blockDraft { BlockTimeline.frame(&next, force: true); ui.blockDraft = next }
                 }
                 Text("–").font(Theme.digits(19)).foregroundStyle(Theme.tertiaryText)
                 TimeEntry(minute: (draft.startMinute + Int(draft.duration / 60)) % 1_440, label: "End time") { m in
@@ -1720,6 +1730,25 @@ private struct BlockEditor: View {
         steps[i].seconds = next
         ui.blockDraft?.steps = steps
         ui.blockDraft?.duration += change
+        reframe()
+    }
+
+    /// A new length for the whole session; the last time block takes up the difference.
+    private func setLength(_ seconds: TimeInterval) {
+        guard var d = ui.blockDraft else { return }
+        if var st = d.steps, !st.isEmpty {
+            let others = st.dropLast().reduce(0) { $0 + $1.seconds }
+            st[st.count - 1].seconds = max(60, seconds - others)
+            d.steps = st
+            d.duration = others + st[st.count - 1].seconds
+        } else {
+            d.duration = seconds
+        }
+        ui.blockDraft = d
+    }
+
+    private func reframe() {
+        if var d = ui.blockDraft { BlockTimeline.frame(&d); ui.blockDraft = d }
     }
 
     private func addStep(_ draft: BlockDraft) {
@@ -1727,6 +1756,7 @@ private struct BlockEditor: View {
         steps.append(TimeBlock(name: "Block \(steps.count + 1)", seconds: 900))
         ui.blockDraft?.steps = steps
         ui.blockDraft?.duration = draft.duration + 900
+        reframe()
     }
 
     private func splitEvenly(_ n: Int, _ draft: BlockDraft) {
@@ -1743,6 +1773,7 @@ private struct BlockEditor: View {
         let gone = steps.remove(at: i)
         ui.blockDraft?.duration = max(300, (ui.blockDraft?.duration ?? 0) - gone.seconds)
         ui.blockDraft?.steps = steps.count < 2 ? nil : steps
+        reframe()
     }
 
     private func onceTitle(_ draft: BlockDraft, _ key: String) -> String {
@@ -1768,7 +1799,10 @@ private struct BlockEditor: View {
     }
 
     private func lengthChip(_ l: TimeInterval, _ draft: BlockDraft) -> some View {
-        Button(TimeFormatter.compact(l)) { ui.blockDraft?.duration = l }
+        Button(TimeFormatter.compact(l)) {
+            setLength(l)
+            reframe()
+        }
             .buttonStyle(PillButtonStyle(selected: draft.duration == l))
     }
 
@@ -1824,13 +1858,19 @@ private struct BlockEditor: View {
 /// Eight hours around the block. Drag it to move; drag its right edge to resize.
 /// Other blocks today show as grey shapes so you can see the gaps.
 struct BlockTimeline: View {
-    /// Four hours: wide enough to see what's around, close enough to aim.
-    static let span = 240
-
-    /// The window that shows `minute` comfortably, keeping `current` if it already does.
-    static func window(around minute: Int, current: Int? = nil) -> Int {
-        if let current, minute >= current + 15, minute <= current + span - 45 { return current }
-        return max(0, min(1_440 - span, (minute - 60) / 30 * 30))
+    /// Zooms the timeline to about twice the session (2 to 8 hours), so the
+    /// session and its time blocks are big enough to grab. Keeps the current view
+    /// while the session still fits it comfortably, so it never jumps mid-edit.
+    static func frame(_ d: inout BlockDraft, force: Bool = false) {
+        let length = max(5, Int(d.duration / 60))
+        let span = max(120, min(480, Int((Double(length * 2) / 60).rounded(.up)) * 60))
+        let margin = min(15, max(0, (span - length) / 4))
+        let fits = d.startMinute >= d.windowStart + margin && d.startMinute + length <= d.windowStart + d.windowSpan - margin
+        let sizeOK = d.windowSpan >= length + 2 * margin && d.windowSpan <= max(span * 2, 240)
+        guard force || !fits || !sizeOK else { return }
+        d.windowSpan = span
+        let ideal = d.startMinute - (span - length) / 2
+        d.windowStart = max(0, min(1_440 - span, ideal / 15 * 15))
     }
 
     @ObservedObject var ui: WidgetUIState
@@ -1849,13 +1889,14 @@ struct BlockTimeline: View {
     var body: some View {
         if let draft = ui.blockDraft {
             let w0 = draft.windowStart
-            let x: (Int) -> CGFloat = { CGFloat($0 - w0) / CGFloat(Self.span) * width }
+            let span = max(60, draft.windowSpan)
+            let x: (Int) -> CGFloat = { CGFloat($0 - w0) / CGFloat(span) * width }
             let others = schedule.today().filter { $0.block.id != draft.id }
             let cal = Calendar.current
             let nowMinute = cal.component(.hour, from: schedule.now) * 60 + cal.component(.minute, from: schedule.now)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control)
-                ForEach(Array(stride(from: (w0 + 59) / 60 * 60, through: w0 + Self.span, by: 60)), id: \.self) { m in
+                ForEach(Array(stride(from: (w0 + 29) / 30 * 30, through: w0 + span, by: span <= 180 ? 30 : 60)), id: \.self) { m in
                     Rectangle().fill(Theme.hairline).frame(width: 1, height: height).offset(x: x(m))
                     Text(Schedule.time(m).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: " ", with: ""))
                         .font(.system(size: 9))
@@ -1865,10 +1906,10 @@ struct BlockTimeline: View {
                 ForEach(others) { o in
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(Theme.controlHover)
-                        .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(Self.span) * width), height: barHeight - 6)
+                        .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(span) * width), height: barHeight - 6)
                         .offset(x: x(o.occurrence.startMinute), y: 19)
                 }
-                if nowMinute >= w0 && nowMinute <= w0 + Self.span {
+                if nowMinute >= w0 && nowMinute <= w0 + span {
                     Rectangle().fill(Theme.accent.opacity(0.7)).frame(width: 1.5, height: height).offset(x: x(nowMinute))
                 }
                 block(draft, x: x(draft.startMinute))
@@ -1886,7 +1927,7 @@ struct BlockTimeline: View {
     }
 
     private func block(_ draft: BlockDraft, x: CGFloat) -> some View {
-        let perMinute = width / CGFloat(Self.span)
+        let perMinute = width / CGFloat(max(60, draft.windowSpan))
         let w = max(26, CGFloat(draft.duration / 60) * perMinute)
         let steps = draft.steps ?? [TimeBlock(name: draft.name.isEmpty ? "Work session" : draft.name, seconds: draft.duration)]
         let total = max(1, steps.reduce(0) { $0 + $1.seconds })
@@ -1974,14 +2015,15 @@ struct BlockTimeline: View {
                 guard let current = ui.blockDraft else { return }
                 if origin == nil { origin = current }
                 guard let o = origin else { return }
-                ui.blockDraft = Self.apply(handle, to: o, minutes: Double(g.translation.width / width) * Double(Self.span),
+                ui.blockDraft = Self.apply(handle, to: o, minutes: Double(g.translation.width / width) * Double(max(60, o.windowSpan)),
                                            step: NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep)
             }
             .onEnded { _ in
                 origin = nil
                 // Keep the block in view after a long drag.
-                if let d = ui.blockDraft {
-                    ui.blockDraft?.windowStart = BlockTimeline.window(around: d.startMinute, current: d.windowStart)
+                if var d = ui.blockDraft {
+                    BlockTimeline.frame(&d)
+                    ui.blockDraft = d
                 }
             }
     }
@@ -2036,6 +2078,7 @@ struct BlockTimeline: View {
         st.insert(TimeBlock(name: "Block \(st.count + 1)", seconds: 900), at: min(st.count, index + 1))
         d.steps = st
         d.duration += 900
+        BlockTimeline.frame(&d)
         ui.blockDraft = d
     }
 }

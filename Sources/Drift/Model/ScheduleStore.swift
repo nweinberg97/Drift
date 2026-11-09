@@ -25,6 +25,8 @@ struct BlockDraft: Equatable {
     var windowStart: Int
     /// Split into time blocks (a session); nil runs it as one timer.
     var steps: [TimeBlock]?
+    /// Minutes the editor's timeline shows: about twice the session, so it's easy to grab.
+    var windowSpan: Int = 240
 
     var changedTime: Bool {
         guard let o = original else { return false }
