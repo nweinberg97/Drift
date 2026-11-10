@@ -1,5 +1,7 @@
 # Getting Drift onto the Mac App Store
 
+> **Doing this for the first time?** Follow [`XCODE-SETUP.md`](XCODE-SETUP.md): the same steps, click by click, including testing purchases. This page is the short reference.
+
 Everything that can be prepared without your Apple account is done. This is the part only you can do, in order. Budget about an hour of clicking, plus Apple's waits (enrollment: a day or two; review: usually one to three days).
 
 What's in this folder:
@@ -27,7 +29,7 @@ And in the repo:
 ## 1. Join the Apple Developer Program ($99/year)
 
 1. Go to **developer.apple.com/programs/enroll** and sign in with your Apple ID (it needs two-factor authentication turned on).
-2. Choose **Individual** (your name shows as the seller; fastest) or **Organization** (your company name shows; needs a free D-U-N-S number first, which can take a week or more).
+2. Choose **Organization** for Forth Ventures (recommended: the company shows as the seller; needs a free D-U-N-S number first, which can take up to two weeks) or **Individual** (your own name shows as the seller).
 3. Pay and wait for the confirmation email.
 
 ## 2. Install Xcode
@@ -50,17 +52,17 @@ open Drift/Drift.xcodeproj
 1. Xcode → **Settings → Accounts** → **+** → Apple ID → sign in.
 2. In the project navigator click **Drift** (the blue project icon) → target **Drift** → **Signing & Capabilities**.
 3. **Team:** choose your name or company. Leave "Automatically manage signing" on.
-   Xcode registers the bundle ID `com.nweinberg.drift` for you.
+   Xcode registers the bundle ID `com.forthventures.drift` for you.
 
 Try it: press **⌘R**. Drift runs from Xcode exactly as the store version will (sandboxed). Quit it from its menu bar icon.
 
 ## 5. Create the app in App Store Connect
 
 1. **appstoreconnect.apple.com → Apps → + → New App**
-2. Platform **macOS**; Name from `listing.md`; Primary language English (U.S.); Bundle ID **com.nweinberg.drift**; SKU `drift-mac-1`; User access: Full.
+2. Platform **macOS**; Name from `listing.md`; Primary language English (U.S.); Bundle ID **com.forthventures.drift**; SKU `forth-drift-mac-1`; User access: Full.
 3. Fill in, using `listing.md` and `app-store-connect.md`:
    - **App Information:** subtitle, categories, content rights, age rating
-   - **Pricing and Availability:** $4.99, all regions
+   - **Pricing and Availability:** Free, all regions; then the four in-app purchases in `listing.md`
    - **App Privacy:** privacy policy URL, then "No, we do not collect data"
    - **macOS App → 1.0:** screenshots, promotional text, description, keywords, support and marketing URLs, copyright, review notes and your contact details
 
