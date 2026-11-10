@@ -284,16 +284,18 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
 
     /// Marketing screenshots at 2880×1800 (Apple's largest Mac size): a headline
     /// beside the real UI, scaled up, on a dark ember backdrop.
-    private func renderStoreShots(runner: CommandRunner) async {
-        // Store shots show a mid-morning day, whatever the build machine's
-        // clock says: shift the zone so it's about 10am here.
+    /// Snapshots show a mid-morning day whatever the build machine's clock
+    /// says: shift the time zone so it's about 10am. Runs before any store
+    /// (which keeps its own calendar) is created.
+    static func useMidMorningClock() {
         let utc = Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: Date())
         var offset = 10 * 3_600 - ((utc.hour ?? 0) * 3_600 + (utc.minute ?? 0) * 60)
         if offset > 14 * 3_600 { offset -= 86_400 }
         if offset < -12 * 3_600 { offset += 86_400 }
-        let savedZone = NSTimeZone.default
-        NSTimeZone.default = TimeZone(secondsFromGMT: offset / 900 * 900) ?? savedZone
-        defer { NSTimeZone.default = savedZone }
+        if let zone = TimeZone(secondsFromGMT: offset / 900 * 900) { NSTimeZone.default = zone }
+    }
+
+    private func renderStoreShots(runner: CommandRunner) async {
 
         let writing = running("Draft proposal", total: 2_700, left: 1_920.4)
         let morning = session("Morning startup", step: 1, left: 371.4)
@@ -358,7 +360,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         await renderShot(name: "store-3-planner", headline: "Plan a session.\nDrag it into place.",
                          sub: "Pull either end to resize, drag the middle to move, and click + to add a block. It starts on time.",
                          layout: .side) {
-            w3.fixedSize().scaleEffect(1.6).position(x: 1_060, y: 450)
+            w3.fixedSize().scaleEffect(1.25).position(x: 1_060, y: 450)
         }
 
         // 4. Today and routines.

@@ -378,6 +378,13 @@
   .sw-idle .go .st.hot { background: var(--ember-deep); filter: brightness(1.2); }
   .sw-idle .go .st svg { width: 8px; height: 8px; fill: currentColor; }
   .sw-idle .go .more { flex: none; width: 28px; color: var(--muted); }
+  .sw-idle .tabs { display: flex; gap: 2px; margin: 2px 8px 4px; padding: 2px; border-radius: 8px; background: rgba(255,255,255,0.06); }
+  .sw-idle .tabs span { flex: 1; text-align: center; font-size: 11px; font-weight: 600; padding: 3px 0; border-radius: 6px; color: var(--muted); }
+  .sw-idle .tabs span.on { background: rgba(255,255,255,0.14); color: #fff; }
+  .s-menu div.mgrid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; height: auto; padding: 3px 8px 6px 26px; }
+  .s-menu div.mgrid span { height: 23px; display: grid; place-items: center; border-radius: 5px; background: rgba(255,255,255,0.08); font-size: 11px; font-weight: 500; transition: background .15s; }
+  .s-menu div.mgrid span.hot { background: var(--ember-deep); color: #fff; }
+  .hero-note { margin-top: 14px; font-size: 14px; color: var(--muted); }
   .s-widget.idle.has-next .sw-next { display: flex; padding-left: 13px; margin-top: -2px; }
   .sw-next { white-space: nowrap; }
 
@@ -638,6 +645,30 @@
     .phrase { flex-direction: column; gap: 2px; }
     .phrase span { text-align: left; }
   }
+
+  /* ---------- Screens & pricing ---------- */
+  .shots { margin-top: 48px; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; }
+  .shots figure { margin: 0; }
+  .shots img { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--line); background: var(--coal); }
+  .shots figcaption { margin-top: 10px; font-size: 14.5px; color: var(--muted); }
+  .shots figcaption b { color: var(--cream); font-weight: 600; }
+  .plans { margin-top: 48px; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 20px; align-items: stretch; }
+  .plan { position: relative; padding: 30px 28px 28px; border-radius: 20px; background: var(--coal); border: 1px solid var(--line); display: flex; flex-direction: column; }
+  .plan.best { border-color: rgba(242,163,110,0.55); background: radial-gradient(100% 80% at 100% 0%, rgba(242,163,110,0.16), transparent 60%), var(--coal); }
+  .plan .tag { position: absolute; top: -11px; left: 26px; font: 700 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: #1B1714; background: var(--ember); padding: 4px 10px; border-radius: 99px; }
+  .plan h3 { font: 600 19px/1.3 var(--display); margin: 0; }
+  .plan .price { font: 600 40px/1.1 var(--display); letter-spacing: -0.02em; margin: 14px 0 4px; }
+  .plan .price small { font-size: 16px; font-weight: 500; color: var(--muted); letter-spacing: 0; }
+  .plan p { margin: 0; color: var(--muted); font-size: 15px; }
+  .plan ul { list-style: none; margin: 20px 0 0; padding: 0; font-size: 15px; display: grid; gap: 8px; }
+  .plan li::before { content: "✓"; color: var(--ember); margin-right: 9px; }
+  .trial-line { margin-top: 28px; font-size: 16px; color: var(--muted); }
+  .trial-line b { color: var(--cream); }
+  .studio { color: var(--muted); text-decoration: none; }
+  .studio:hover { color: var(--cream); }
+  @media (max-width: 860px) {
+    .shots, .plans { grid-template-columns: minmax(0, 1fr); }
+  }
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after { animation-duration: 0.001s !important; animation-iteration-count: 1 !important; transition-duration: 0.001s !important; }
   }
@@ -650,8 +681,9 @@
   <ul>
     <li><a href="#features">Features</a></li>
     <li><a href="#try">Try it</a></li>
+    <li><a href="#screens">Screens</a></li>
+    <li><a href="#pricing">Pricing</a></li>
     <li><a href="guide.html">Guide</a></li>
-    <li><a href="#install">Install</a></li>
   </ul>
 </nav>
 
@@ -668,11 +700,12 @@
         <p class="hero-time"><b class="num" id="hero-time">18:00</b> left on this one</p>
       </div>
     </div>
-    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Line up a few blocks to run back to back. Start now, plan it for later today, or make it a routine, and Drift starts each one on time.</p>
+    <p class="lede">A quiet focus timer for your Mac. Press <kbd>⌥ Space</kbd> from any app, write what you're working on and for how long, and get back to it. Line up time blocks that hand off on their own, plan a work session on a timeline, or make it a routine, and Drift starts each one on time.</p>
     <div class="actions">
       <a class="btn btn-ember" href="#install">Get Drift</a>
       <a class="btn btn-ghost" href="#features">Watch it work</a>
     </div>
+    <p class="hero-note">Free for 7 days, then from $1.99 a month. Launch offer: $4.99 for life.</p>
   </div>
 </header>
 
@@ -680,7 +713,7 @@
 
   <section id="features">
     <h2>Name it, time it, get back to work.</h2>
-    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long, or when. A small timer stays in the corner of your screen while you work. With nothing running, it asks what you're working on and starts with one tap.</p>
+    <p class="sub">Press ⌥ Space in any app and type what you're doing and for how long, or when. A small timer stays in the corner of your screen while you work. With nothing running, it offers three ways in: <b>Start now</b>, <b>Pomodoro</b> and <b>Plan</b>.</p>
 
     <div class="demo">
       <div class="stage-wrap" id="stage-wrap">
@@ -716,7 +749,8 @@
             </div></div></div>
             <div class="sw-idle">
               <div class="top"><span class="sw-dot"></span><span class="q">What are you working on?</span><kbd>⌥ Space</kbd></div>
-              <div class="go" id="sw-go"><span class="st"><svg viewBox="0 0 10 10"><path d="M2 1l7 4-7 4z"/></svg>Start 25m</span><span>10m</span><span>15m</span><span>45m</span><span>1h</span><span class="more">⋯</span></div>
+              <div class="tabs"><span class="on">Start now</span><span>Pomodoro</span><span>Plan</span></div>
+              <div class="go" id="sw-go"><span class="st"><svg viewBox="0 0 10 10"><path d="M2 1l7 4-7 4z"/></svg>Start 25m</span><span>10m</span><span>15m</span><span>45m</span><span class="more" title="Any length"><svg viewBox="0 0 12 12" width="11" height="11"><circle cx="6" cy="6" r="4.6" fill="none" stroke="currentColor" stroke-width="1.4"/><path d="M6 6V2.8" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/></svg></span></div>
             </div>
             <div class="sw-row">
               <span class="sw-dot"></span>
@@ -750,7 +784,7 @@
               <div class="er"><em>Start</em><span>−5</span><span>−1</span><span>+1</span><span>+5</span></div>
               <div class="er" id="be-rep"></div>
               <div class="er" id="be-days"></div>
-              <div class="hint" id="be-hint">Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it.</div>
+              <div class="hint" id="be-hint">Drag either end to resize and the middle to move it. Steps of 1, 5 or 10 minutes; click a time to type it.</div>
               <div class="ft" id="be-ft"></div>
             </div></div></div>
           </div>
@@ -774,7 +808,8 @@
             <div class="sep"></div>
             <div><span class="chk"></span>New Timer…<b class="k">⌥Space</b></div>
             <div class="mchips"><span>5m</span><span>10m</span><span>15m</span><span>25m</span><span>45m</span><span>1h</span></div>
-            <div class="ind" id="m-more">More Ways to Start<b class="k">›</b></div>
+            <div class="mgrid"><span id="m-plan">Plan work session</span><span>New routine</span><span>Pomodoro</span><span>Voice</span></div>
+            <div class="ind" id="m-more">Saved Sessions<b class="k">›</b></div>
             <div class="sep"></div>
             <div id="m-focus"><span class="chk"></span>Focus Sound: <span id="m-fs">Off</span><b class="k">›</b></div>
             <div class="sep"></div>
@@ -792,21 +827,21 @@
 
       <ol class="features" id="features-list">
         <li><button data-scene="0"><b>Write the task, then the time</b><span>⌥ Space, type Reply to emails 25m, press Return. Leave out the time and it offers your default.</span><i></i></button></li>
-        <li><button data-scene="1"><b>Nothing running? One tap</b><span>The widget asks what you're working on. Start 25m, tap 10m, 15m, 45m or 1h, or ⋯ for any length.</span><i></i></button></li>
+        <li><button data-scene="1"><b>Nothing running? One tap</b><span>Start now, Pomodoro or Plan. Start 25m, tap a quick length, or the dial for any length. Double-click a time to type it.</span><i></i></button></li>
         <li><button data-scene="2"><b>Or just say it</b><span>Press ⌥ Space twice and talk. Sessions work too: “ten minutes of inbox, then ten minutes to plan the day, starting at 8”.</span><i></i></button></li>
-        <li><button data-scene="3"><b>Turn the dial</b><span>Click the time. Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30, 45 min, 1 h or 2 h.</span><i></i></button></li>
+        <li><button data-scene="3"><b>Turn the dial</b><span>Click the time and drag a minute at a time, tap 5 min to 2 h, or double-click and type it.</span><i></i></button></li>
         <li><button data-scene="4"><b>Line up a session</b><span>Several time blocks in one timer. Each starts when the one before ends, and you see the clock time of each as you type.</span><i></i></button></li>
         <li><button data-scene="5"><b>Plan it for later today</b><span>Under what you type: Start now · Later today · Routine. Tap Later today and a time, and a Planned card confirms it.</span><i></i></button></li>
         <li><button data-scene="6"><b>One block to the next</b><span>A card says what's next and starts it in 10 seconds. Blocks don't stretch unless you allow it.</span><i></i></button></li>
         <li><button data-scene="7"><b>Routines for your week</b><span>“Deep work 9–10:30 weekdays” becomes a routine; “Client call at 2pm for 30m” is planned for later today. Drift picks from your words.</span><i></i></button></li>
         <li><button data-scene="8"><b>Starts on time</b><span>When it's time, Drift asks. Ignore it and it starts by itself after a minute.</span><i></i></button></li>
-        <li><button data-scene="9"><b>Move it to the minute</b><span>Drag in 5-minute steps (hold ⌥ for single minutes), or click a time and type it. Today only, or every day it repeats.</span><i></i></button></li>
+        <li><button data-scene="9"><b>Plan it on a timeline</b><span>Drag either end to resize, the middle to move. Time blocks show as segments with + to add one. Today only, or every day it repeats.</span><i></i></button></li>
         <li><button data-scene="10"><b>Delete, with Undo</b><span>Hover a row and click ×, or right-click it. An Undo bar stays for a few seconds.</span><i></i></button></li>
         <li><button data-scene="11"><b>Run several at once</b><span>One stays in view. The rest wait in a list underneath.</span><i></i></button></li>
         <li><button data-scene="12"><b>Hide it, keep going</b><span>⌥ T hides the widget. The time moves to the menu bar.</span><i></i></button></li>
         <li><button data-scene="13"><b>Focus, then break</b><span>Type pomodoro and it alternates on its own.</span><i></i></button></li>
         <li><button data-scene="14"><b>Time's up, hard to miss</b><span>The widget shakes until you touch it, with a big Done button. Handy when your sound is off.</span><i></i></button></li>
-        <li><button data-scene="15"><b>A short menu</b><span>Quick lengths up top. Pomodoro, voice, Plan Later Today… and New Routine… under More Ways to Start.</span><i></i></button></li>
+        <li><button data-scene="15"><b>A short menu</b><span>Quick lengths up top, then four buttons: Plan work session, New routine, Pomodoro, Voice. Your saved sessions are one click away.</span><i></i></button></li>
       </ol>
     </div>
   </section>
@@ -856,11 +891,52 @@
     </div>
   </section>
 
+  <section id="screens">
+    <h2>What it looks like.</h2>
+    <p class="sub">Straight from the app. Drift lives in the corner of your screen and in the menu bar; nothing else.</p>
+    <div class="shots">
+      <figure><img src="shots/store-1-launcher.jpg" alt="The launcher with a three-block morning session typed in" loading="lazy" width="1440" height="900"><figcaption><b>Type your plan.</b> One line for a task, or a whole session of time blocks.</figcaption></figure>
+      <figure><img src="shots/store-2-session.jpg" alt="A running session showing the current block and what comes next" loading="lazy" width="1440" height="900"><figcaption><b>Blocks hand off on their own.</b> Each starts as the last one ends.</figcaption></figure>
+      <figure><img src="shots/store-3-planner.jpg" alt="The planner timeline with three time blocks" loading="lazy" width="1440" height="900"><figcaption><b>Plan a work session.</b> Drag the ends to resize, the middle to move, + to add a block.</figcaption></figure>
+      <figure><img src="shots/store-4-today.jpg" alt="The widget expanded with today's plan underneath the running timer" loading="lazy" width="1440" height="900"><figcaption><b>Today at a glance.</b> Routines repeat and start on time.</figcaption></figure>
+      <figure><img src="shots/store-5-dial.jpg" alt="The time dial" loading="lazy" width="1440" height="900"><figcaption><b>Turn the dial,</b> or double-click the time and type it.</figcaption></figure>
+      <figure><img src="shots/store-6-pomodoro.jpg" alt="A pomodoro focus round with focus sound playing" loading="lazy" width="1440" height="900"><figcaption><b>Pomodoro and focus sounds,</b> made on your Mac.</figcaption></figure>
+    </div>
+  </section>
+
+  <section id="pricing">
+    <h2>Every feature, in every plan.</h2>
+    <p class="sub">No free tier with paid add-ons, no account, no ads. Try all of it free for 7 days, then pick how you'd like to pay.</p>
+    <div class="plans">
+      <div class="plan">
+        <span class="tag">Launch offer</span>
+        <h3>Lifetime</h3>
+        <div class="price">$4.99</div>
+        <p>Pay once, keep it forever. Only while Drift is new.</p>
+        <ul><li>Everything in Drift</li><li>All future updates</li><li>Family Sharing</li></ul>
+      </div>
+      <div class="plan best">
+        <span class="tag">Best value</span>
+        <h3>Yearly</h3>
+        <div class="price">$9.99<small> / year</small></div>
+        <p>Less than a dollar a month.</p>
+        <ul><li>Everything in Drift</li><li>Cancel any time</li><li>Family Sharing</li></ul>
+      </div>
+      <div class="plan">
+        <h3>Monthly</h3>
+        <div class="price">$1.99<small> / month</small></div>
+        <p>Try it for a season.</p>
+        <ul><li>Everything in Drift</li><li>Cancel any time</li><li>Family Sharing</li></ul>
+      </div>
+    </div>
+    <p class="trial-line"><b>7 days free, no card needed.</b> Purchases go through the Mac App Store; Drift never sees your payment details. Prices in US dollars; your App Store shows your local price.</p>
+  </section>
+
   <section>
     <h2>Nothing to sign up for.</h2>
     <p class="sub">Drift is a timer, not a productivity platform.</p>
-    <div class="without" aria-label="Things Drift doesn't have: accounts, streaks, dashboards, subscriptions, analytics, nagging">
-      <s>Accounts</s><s>Streaks</s><s>Dashboards</s><s>Subscriptions</s><s>Analytics</s><s>Nagging</s>
+    <div class="without" aria-label="Things Drift doesn't have: accounts, streaks, dashboards, ads, analytics, nagging">
+      <s>Accounts</s><s>Streaks</s><s>Dashboards</s><s>Ads</s><s>Analytics</s><s>Nagging</s>
     </div>
     <div class="facts">
       <div>
@@ -885,7 +961,7 @@
     <!-- Shown instead of "Coming soon" once APP_STORE_URL is set (bottom of the page). -->
     <div id="store-install" hidden>
       <h2>Get Drift.</h2>
-      <p class="sub">One price, no subscription. On the Mac App Store.</p>
+      <p class="sub">Free for 7 days, then Lifetime, Yearly or Monthly. On the Mac App Store.</p>
       <div class="store-card">
         <a class="btn btn-ember" id="store-link" href="#">Download on the Mac App Store</a>
         <p>macOS 13 Ventura or newer · Apple silicon and Intel</p>
@@ -893,7 +969,7 @@
     </div>
     <div id="coming-soon">
       <h2>Coming soon to the Mac App Store.</h2>
-      <p class="sub">One price, no subscription, no account. For macOS 13 Ventura or newer, on Apple silicon and Intel Macs.</p>
+      <p class="sub">Free for 7 days, and $4.99 for life at launch. No account. For macOS 13 Ventura or newer, on Apple silicon and Intel Macs.</p>
       <div class="store-card">
         <span class="btn btn-soon" aria-disabled="true">Mac App Store · Coming soon</span>
         <p>Want to see everything it does first? <a href="guide.html">Read the guide</a>.</p>
@@ -902,7 +978,7 @@
   </section>
 </main>
 
-<footer><img src="icon.png" alt="">Drift. Stay with it.<span class="foot-links"><a href="guide.html">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
+<footer><img src="icon.png" alt="">Drift. Stay with it. <span class="studio">A Forth Ventures app · © 2026 Forth Ventures</span><span class="foot-links"><a href="guide.html">Guide</a><a href="support.html">Support</a><a href="privacy.html">Privacy</a></span></footer>
 
 <div class="float" id="float" role="timer" aria-live="off" aria-hidden="true">
   <div class="f-card" id="f-card" aria-live="polite" hidden></div>
@@ -1394,7 +1470,7 @@
     const set = new Set(days || []), k = [...set].sort().join('');
     $('be-rep').innerHTML = `<em>Repeat</em><span class="${days ? '' : 'on'}">Today</span><span class="${k === '12345' ? 'on' : ''}">Weekdays</span><span class="${k === '0123456' ? 'on' : ''}">Every day</span>`;
     $('be-days').innerHTML = '<em></em>' + [1, 2, 3, 4, 5, 6, 0].map(d => `<span class="sq ${set.has(d) ? 'on' : ''}">${DAYN[d][0]}</span>`).join('');
-    $('be-hint').textContent = 'Drag to move it (hold ⌥ for single minutes), drag its right edge for the length, or click a time to type it.';
+    $('be-hint').textContent = 'Drag either end to resize and the middle to move it. Steps of 1, 5 or 10 minutes; click a time to type it.';
     $('be-ft').innerHTML = buttons;
   }
   function setEditorTime(start, dur) {
@@ -1802,11 +1878,16 @@
       await cursorTo(mb, id, 2, 4);
       mb.classList.add('open'); menu.classList.add('on');
       await wait(700, id);
+      const planBtn = $('m-plan');
+      await cursorTo(planBtn, id, 0, 0);
+      planBtn.classList.add('hot');
+      await wait(900, id);
+      planBtn.classList.remove('hot');
       const more = $('m-more');
       await cursorTo(more, id, -40, 2);
       more.classList.add('hot');
-      openSub(more, '<div><span class="chk"></span>Pomodoro (25 min focus, 5 min break)</div><div><span class="chk"></span>Voice Command…<b class="k">⌥V</b></div><div class="sep"></div><div><span class="chk"></span>Plan Later Today…</div><div><span class="chk"></span>New Routine…</div>');
-      await wait(1900, id);
+      openSub(more, '<div><span class="chk"></span>Morning startup<b class="k">25m</b></div><div><span class="chk"></span>Writing sprint<b class="k">1h</b></div><div><span class="chk"></span>Deep work<b class="k">1h 30m</b></div>');
+      await wait(1600, id);
       more.classList.remove('hot'); sub.classList.remove('on');
       const focus = $('m-focus');
       await cursorTo(focus, id, -40, 2);

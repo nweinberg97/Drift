@@ -12,6 +12,7 @@ enum DriftMain {
         // CI renders every widget state to PNGs instead of running normally.
         // Debug builds only: the store build doesn't contain this.
         if let dir = ProcessInfo.processInfo.environment["DRIFT_SNAPSHOT_DIR"] {
+            SnapshotRunner.useMidMorningClock()
             let runner = SnapshotRunner(directory: URL(fileURLWithPath: dir))
             app.delegate = runner
             app.setActivationPolicy(.accessory)

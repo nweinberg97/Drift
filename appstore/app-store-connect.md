@@ -31,9 +31,10 @@ The Info.plist sets `ITSAppUsesNonExemptEncryption = NO`, so App Store Connect w
 
 ## Pricing and availability
 
-- Price: **USD 4.99** (Apple shows the matching price in each country)
+- Price: **Free** (the app unlocks with in-app purchases; see `listing.md` → Pricing for the four products)
 - Availability: **All countries or regions**
-- Pre-order: off (optional)
+- Pre-order: optional; useful for a launch-day link
+- Before you can sell anything: **Agreements, Tax and Banking** → Paid Apps agreement active, bank account and tax forms done. Then apply for the **App Store Small Business Program** (15% commission).
 
 ## Mac App Store specifics
 
@@ -41,7 +42,8 @@ The Info.plist sets `ITSAppUsesNonExemptEncryption = NO`, so App Store Connect w
 - **Minimum macOS:** 13 Ventura (set in the project)
 - **Apple silicon and Intel:** both (universal build by default when archiving)
 - **App Sandbox:** on. Entitlements: `app-sandbox`, `device.audio-input` (microphone, only for voice). Nothing else.
-- **Uses Apple Sign In / Game Center / In-App Purchase / iCloud:** No
+- **In-App Purchase:** Yes (StoreKit 2; no extra entitlement or network access needed on macOS)
+- **Uses Apple Sign In / Game Center / iCloud:** No
 
 ## Things that are yours to fill in
 
