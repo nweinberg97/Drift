@@ -25,6 +25,7 @@
 		604E474C4D86A7143B14D714 /* libDriftCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDriftCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		553964F95E0F5DFBBB4736F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2AAF0FFB101CFE2B72D7FEC0 /* Drift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; };
+		7EDC8BA910E847B9C896E933 /* Drift.storekit */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Drift.storekit; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -68,6 +69,7 @@
 			children = (
 				553964F95E0F5DFBBB4736F9 /* Info.plist */,
 				2AAF0FFB101CFE2B72D7FEC0 /* Drift.entitlements */,
+				7EDC8BA910E847B9C896E933 /* Drift.storekit */,
 			);
 			name = Config;
 			path = packaging/AppStore/Config;
@@ -260,8 +262,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nweinberg.drift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.drift;
 				PRODUCT_NAME = Drift;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APPSTORE";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 			};
 			name = Debug;
@@ -284,8 +287,9 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.nweinberg.drift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.drift;
 				PRODUCT_NAME = Drift;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APPSTORE";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 			};
 			name = Release;

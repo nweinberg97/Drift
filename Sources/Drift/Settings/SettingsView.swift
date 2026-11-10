@@ -9,6 +9,7 @@ final class SettingsWindowController {
     private let settings: AppSettings
     var onRecordingChanged: (Bool) -> Void = { _ in }
     var resetWidgetPosition: () -> Void = {}
+    var showPaywall: () -> Void = {}
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -19,7 +20,8 @@ final class SettingsWindowController {
             let view = SettingsView(
                 settings: settings,
                 onRecordingChanged: { [weak self] in self?.onRecordingChanged($0) },
-                resetWidgetPosition: { [weak self] in self?.resetWidgetPosition() }
+                resetWidgetPosition: { [weak self] in self?.resetWidgetPosition() },
+                showPaywall: { [weak self] in self?.showPaywall() }
             )
             let hosting = NSHostingController(rootView: view)
             let window = NSWindow(contentViewController: hosting)
@@ -40,6 +42,8 @@ struct SettingsView: View {
     @ObservedObject var settings: AppSettings
     let onRecordingChanged: (Bool) -> Void
     let resetWidgetPosition: () -> Void
+    var showPaywall: () -> Void = {}
+    @ObservedObject private var purchases = Purchases.shared
 
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
     @State private var launchError: String?
@@ -48,6 +52,30 @@ struct SettingsView: View {
 
     var body: some View {
         Form {
+            if purchases.isAppStoreBuild {
+                Section {
+                    LabeledContent("Plan") {
+                        Text(purchases.statusLine).foregroundStyle(.secondary)
+                    }
+                    HStack {
+                        switch purchases.access {
+                        case .lifetime:
+                            EmptyView()
+                        case .subscribed:
+                            Button("Manage Subscription") { NSWorkspace.shared.open(Purchases.manageSubscriptionsURL) }
+                        default:
+                            Button(purchases.trialAvailable ? "Start Free Trial" : "Unlock \(AppInfo.name)", action: showPaywall)
+                        }
+                        Button("Restore Purchases") { Task { await purchases.restore() } }
+                    }
+                    if let message = purchases.message {
+                        Text(message).font(.caption).foregroundStyle(.secondary)
+                    }
+                } header: {
+                    Text("Purchase")
+                }
+            }
+
             Section {
                 Toggle(isOn: $settings.featurePlan) {
                     Text("Plan my day")
@@ -204,7 +232,7 @@ struct SettingsView: View {
             } header: {
                 Text("General")
             } footer: {
-                Text("\(AppInfo.name) works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.")
+                Text("\(AppInfo.name) works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.\n\n\(AppInfo.name) \(AppInfo.version) · A \(AppInfo.company) app")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

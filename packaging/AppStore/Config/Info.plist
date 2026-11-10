@@ -45,7 +45,7 @@
     <key>ITSAppUsesNonExemptEncryption</key>
     <false/>
     <key>NSHumanReadableCopyright</key>
-    <string>Stay with it.</string>
+    <string>© 2026 Forth Ventures. All rights reserved.</string>
     <key>NSMicrophoneUsageDescription</key>
     <string>Drift listens only while you give a voice command, such as “start a 25 minute timer”. Audio is processed on this Mac and never stored.</string>
     <key>NSSpeechRecognitionUsageDescription</key>

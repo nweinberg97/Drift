@@ -22,7 +22,7 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SETTINGS = {
     "name": "Drift",                          # product + executable name
-    "bundle_id": "com.nweinberg.drift",
+    "bundle_id": "com.forthventures.drift",   # permanent once uploaded
     "marketing_version": "1.0",
     "build": "1",
     "deployment_target": "13.0",
@@ -39,7 +39,7 @@ S = SETTINGS
 NAME = S["name"]
 ids = {k: uid(k) for k in [
     "project", "main_group", "products_group", "config_group",
-    "app_ref", "core_ref", "infoplist_ref", "entitlements_ref",
+    "app_ref", "core_ref", "infoplist_ref", "entitlements_ref", "storekit_ref",
     "grp_app", "grp_core", "grp_res",
     "t_app", "t_core",
     "app_sources", "app_frameworks", "app_resources",
@@ -96,6 +96,9 @@ app_common = {
     "CODE_SIGN_ENTITLEMENTS": "packaging/AppStore/Config/Drift.entitlements",
     "CODE_SIGN_STYLE": "Automatic",
     "COMBINE_HIDPI_IMAGES": "YES",
+    # APPSTORE turns on purchases (Sources/Drift/Store). The Swift Package
+    # build that scripts/install.sh makes leaves it off and is always unlocked.
+    "SWIFT_ACTIVE_COMPILATION_CONDITIONS": "$(inherited) APPSTORE",
     "CURRENT_PROJECT_VERSION": S["build"],
     "DEVELOPMENT_TEAM": S["team"],
     "ENABLE_APP_SANDBOX": "YES",
@@ -153,6 +156,7 @@ pbx = f"""// !$*UTF8*$!
 \t\t{ids['core_ref']} /* libDriftCore.a */ = {{isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDriftCore.a; sourceTree = BUILT_PRODUCTS_DIR; }};
 \t\t{ids['infoplist_ref']} /* Info.plist */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; }};
 \t\t{ids['entitlements_ref']} /* Drift.entitlements */ = {{isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; }};
+\t\t{ids['storekit_ref']} /* Drift.storekit */ = {{isa = PBXFileReference; lastKnownFileType = text.json; path = Drift.storekit; sourceTree = "<group>"; }};
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
@@ -196,6 +200,7 @@ pbx = f"""// !$*UTF8*$!
 \t\t\tchildren = (
 \t\t\t\t{ids['infoplist_ref']} /* Info.plist */,
 \t\t\t\t{ids['entitlements_ref']} /* Drift.entitlements */,
+\t\t\t\t{ids['storekit_ref']} /* Drift.storekit */,
 \t\t\t);
 \t\t\tname = Config;
 \t\t\tpath = packaging/AppStore/Config;
@@ -414,6 +419,9 @@ scheme = f"""<?xml version="1.0" encoding="UTF-8"?>
             ReferencedContainer = "container:Drift.xcodeproj">
          </BuildableReference>
       </BuildableProductRunnable>
+      <StoreKitConfigurationFileReference
+         identifier = "../../packaging/AppStore/Config/Drift.storekit">
+      </StoreKitConfigurationFileReference>
    </LaunchAction>
    <ProfileAction
       buildConfiguration = "Release"

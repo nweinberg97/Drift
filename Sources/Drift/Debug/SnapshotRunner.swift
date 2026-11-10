@@ -285,25 +285,37 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
     /// Marketing screenshots at 2880×1800 (Apple's largest Mac size): a headline
     /// beside the real UI, scaled up, on a dark ember backdrop.
     private func renderStoreShots(runner: CommandRunner) async {
-        let writing = running("Draft proposal", total: 2_700, left: 2_699.4)
-        let email = running("Reply to emails", total: 1_500, left: 1_453.4)
-        let laundry = running("Code review", total: 3_600, left: 2_462.4)
-        let tea = paused("Prep for standup", total: 600, left: 192)
-        let reading = running("Weekly planning", total: 1_800, left: 1_312.4)
-        // Store shots show a typical day, not the build machine's clock.
+        // Store shots show a mid-morning day, whatever the build machine's
+        // clock says: shift the zone so it's about 10am here.
+        let utc = Calendar(identifier: .gregorian).dateComponents(in: TimeZone(identifier: "UTC")!, from: Date())
+        var offset = 10 * 3_600 - ((utc.hour ?? 0) * 3_600 + (utc.minute ?? 0) * 60)
+        if offset > 14 * 3_600 { offset -= 86_400 }
+        if offset < -12 * 3_600 { offset += 86_400 }
+        let savedZone = NSTimeZone.default
+        NSTimeZone.default = TimeZone(secondsFromGMT: offset / 900 * 900) ?? savedZone
+        defer { NSTimeZone.default = savedZone }
+
+        let writing = running("Draft proposal", total: 2_700, left: 1_920.4)
+        let morning = session("Morning startup", step: 1, left: 371.4)
+        var cycle = PomodoroCycle()
+        cycle.round = 2
+        let pomo = running(nil, total: 1_500, left: 931.4, pomodoro: cycle)
+        let today = Schedule.dayKey(Date())
+        var sprint = ScheduledBlock(name: "Writing sprint", startMinute: 14 * 60, duration: 3_600, days: nil, date: today)
+        sprint.steps = [TimeBlock(name: "Writing", seconds: 1_200), TimeBlock(name: "Editing", seconds: 1_500),
+                        TimeBlock(name: "Reading", seconds: 900)]
         let plan = [
             ScheduledBlock(name: "Deep work", startMinute: 9 * 60, duration: 5_400, days: Array(0...6), date: nil),
-            ScheduledBlock(name: "Client call", startMinute: 13 * 60, duration: 1_800, days: Array(0...6), date: nil),
-            ScheduledBlock(name: "Weekly planning", startMinute: 16 * 60, duration: 1_800, days: [5], date: nil),
+            ScheduledBlock(name: "Client call", startMinute: 11 * 60 + 30, duration: 1_800, days: nil, date: today),
+            sprint,
+            ScheduledBlock(name: "Inbox zero", startMinute: 16 * 60 + 30, duration: 1_200, days: Array(0...6), date: nil),
         ]
 
-        func widget(_ timers: [DriftTimer], primary: UUID?, blocks: [ScheduledBlock] = [], prompt: Int? = nil,
-                    focus: Bool = false, configure: (WidgetUIState) -> Void = { _ in }) -> WidgetView {
+        func widget(_ timers: [DriftTimer], primary: UUID?, blocks: [ScheduledBlock] = [], focus: Bool = false,
+                    configure: (WidgetUIState) -> Void = { _ in }) -> WidgetView {
             store.replaceAll(timers, primary: primary)
             settings.focusSoundEnabled = focus
-            var p: ScheduleStore.Prompt?
-            if let prompt { p = .init(blockID: blocks[prompt].id, deadline: Date().addingTimeInterval(52)) }
-            schedule.replaceAll(blocks, prompt: p)
+            schedule.replaceAll(blocks, prompt: nil)
             let ui = WidgetUIState()
             configure(ui)
             let actions = WidgetActions(openComposer: {}, openVoice: {}, acknowledge: {}, hide: {},
@@ -311,69 +323,82 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             return WidgetView(store: store, settings: settings, ui: ui, schedule: schedule, actions: actions)
         }
 
-        // 1. The launcher.
+        // 1. The launcher: a whole session in one line.
         settings.forgetRecents()
         settings.hasWrittenTask = true
         let model = ComposerModel()
-        model.text = "Draft proposal 45m"
+        model.text = "Morning startup: inbox 10m, plan the day 10m, review calendar 5m"
         let launcher = ComposerView(
             model: model, settings: settings, voice: voice,
             preview: { runner.preview($0) }, plan: { runner.plan($0) },
             submit: {}, startPreset: { _ in }, startRecent: { _ in }, startPomodoro: {},
             toggleVoice: {}, close: {}, resize: { _ in }, autofocus: false
         )
-        let w1 = widget([writing], primary: writing.id)
         await renderShot(
             name: "store-1-launcher",
-            headline: "Write the task.\nDrift keeps the time.",
-            sub: "Press ⌥ Space in any app and type what you're working on and for how long.",
+            headline: "Type your plan.\nDrift keeps the time.",
+            sub: "Press ⌥ Space in any app. One line for a task, or a whole session of time blocks.",
             layout: .stacked
         ) {
-            ZStack {
-                launcher.fixedSize().scaleEffect(1.7).position(x: 720, y: 470)
-                w1.fixedSize().scaleEffect(2.1).position(x: 720, y: 755)
-            }
+            launcher.fixedSize().scaleEffect(1.7).position(x: 720, y: 560)
         }
 
-        // 2. The dial.
-        let w2 = widget([writing], primary: writing.id) { ui in
+        // 2. A session running, block by block.
+        let w2 = widget([morning], primary: morning.id) { ui in ui.expanded = true }
+        await renderShot(name: "store-2-session", headline: "Time blocks that\nhand off on their own.",
+                         sub: "Inbox, then planning, then your calendar: each block starts as the last one ends, with a moment to breathe between.",
+                         layout: .side) {
+            w2.fixedSize().scaleEffect(1.9).position(x: 1_060, y: 450)
+        }
+
+        // 3. The planner timeline.
+        let w3 = widget([], primary: nil, blocks: plan) { ui in
+            ui.editBlock(sprint.id, schedule: self.schedule, routine: false)
+        }
+        await renderShot(name: "store-3-planner", headline: "Plan a session.\nDrag it into place.",
+                         sub: "Pull either end to resize, drag the middle to move, and click + to add a block. It starts on time.",
+                         layout: .side) {
+            w3.fixedSize().scaleEffect(1.6).position(x: 1_060, y: 450)
+        }
+
+        // 4. Today and routines.
+        let w4 = widget([writing], primary: writing.id, blocks: plan) { ui in ui.expanded = true }
+        await renderShot(name: "store-4-today", headline: "Today at a glance.\nRoutines repeat.",
+                         sub: "Type “Deep work 9–10:30 weekdays” once. When it's time, Drift asks, then starts it.",
+                         layout: .side) {
+            w4.fixedSize().scaleEffect(1.8).position(x: 1_060, y: 450)
+        }
+
+        // 5. The dial.
+        let w5 = widget([writing], primary: writing.id) { ui in
             ui.dialID = writing.id
             ui.dialValue = 1_920
         }
-        await renderShot(name: "store-2-dial", headline: "Click the time.\nTurn the dial.",
-                         sub: "Drag a minute at a time, or tap 5, 10, 15, 20, 25, 30 or 45 minutes, 1 or 2 hours.",
+        await renderShot(name: "store-5-dial", headline: "Click the time.\nTurn the dial.",
+                         sub: "Drag a minute at a time, or double-click and type it. Quick lengths are one tap away.",
                          layout: .side) {
-            w2.fixedSize().scaleEffect(1.75).position(x: 1_060, y: 455)
+            w5.fixedSize().scaleEffect(1.75).position(x: 1_060, y: 455)
         }
 
-        // 3. Plan your day.
-        let w3 = widget([email], primary: email.id, blocks: plan, prompt: 0) { ui in ui.expanded = true }
-        await renderShot(name: "store-3-plan", headline: "Plan your day.\nSessions start on time.",
-                         sub: "Type “Deep work 9–10:30 weekdays”. When it's time, Drift asks, then starts it. Move any block just for today.",
+        // 6. Pomodoro with focus sound.
+        let w6 = widget([pomo], primary: pomo.id, focus: true) { ui in ui.expanded = true }
+        await renderShot(name: "store-6-pomodoro", headline: "Pomodoro and soft\nfocus sounds.",
+                         sub: "25/5, 50/10 or 90/15 cycles. Rain, ocean, fireplace, lo-fi and more, made on your Mac.",
                          layout: .side) {
-            w3.fixedSize().scaleEffect(1.85).position(x: 1_060, y: 450)
-        }
-
-        // 4. Several timers, named in place.
-        let w4 = widget([email, laundry, tea, reading], primary: email.id, blocks: plan) { ui in
-            ui.expanded = true
-            ui.renamingID = email.id
-            ui.draft = "Reply to emails"
-        }
-        await renderShot(name: "store-4-several", headline: "Name it in place.\nRun several at once.",
-                         sub: "Click a name to type, a time to change it. Every timer in one small widget.",
-                         layout: .side) {
-            w4.fixedSize().scaleEffect(1.85).position(x: 1_060, y: 450)
-        }
-
-        // 5. Focus sound.
-        let w5 = widget([reading], primary: reading.id, blocks: plan, focus: true) { ui in ui.expanded = true }
-        await renderShot(name: "store-5-sound", headline: "Soft focus sound,\nmade on your Mac.",
-                         sub: "Rain, ocean, fireplace, lo-fi, binaural beats and more. Off until you want it; quiet on breaks.",
-                         layout: .side) {
-            w5.fixedSize().scaleEffect(1.95).position(x: 1_060, y: 450)
+            w6.fixedSize().scaleEffect(1.95).position(x: 1_060, y: 450)
         }
         settings.focusSoundEnabled = false
+
+        // The paywall, for App Review's in-app purchase screenshot.
+        var selected = Purchases.ID.yearly
+        let binding = Binding(get: { selected }, set: { selected = $0 })
+        for (name, trial, dark) in [("50-paywall", true, false), ("51-paywall-dark", true, true), ("52-paywall-ended", false, false)] {
+            let plans = Purchases.ID.plans.map { Purchases.plan($0, price: nil) }
+            let view = PaywallView(ended: !trial, trialAvailable: trial, plans: plans, selected: binding, busy: nil,
+                                   message: nil, startTrial: {}, buy: { _ in }, restore: {}, close: {})
+                .background(Color(nsColor: .windowBackgroundColor))
+            await render(view, name: name, dark: dark)
+        }
     }
 
     private func renderShot<Content: View>(name: String, headline: String, sub: String, layout: ShotLayout,

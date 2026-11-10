@@ -1,0 +1,118 @@
+{
+  "identifier" : "D21F7A3C",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+    {
+      "displayPrice" : "0.0",
+      "familyShareable" : false,
+      "internalID" : "6A1B2C01",
+      "localizations" : [
+        {
+          "description" : "Every feature, free for 7 days. Nothing renews.",
+          "displayName" : "7-Day Free Trial",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "drift.trial",
+      "referenceName" : "7-Day Free Trial",
+      "type" : "NonConsumable"
+    },
+    {
+      "displayPrice" : "4.99",
+      "familyShareable" : true,
+      "internalID" : "6A1B2C02",
+      "localizations" : [
+        {
+          "description" : "Every feature, forever. One-time launch price.",
+          "displayName" : "Drift Lifetime",
+          "locale" : "en_US"
+        }
+      ],
+      "productID" : "drift.lifetime",
+      "referenceName" : "Lifetime",
+      "type" : "NonConsumable"
+    }
+  ],
+  "settings" : {
+    "_applicationInternalID" : "6A1B2C00",
+    "_developerTeamID" : "",
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ],
+    "_timeRate" : 0
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "6A1B2C10",
+      "localizations" : [
+        {
+          "description" : "",
+          "displayName" : "Drift Pro",
+          "locale" : "en_US"
+        }
+      ],
+      "name" : "Drift Pro",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "9.99",
+          "familyShareable" : true,
+          "groupNumber" : 1,
+          "internalID" : "6A1B2C11",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Every feature. Renews yearly.",
+              "displayName" : "Drift Pro Yearly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "drift.pro.yearly",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Pro Yearly",
+          "subscriptionGroupID" : "6A1B2C10",
+          "type" : "RecurringSubscription"
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "1.99",
+          "familyShareable" : true,
+          "groupNumber" : 2,
+          "internalID" : "6A1B2C12",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Every feature. Renews monthly.",
+              "displayName" : "Drift Pro Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "drift.pro.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Pro Monthly",
+          "subscriptionGroupID" : "6A1B2C10",
+          "type" : "RecurringSubscription"
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 3,
+    "minor" : 0
+  }
+}

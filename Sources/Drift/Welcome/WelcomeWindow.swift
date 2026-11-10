@@ -88,6 +88,9 @@ struct WelcomeView: View {
                 .padding(.top, 20)
 
             HStack {
+                Text("A \(AppInfo.company) app")
+                    .font(.system(size: 11))
+                    .foregroundStyle(.tertiary)
                 Spacer()
                 Button("Close", action: close)
                     .keyboardShortcut(.cancelAction)

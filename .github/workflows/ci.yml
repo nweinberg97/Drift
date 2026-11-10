@@ -85,7 +85,7 @@ jobs:
           test -f "$APP/Contents/Resources/Assets.car" || { echo "::error::Asset catalog (app icon) missing"; exit 1; }
           test -f "$APP/Contents/Resources/AppIcon.icns" || echo "::warning::No AppIcon.icns (asset catalog only)"
           /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$APP/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.nweinberg.drift
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.forthventures.drift
           /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Contents/Info.plist"
           lipo -info "$APP"/Contents/MacOS/*
 

@@ -43,6 +43,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     private var statusItem: StatusItemController!
     private var settingsWindow: SettingsWindowController!
     private var welcome: WelcomeWindowController!
+    private let purchases = Purchases.shared
+    private var paywall: PaywallWindowController!
     private let voice = VoiceController()
     private let notifications = NotificationService()
     private let chimes = Chimes()
@@ -63,6 +65,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         settingsWindow = SettingsWindowController(settings: settings)
         welcome = WelcomeWindowController(settings: settings)
         welcome.tryIt = { [weak self] in self?.composer.show() }
+        paywall = PaywallWindowController(purchases: purchases)
+        purchases.start()
+        settingsWindow.showPaywall = { [weak self] in self?.paywall.show() }
 
         runner.showWidget = { [weak self] in self?.widget.show() }
         runner.revealTimers = { [weak self] in self?.widget.reveal() }
@@ -121,7 +126,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
             planToday: { [weak self] in self?.widget.editBlock(nil, routine: false) },
             newRoutine: { [weak self] in self?.widget.editBlock(nil, routine: true) },
             deleteBlock: { [weak self] id in self?.widget.deleteBlock(id) },
-            gettingStarted: { [weak self] in self?.welcome.show() }
+            gettingStarted: { [weak self] in self?.welcome.show() },
+            unlock: { [weak self] in self?.paywall.show() }
         ))
 
         registerHotKeys()
@@ -206,6 +212,16 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     // MARK: - TimerStoreDelegate
 
     func timerStore(_ store: TimerStore, didStart timer: DriftTimer) {
+        // No trial or purchase yet (App Store build only): take the timer back
+        // and show the one screen that explains the plans.
+        guard purchases.isUnlocked else {
+            let id = timer.id
+            DispatchQueue.main.async { [weak self] in
+                self?.store.remove(id)
+                self?.paywall.show()
+            }
+            return
+        }
         if settings.startSound { chimes.playStart(volume: settings.soundVolume) }
         if settings.notifications { notifications.requestAuthorizationIfNeeded() }
     }
@@ -227,6 +243,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
         }
         let persistent = settings.completionSound && settings.completionAlert == .untilDismissed
         widget.presentFinished(timer.id, alerting: persistent, shake: settings.shakeOnFinish)
+        ReviewPrompt.timerFinished()
         guard settings.completionSound else { return }
         if persistent {
             chimes.startRinging(volume: settings.soundVolume)

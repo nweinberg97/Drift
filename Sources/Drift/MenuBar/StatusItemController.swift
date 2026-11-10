@@ -24,6 +24,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         var newRoutine: () -> Void
         var deleteBlock: (UUID) -> Void
         var gettingStarted: () -> Void
+        var unlock: () -> Void
     }
 
     private let item = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
@@ -243,10 +244,19 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             applyShortcut(.toggleWidget, to: toggle)
             menu.addItem(toggle)
         }
+        if !Purchases.shared.isUnlocked {
+            let unlock = action(Purchases.shared.trialAvailable ? "Start Free Trial…" : "Unlock \(AppInfo.name)…", #selector(unlock))
+            unlock.image = NSImage(systemSymbolName: "lock.open", accessibilityDescription: nil)
+            menu.addItem(unlock)
+        }
         let help = NSMenuItem(title: "Help", action: nil, keyEquivalent: "")
         let helpMenu = NSMenu()
         helpMenu.addItem(action("Getting Started", #selector(gettingStarted)))
         helpMenu.addItem(action("Help & Support", #selector(openSupport)))
+        helpMenu.addItem(.separator())
+        let about = NSMenuItem(title: "\(AppInfo.name) \(AppInfo.version) · A \(AppInfo.company) app", action: nil, keyEquivalent: "")
+        about.isEnabled = false
+        helpMenu.addItem(about)
         help.submenu = helpMenu
         menu.addItem(help)
         let settingsItem = action("Settings…", #selector(openSettings))
@@ -468,6 +478,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         actions.deleteBlock(id)
     }
     @objc private func gettingStarted() { actions.gettingStarted() }
+    @objc private func unlock() { actions.unlock() }
     @objc private func openSupport() { NSWorkspace.shared.open(AppInfo.supportURL) }
     @objc private func editBlock(_ sender: NSMenuItem) {
         guard let id = sender.representedObject as? UUID else { return }
