@@ -45,28 +45,33 @@ nav ul a:hover { color: var(--cream); }
 .btn-ghost { color: var(--cream); box-shadow: inset 0 0 0 1px var(--line); }
 .btn-ghost:hover { box-shadow: inset 0 0 0 1px var(--muted); }
 nav .btn { height: 36px; padding: 0 16px; font-size: 14px; }
+.btn svg { width: 10px; height: 10px; fill: currentColor; }
 
 /* hero */
 .hero { padding-block: 56px 40px; text-align: center; position: relative; overflow: hidden; }
-.hero::before { content: ""; position: absolute; inset: -20% -10% auto; height: 120%; background: radial-gradient(40% 50% at 50% 40%, rgba(242,163,110,0.16), transparent 70%); pointer-events: none; }
+/* the glow is a soft circle behind the ring that fades all the way out: no box edge */
+.ring::before { content: ""; position: absolute; inset: -22%; border-radius: 50%; background: radial-gradient(closest-side, rgba(242,163,110,0.20), rgba(242,163,110,0.07) 55%, transparent 100%); pointer-events: none; }
 .ring { position: relative; width: min(340px, 78vw); aspect-ratio: 1; margin: 0 auto; }
 .ring svg { width: 100%; height: 100%; transform: rotate(-90deg); }
 .ring .trk { stroke: var(--ash); }
-.ring .arc { stroke: var(--ember); filter: drop-shadow(0 0 14px rgba(242,163,110,0.45)); transition: stroke-dashoffset 1s linear; }
+.ring svg { position: relative; overflow: visible; }
+.ring .arc { stroke: var(--ember); transition: stroke-dashoffset 1s linear; }
 .ring-in { position: absolute; inset: 0; display: grid; place-content: center; gap: 4px; }
-.ring-in h1 { margin: 0; font: 700 clamp(56px, 11vw, 92px)/0.95 var(--display); letter-spacing: -0.045em; }
+.ring-in h1 { margin: 0; font: 600 clamp(48px, 9.4vw, 78px)/1 var(--display); letter-spacing: 0.01em; }
 .ring-in .tag { font: 500 clamp(18px, 3vw, 22px) var(--display); color: var(--ember); }
 .ring-in .left { font-size: 14px; color: var(--muted); margin-top: 6px; font-variant-numeric: tabular-nums; }
 .ring-in .left b { color: var(--cream); font-weight: 600; }
 .lede { max-width: 34em; margin: 30px auto 0; font-size: clamp(18px, 2.2vw, 21px); color: #DCD4CA; text-wrap: balance; }
 .lede kbd { font: 600 0.85em var(--sans); background: var(--ash); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 6px; padding: 1px 7px; color: var(--cream); }
 .cta { display: flex; justify-content: center; gap: 12px; flex-wrap: wrap; margin-top: 28px; }
-.fine { margin-top: 14px; font-size: 14px; color: var(--muted); }
-.fine b { color: var(--ember); font-weight: 600; }
+.offer { margin: 22px 0 0; display: flex; justify-content: center; align-items: center; gap: 10px; flex-wrap: wrap; }
+.offer span { font: 700 11px var(--sans); letter-spacing: .06em; text-transform: uppercase; color: #1B1714; background: var(--ember); padding: 4px 10px; border-radius: 99px; }
+.offer b { font: 600 22px var(--display); color: var(--cream); }
+.fine { margin-top: 6px; font-size: 13.5px; color: var(--faint); }
 
 /* typing demo under the hero */
-.type { max-width: 560px; margin: 44px auto 0; text-align: left; background: rgba(42,39,36,0.9); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 30px 70px -30px rgba(0,0,0,0.7); overflow: hidden; }
-.type-in { display: flex; align-items: center; gap: 12px; padding: 16px 18px; font: 400 20px/1.4 var(--display); min-height: 62px; }
+.type { max-width: 640px; margin: 36px auto 0; text-align: left; background: rgba(42,39,36,0.9); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 30px 70px -30px rgba(0,0,0,0.7); overflow: hidden; }
+.type-in { display: flex; align-items: center; gap: 14px; padding: 20px 22px; font: 400 clamp(19px, 2.6vw, 24px)/1.4 var(--display); min-height: 72px; }
 .type-in .d { width: 8px; height: 8px; border-radius: 50%; background: var(--ember); flex: none; }
 .type-in .txt { min-width: 0; }
 .type-in .p { color: var(--ember); background: var(--ember-wash); border-radius: 5px; box-shadow: 0 0 0 3px var(--ember-wash); }
@@ -201,7 +206,7 @@ footer a:hover { color: var(--cream); }
   <div class="wrap">
     <a class="brand" href="#top"><img src="icon.png" alt="">Temro</a>
     <ul><li><a href="#features">Features</a></li><li><a href="#pricing">Pricing</a></li><li><a href="more.html">More info</a></li></ul>
-    <a class="btn btn-ember" href="#get">Get Temro</a>
+    <a class="btn btn-ghost" href="#pricing">Get Temro</a>
   </div>
 </nav>
 
@@ -212,8 +217,9 @@ footer a:hover { color: var(--cream); }
       <div class="ring-in"><h1>Temro</h1><div class="tag">Stay with it.</div><div class="left"><b id="left">18:00</b> left on this one</div></div>
     </div>
     <p class="lede">A calm focus timer for your Mac. Press <kbd>⌥ Space</kbd>, type what you're working on and for how long, and get back to it.</p>
-    <div class="cta"><a class="btn btn-ember" href="#pricing">Get the launch offer</a><a class="btn btn-ghost" href="#features">See what it does</a></div>
-    <p class="fine"><b>Launch offer: $4.99 for life.</b> After launch, $1.99/month or $9.99/year.</p>
+    <div class="cta"><a class="btn btn-ember" href="#pricing">Get the launch offer</a><a class="btn btn-ghost" href="#features"><svg viewBox="0 0 10 10" aria-hidden="true"><path d="M2 1l7 4-7 4z"/></svg>See what it does</a></div>
+    <p class="offer"><span>Launch offer</span><b>$4.99 for life</b></p>
+    <p class="fine">After launch: $1.99/month or $9.99/year</p>
 
     <div class="type" aria-label="Example: typing a task into Temro">
       <div class="type-in"><span class="d"></span><span class="txt" id="typed"></span></div>
