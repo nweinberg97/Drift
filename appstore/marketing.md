@@ -4,7 +4,7 @@ Copy for launch, ready to paste. Swap "Drift" for the final name once it clears.
 
 **The one-liner:** A calm focus timer for your Mac. Write what you're working on, and Drift keeps the time.
 
-**The offer:** Free for 7 days with every feature. Then $1.99 a month or $9.99 a year, or **$4.99 for life during launch week only**.
+**The offer:** **$4.99 for life, during launch only.** After that, $1.99 a month or $9.99 a year. Every feature in every plan.
 
 **Three proof points to repeat everywhere:**
 
@@ -40,7 +40,7 @@ Copy for launch, ready to paste. Swap "Drift" for the final name once it clears.
 
   A few things I'm proud of: sessions of time blocks that hand off with a small card, a planner where you drag a session into place, and a widget that shakes when time's up so you notice even with the sound off.
 
-  Launch week only: Lifetime is $4.99, once. After that it's $1.99/month or $9.99/year, and everyone gets 7 days free with every feature. I'd love to hear what you'd change.
+  Launch week only: Lifetime is $4.99, once. After that it's $1.99/month or $9.99/year, with every feature in every plan. I'd love to hear what you'd change.
 
 ---
 
@@ -74,7 +74,7 @@ Copy for launch, ready to paste. Swap "Drift" for the final name once it clears.
 >
 > I made a small Mac timer: ⌥ Space from any app, type "Code review 30m" or "inbox 10m, plan 10m, review 5m", Return. A tiny widget counts down; blocks hand off on their own. It also does routines ("Deep work 9–10:30 weekdays"), Pomodoro and on-device focus sounds. No account, no network access.
 >
-> 7-day free trial; launch-week lifetime is $4.99. Happy to answer anything and take feature requests.
+> Launch-week lifetime is $4.99, then $1.99/month or $9.99/year. Happy to answer anything and take feature requests.
 
 ---
 
@@ -98,7 +98,7 @@ Copy for launch, ready to paste. Swap "Drift" for the final name once it clears.
 >
 > Press ⌥ Space, type "Reply to emails 25m", press Return. That's it. Line up time blocks, plan your day, or run a Pomodoro with soft focus sounds.
 >
-> Everyone gets 7 days free. This week only, Lifetime is $4.99, once. From [date] it's $1.99/month or $9.99/year.
+> This week only, Lifetime is $4.99, once. From [date] it's $1.99/month or $9.99/year.
 >
 > Thanks for being early.
 > Forth Ventures
@@ -129,7 +129,7 @@ Copy for launch, ready to paste. Swap "Drift" for the final name once it clears.
 - The six screenshots (2880 × 1800)
 - 30-second demo video
 - The 50-word description above
-- Fact sheet: Developer Forth Ventures, Vancouver · Platform macOS 13 or newer, Apple silicon and Intel · Price free 7-day trial, $1.99/mo, $9.99/yr, $4.99 lifetime at launch · Launch date [date] · Contact press@[domain]
+- Fact sheet: Developer Forth Ventures, Vancouver · Platform macOS 13 or newer, Apple silicon and Intel · Price $4.99 lifetime at launch, then $1.99/mo or $9.99/yr · Launch date [date] · Contact press@[domain]
 - Founder quote: "I wanted a timer I could start without thinking about the timer. Drift is one keystroke and one line of text, and then it gets out of your way."
 
 ## Launch calendar

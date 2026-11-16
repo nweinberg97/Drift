@@ -29,16 +29,15 @@ The app is a **free download** that unlocks with in-app purchases. Price: **Free
 
 | Reference name | Product ID | Type | Price | Display name (30) | Description (45) |
 |---|---|---|---|---|---|
-| 7-Day Free Trial | `drift.trial` | Non-Consumable | Free | 7-Day Free Trial | Every feature, free for 7 days. No renewal. |
 | Lifetime | `drift.lifetime` | Non-Consumable | $4.99 | Drift Lifetime | Every feature, forever. One-time purchase. |
 | Pro Yearly | `drift.pro.yearly` | Auto-Renewable Subscription | $9.99 / 1 year | Drift Pro Yearly | Every feature. Renews every year. |
 | Pro Monthly | `drift.pro.monthly` | Auto-Renewable Subscription | $1.99 / 1 month | Drift Pro Monthly | Every feature. Renews every month. |
 
 - **Subscription group:** reference name "Drift Pro", display name "Drift Pro". Put Yearly at level 1 and Monthly at level 2.
-- **No introductory offers** on the subscriptions: the free trial is the `drift.trial` purchase, which needs no card and never renews (App Review Guideline 3.1.1 allows this for a free trial).
+- **No free trial and no introductory offers.** The download is free; the paywall asks for a plan before the first timer.
 - **Family Sharing:** turn on for Lifetime and both subscriptions.
 - **Review screenshot** for each product: `50-paywall.png` from the `ci-snapshots` branch (the paywall as it appears in the app).
-- **Review notes** for each product: "Unlocks every feature of the app. The paywall opens when you start a timer without an active plan, or from the menu bar icon → Unlock / Start Free Trial."
+- **Review notes** for each product: "Unlocks every feature of the app. The paywall opens when you start a timer without an active plan, or from the menu bar icon → Unlock Drift."
 - **After launch week:** remove Lifetime from sale (Pricing and Availability → Remove from sale). The app hides it automatically and people who bought it keep it.
 
 ## URLs
@@ -59,13 +58,13 @@ For an app with subscriptions, the description must also include the Terms of Us
 Launch week: lifetime price, launch week only.
 
 ```
-Launch week: get Drift for life for $4.99, once. Or try every feature free for 7 days. Write what you're working on, and Drift keeps the time.
+Launch offer: get Drift for life for $4.99, once. After launch it's $1.99/month or $9.99/year. Write what you're working on, and Drift keeps the time.
 ```
 
 After launch:
 
 ```
-Plan a work session on a timeline, line up time blocks that hand off on their own, and get back to work. Free for 7 days.
+Plan a work session on a timeline, line up time blocks that hand off on their own, and get back to work. From $1.99 a month.
 ```
 
 ## Keywords (100, comma-separated, no spaces)
@@ -83,8 +82,8 @@ Drift is a calm focus timer that lives in the corner of your screen.
 
 Press ⌥ Space in any app, write what you're working on and for how long, and press Return. "Reply to emails 25m." "Draft proposal 45m." A small timer appears, named for your task, and you get back to work.
 
-TRY EVERYTHING FREE FOR 7 DAYS
-No card needed. Then choose Lifetime, Yearly or Monthly. Every feature is in every plan.
+LIFETIME FOR LAUNCH, THEN A SIMPLE PLAN
+During the launch, Lifetime is $4.99, once, and yours forever. After that, $1.99 a month or $9.99 a year. Every feature is in every plan.
 
 START, POMODORO OR PLAN
 With nothing running, the widget offers three ways in:
@@ -171,9 +170,9 @@ All 2880 × 1800 (16:10), rendered from the app's real interface by CI on every 
 ```
 Drift is a menu-bar utility (no Dock icon). On first launch a "Welcome" window explains everything; reopen it from the menu bar icon → Help → Getting Started.
 
-In-app purchases: the app is free to download. Starting a timer without a plan opens the paywall, which offers a free 7-day trial (a $0 non-consumable, no renewal), Lifetime (non-consumable) and Pro Monthly/Yearly (auto-renewable, one group). Restore Purchases, Terms of Use and Privacy links are on the paywall and in Settings → Purchase. The paywall is also in the menu bar → Start Free Trial / Unlock.
+In-app purchases: the app is free to download. Starting a timer without a plan opens the paywall, which offers Lifetime (non-consumable, launch offer) and Pro Monthly/Yearly (auto-renewable, one group). There is no free trial. Restore Purchases, Terms of Use and Privacy links are on the paywall and in Settings → Purchase. The paywall is also in the menu bar → Unlock Drift.
 
-How to test in under a minute (start the free trial first):
+How to test in under a minute (buy Lifetime in the sandbox first):
 1. Press Option-Space from any app. Type "Reply to emails 25m" and press Return. A timer appears in the widget at the top left.
 2. Click the timer's name to rename it. Click its time to open the dial; double-click it to type a time.
 3. Press Option-Space, type "Inbox 1m, plan the day 1m" and press Return. When the first block ends, a card shows what's next and starts it. At the end the widget shakes and shows Session complete.

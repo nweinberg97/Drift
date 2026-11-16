@@ -89,10 +89,10 @@ You'll also see **App Sandbox** (with Audio Input ticked) and **Hardened Runtime
 
 With Drift.storekit attached, every purchase is fake and free.
 
-1. Press **⌥ Space**, type `Test 1m`, press Return. The **Unlock Drift** window should open (no trial or plan yet).
-2. Click **Try everything free for 7 days** → confirm. The window closes; start the timer again and it runs.
-3. Test buying: menu bar: **Debug → StoreKit → Manage Transactions…** shows what you've "bought". Select the trial and click the **delete** (trash) button to remove it, then repeat step 1 and buy **Yearly** or **Lifetime** instead.
-4. Test the trial running out: in **Manage Transactions**, delete the trial, or in the Edit Scheme StoreKit options set a faster time rate for subscriptions.
+1. Press **⌥ Space**, type `Test 1m`, press Return. The **Unlock Drift** window should open (nothing bought yet).
+2. Pick **Lifetime** → **Buy Lifetime** → confirm. The window closes; start the timer again and it runs.
+3. Test buying: menu bar: **Debug → StoreKit → Manage Transactions…** shows what you've "bought". Select the purchase and click the **delete** (trash) button to remove it, then repeat step 1 and subscribe to **Yearly** or **Monthly** instead.
+4. Test a subscription running out: in the Edit Scheme StoreKit options set a faster time rate, or expire it in **Manage Transactions**. Drift should lock and show the paywall again.
 5. **Settings → Purchase** should show your plan, **Restore Purchases**, and **Manage Subscription** for a subscription.
 
 > **Say to Clicky:** "I'm testing StoreKit purchases in Xcode. Show me the Manage Transactions window."
@@ -127,7 +127,7 @@ Needs your paid developer account. Open **appstoreconnect.apple.com**.
 
 Use the table in `appstore/listing.md` → Pricing. The **Product IDs must match exactly**.
 
-1. Left sidebar: **Monetization → In-App Purchases → +**: create **drift.trial** (Non-Consumable, price **Free**) and **drift.lifetime** (Non-Consumable, $4.99).
+1. Left sidebar: **Monetization → In-App Purchases → +**: create **drift.lifetime** (Non-Consumable, $4.99).
 2. **Monetization → Subscriptions → Create** a group **Drift Pro**, then add **drift.pro.yearly** (1 year, $9.99) and **drift.pro.monthly** (1 month, $1.99). Don't add introductory offers.
 3. For each one: display name, description, **Review Screenshot** (from B4), review notes from `listing.md`.
 4. Turn on **Family Sharing** for Lifetime and both subscriptions.
