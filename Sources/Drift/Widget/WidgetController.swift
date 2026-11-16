@@ -61,6 +61,22 @@ final class WidgetController: NSObject, NSWindowDelegate {
             .sink { [weak self] _ in self?.screensChanged() }
             .store(in: &cancellables)
 
+        // After sleep, lid open, login or a fast user switch, displays come
+        // back in stages. Check the widget is really on screen once they've
+        // settled, and again a little later.
+        let workspace = NSWorkspace.shared.notificationCenter
+        for name in [NSWorkspace.didWakeNotification, NSWorkspace.screensDidWakeNotification,
+                     NSWorkspace.sessionDidBecomeActiveNotification] {
+            workspace.publisher(for: name)
+                .sink { [weak self] _ in self?.reassertSoon() }
+                .store(in: &cancellables)
+        }
+        workspace.publisher(for: NSWorkspace.activeSpaceDidChangeNotification)
+            .sink { [weak self] _ in self?.reassert() }
+            .store(in: &cancellables)
+        // Launched at login: the displays may not be ready yet.
+        reassertSoon()
+
         // A card saved in the block editor: keep it on screen for a moment, then let it go.
         ui.$confirmation
             .map { $0 != nil }
@@ -436,31 +452,80 @@ final class WidgetController: NSObject, NSWindowDelegate {
         }
     }
 
-    /// Top-left of the main display, just under the menu bar.
-    func moveToDefaultPosition() {
+    /// Top-left of the main display, just under the menu bar. `remember` is
+    /// false when we're only moving it because its own display is missing,
+    /// so it goes back there when that display returns.
+    func moveToDefaultPosition(remember: Bool = true) {
         guard let screen = NSScreen.screens.first ?? NSScreen.main else { return }
         let visible = screen.visibleFrame
         let size = panel.frame.size
+        repositioning = true
         panel.setFrameOrigin(NSPoint(x: visible.minX + Self.inset, y: visible.maxY - Self.inset * 0.7 - size.height))
-        savePlacement()
+        repositioning = false
+        if remember { savePlacement() }
     }
 
-    /// If the display the widget lived on went away (or resolution changed),
-    /// bring it back somewhere sensible.
+    /// True while Drift moves the panel itself, so the move isn't saved as
+    /// where you want it.
+    private var repositioning = false
+    private var reassertWork: [DispatchWorkItem] = []
+
+    /// A display came, went or changed size.
     private func screensChanged() {
-        let frame = panel.frame
-        let onScreen = NSScreen.screens.contains { $0.visibleFrame.intersects(frame.insetBy(dx: 20, dy: 10)) }
-        if onScreen {
-            panel.setFrame(clamped(frame), display: true)
-        } else {
-            moveToDefaultPosition()
+        reassert()
+        reassertSoon()
+    }
+
+    private func reassertSoon() {
+        reassertWork.forEach { $0.cancel() }
+        reassertWork = [1.0, 4.0].map { delay in
+            let work = DispatchWorkItem { [weak self] in self?.reassert() }
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+            return work
         }
     }
 
+    /// Makes sure a widget that should be showing really is: on a display
+    /// that exists (back on its own display if that one has returned), mostly
+    /// inside the visible area, fully opaque and in front.
+    func reassert() {
+        guard !settings.widgetHidden, hideWork == nil else { return }
+        guard !NSScreen.screens.isEmpty else { return }
+        let size = panel.frame.size
+        repositioning = true
+        if let data = UserDefaults.standard.data(forKey: Self.placementKey),
+           let placement = try? JSONDecoder().decode(Placement.self, from: data),
+           let home = NSScreen.screens.first(where: { $0.displayID == placement.screenID }),
+           panel.screen?.displayID != home.displayID {
+            panel.setFrame(clamped(NSRect(x: placement.x, y: placement.top - size.height, width: size.width, height: size.height)), display: true)
+        }
+        repositioning = false
+        if visibleShare(panel.frame) < 0.6 {
+            moveToDefaultPosition(remember: false)
+        } else {
+            repositioning = true
+            panel.setFrame(clamped(panel.frame), display: true)
+            repositioning = false
+        }
+        panel.level = .floating
+        panel.alphaValue = 1
+        panel.orderFrontRegardless()
+    }
+
+    /// How much of `frame` (0…1) is inside some display's visible area.
+    private func visibleShare(_ frame: NSRect) -> CGFloat {
+        let area = frame.width * frame.height
+        guard area > 0 else { return 1 }
+        let best = NSScreen.screens.map { s -> CGFloat in
+            let i = s.visibleFrame.intersection(frame)
+            return i.isNull ? 0 : i.width * i.height
+        }.max() ?? 0
+        return best / area
+    }
+
     private func ensureOnScreen() {
-        let frame = panel.frame
-        if !NSScreen.screens.contains(where: { $0.visibleFrame.intersects(frame) }) {
-            moveToDefaultPosition()
+        if visibleShare(panel.frame) < 0.6 {
+            moveToDefaultPosition(remember: false)
         }
     }
 
@@ -488,6 +553,8 @@ final class WidgetController: NSObject, NSWindowDelegate {
     }
 
     func windowDidChangeScreen(_ notification: Notification) {
+        // Only remember moves you made, not ones Drift or macOS made for you.
+        guard !repositioning, panel.isVisible, NSEvent.pressedMouseButtons != 0 else { return }
         savePlacement()
     }
 }
