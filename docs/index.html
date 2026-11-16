@@ -188,7 +188,7 @@ footer a:hover { color: var(--cream); }
 .rise { animation: rise .7s cubic-bezier(.2,.8,.2,1) both; animation-timeline: view(); animation-range: entry 0% entry 40%; }
 @keyframes rise { from { transform: translateY(18px); } }
 
-@media (max-width: 900px) { .tiles, .plans { grid-template-columns: minmax(0, 1fr); } nav ul { display: none; } }
+@media (max-width: 900px) { .tiles, .plans { grid-template-columns: minmax(0, 1fr); } nav ul { display: none; } nav .btn { margin-left: auto; } }
 @media (min-width: 600px) and (max-width: 900px) { .tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
 @media (prefers-reduced-motion: reduce) { *, *::before, *::after { animation: none !important; transition: none !important; } .v-type .tw { max-width: none; } .v-blocks .names span:first-child { opacity: 1; } }
 </style>
