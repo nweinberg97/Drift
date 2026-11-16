@@ -64,7 +64,7 @@ struct SettingsView: View {
                         case .subscribed:
                             Button("Manage Subscription") { NSWorkspace.shared.open(Purchases.manageSubscriptionsURL) }
                         default:
-                            Button(purchases.trialAvailable ? "Start Free Trial" : "Unlock \(AppInfo.name)", action: showPaywall)
+                            Button("Unlock \(AppInfo.name)", action: showPaywall)
                         }
                         Button("Restore Purchases") { Task { await purchases.restore() } }
                     }

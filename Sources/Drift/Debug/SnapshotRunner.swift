@@ -392,12 +392,12 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         settings.focusSoundEnabled = false
 
         // The paywall, for App Review's in-app purchase screenshot.
-        var selected = Purchases.ID.yearly
+        var selected = Purchases.ID.lifetime
         let binding = Binding(get: { selected }, set: { selected = $0 })
-        for (name, trial, dark) in [("50-paywall", true, false), ("51-paywall-dark", true, true), ("52-paywall-ended", false, false)] {
+        for (name, dark) in [("50-paywall", false), ("51-paywall-dark", true)] {
             let plans = Purchases.ID.plans.map { Purchases.plan($0, price: nil) }
-            let view = PaywallView(ended: !trial, trialAvailable: trial, plans: plans, selected: binding, busy: nil,
-                                   message: nil, startTrial: {}, buy: { _ in }, restore: {}, close: {})
+            let view = PaywallView(plans: plans, selected: binding, busy: nil,
+                                   message: nil, buy: { _ in }, restore: {}, close: {})
                 .background(Color(nsColor: .windowBackgroundColor))
             await render(view, name: name, dark: dark)
         }

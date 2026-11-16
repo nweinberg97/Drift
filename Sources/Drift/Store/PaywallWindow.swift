@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// The one place Drift asks for money: the free trial first, then three
+/// The one place Drift asks for money: three plans with every feature in each,
 /// plans with every feature in each. Opens when someone without access starts
 /// a timer, and from the menu bar and Settings.
 @MainActor
@@ -39,17 +39,14 @@ final class PaywallWindowController {
 struct PaywallScreen: View {
     @ObservedObject var purchases: Purchases
     let close: () -> Void
-    @State private var selected = Purchases.ID.yearly
+    @State private var selected = Purchases.ID.lifetime
 
     var body: some View {
         PaywallView(
-            ended: purchases.access == .trialEnded,
-            trialAvailable: purchases.trialAvailable,
             plans: purchases.plans,
             selected: $selected,
             busy: purchases.busy,
             message: purchases.message,
-            startTrial: { Task { await purchases.startTrial() } },
             buy: { id in Task { await purchases.buy(id) } },
             restore: { Task { await purchases.restore() } },
             close: close
@@ -62,13 +59,10 @@ struct PaywallScreen: View {
 
 /// Pure view, so snapshots can render it without the App Store.
 struct PaywallView: View {
-    let ended: Bool
-    let trialAvailable: Bool
     let plans: [Purchases.Plan]
     @Binding var selected: String
     let busy: String?
     let message: String?
-    let startTrial: () -> Void
     let buy: (String) -> Void
     let restore: () -> Void
     let close: () -> Void
@@ -83,7 +77,7 @@ struct PaywallView: View {
                     .frame(width: 52, height: 52)
                     .accessibilityHidden(true)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text(ended ? "Your free week is over" : "Unlock \(AppInfo.name)")
+                    Text("Unlock \(AppInfo.name)")
                         .font(.system(size: 21, weight: .semibold))
                     Text("Every feature in every plan. No account, no tracking.")
                         .font(.system(size: 13))
@@ -99,32 +93,6 @@ struct PaywallView: View {
                 Feature(symbol: "waveform", text: "Pomodoro, focus sounds and voice")
             }
             .padding(.bottom, 18)
-
-            if trialAvailable {
-                Button(action: startTrial) {
-                    HStack {
-                        if busy == Purchases.ID.trial { ProgressView().controlSize(.small) }
-                        Text("Try everything free for \(Purchases.trialDays) days")
-                            .font(.system(size: 14, weight: .semibold))
-                    }
-                    .frame(maxWidth: .infinity)
-                }
-                .buttonStyle(.borderedProminent)
-                .tint(Theme.accent)
-                .controlSize(.large)
-                .disabled(busy != nil)
-                Text("No card needed. Nothing renews.")
-                    .font(.system(size: 11))
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity)
-                    .padding(.top, 6)
-                HStack {
-                    Rectangle().fill(Theme.hairline).frame(height: 1)
-                    Text("or unlock now").font(.system(size: 11)).foregroundStyle(.secondary).fixedSize()
-                    Rectangle().fill(Theme.hairline).frame(height: 1)
-                }
-                .padding(.vertical, 14)
-            }
 
             VStack(spacing: 8) {
                 ForEach(plans) { plan in
@@ -142,7 +110,7 @@ struct PaywallView: View {
                     .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(trialAvailable ? Color.primary.opacity(0.75) : Theme.accent)
+                .tint(Theme.accent)
                 .controlSize(.large)
                 .disabled(busy != nil)
                 .padding(.top, 12)

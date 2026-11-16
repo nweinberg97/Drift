@@ -245,7 +245,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
             menu.addItem(toggle)
         }
         if !Purchases.shared.isUnlocked {
-            let unlock = action(Purchases.shared.trialAvailable ? "Start Free Trial…" : "Unlock \(AppInfo.name)…", #selector(unlock))
+            let unlock = action("Unlock \(AppInfo.name)…", #selector(unlock))
             unlock.image = NSImage(systemSymbolName: "lock.open", accessibilityDescription: nil)
             menu.addItem(unlock)
         }

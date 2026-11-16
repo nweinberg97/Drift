@@ -213,7 +213,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
     // MARK: - TimerStoreDelegate
 
     func timerStore(_ store: TimerStore, didStart timer: DriftTimer) {
-        // No trial or purchase yet (App Store build only): take the timer back
+        // Nothing bought yet (App Store build only): take the timer back
         // and show the one screen that explains the plans.
         guard purchases.isUnlocked else {
             let id = timer.id

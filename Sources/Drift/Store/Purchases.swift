@@ -4,9 +4,10 @@ import StoreKit
 
 /// What the person has paid for, read from the App Store with StoreKit 2.
 ///
-/// Drift is a free download with every feature in every plan:
-///   - a free 7-day trial (a $0 one-time purchase, so it needs no card),
-///   - Lifetime, a one-time purchase (the launch early-bird price),
+/// Drift is a free download that unlocks with a purchase before first use
+/// (no free trial). Every feature is in every plan:
+///   - Lifetime, a one-time purchase, sold only during the launch promotion
+///     (remove it from sale in App Store Connect and it disappears here),
 ///   - Pro Monthly or Pro Yearly, auto-renewing subscriptions in one group.
 ///
 /// Only the App Store build (the Xcode project, which defines APPSTORE)
@@ -21,15 +22,12 @@ final class Purchases: ObservableObject {
 
     /// Product IDs. These must match App Store Connect and Drift.storekit.
     enum ID {
-        static let trial = "drift.trial"
         static let lifetime = "drift.lifetime"
         static let yearly = "drift.pro.yearly"
         static let monthly = "drift.pro.monthly"
-        static let all = [trial, lifetime, yearly, monthly]
+        static let all = [lifetime, yearly, monthly]
         static let plans = [lifetime, yearly, monthly]
     }
-
-    static let trialDays = 7
 
     enum Access: Equatable {
         /// Not the App Store build, or not checked yet: nothing is blocked.
@@ -37,9 +35,7 @@ final class Purchases: ObservableObject {
         case checking
         case lifetime
         case subscribed(productID: String, renews: Date?)
-        case trial(ends: Date)
-        case trialEnded
-        /// Never started a trial or bought anything.
+        /// Nothing bought yet, or a subscription that has lapsed.
         case none
     }
 
@@ -63,14 +59,9 @@ final class Purchases: ObservableObject {
 
     var isUnlocked: Bool {
         switch access {
-        case .unlocked, .checking, .lifetime, .subscribed, .trial: return true
-        case .trialEnded, .none: return false
+        case .unlocked, .checking, .lifetime, .subscribed: return true
+        case .none: return false
         }
-    }
-
-    var trialAvailable: Bool {
-        if case .none = access { return true }
-        return false
     }
 
     private init() {
@@ -112,7 +103,6 @@ final class Purchases: ObservableObject {
         guard isAppStoreBuild else { return }
         var lifetime = false
         var subscription: (String, Date?)?
-        var trialStart: Date?
         for await result in Transaction.currentEntitlements {
             guard case .verified(let t) = result, t.revocationDate == nil else { continue }
             switch t.productID {
@@ -122,8 +112,6 @@ final class Purchases: ObservableObject {
                 if t.expirationDate.map({ $0 > Date() }) ?? true {
                     subscription = (t.productID, t.expirationDate)
                 }
-            case ID.trial:
-                trialStart = t.purchaseDate
             default:
                 break
             }
@@ -133,18 +121,13 @@ final class Purchases: ObservableObject {
             access = .lifetime
         } else if let subscription {
             access = .subscribed(productID: subscription.0, renews: subscription.1)
-        } else if let trialStart {
-            let ends = trialStart.addingTimeInterval(TimeInterval(Self.trialDays) * 86_400)
-            if ends > Date() {
-                access = .trial(ends: ends)
-                // Lock again the moment the trial runs out, even mid-session.
-                let timer = Timer(fire: ends, interval: 0, repeats: false) { [weak self] _ in
+            // Check again just after it's due to renew, so a lapse is noticed.
+            if let due = subscription.1 {
+                let timer = Timer(fire: due.addingTimeInterval(60), interval: 0, repeats: false) { [weak self] _ in
                     Task { @MainActor in await self?.refresh() }
                 }
                 RunLoop.main.add(timer, forMode: .common)
                 expiry = timer
-            } else {
-                access = .trialEnded
             }
         } else {
             access = .none
@@ -176,8 +159,6 @@ final class Purchases: ObservableObject {
             message = error.localizedDescription
         }
     }
-
-    func startTrial() async { await buy(ID.trial) }
 
     /// Restore Purchases: asks the App Store to sync this Apple ID's purchases.
     func restore() async {
@@ -220,7 +201,7 @@ final class Purchases: ObservableObject {
         switch id {
         case ID.lifetime:
             return Plan(id: id, title: "Lifetime", price: price ?? "$4.99",
-                        detail: "Pay once, yours forever. Launch price.", badge: "Early bird")
+                        detail: "Pay once, yours forever. Launch offer only.", badge: "Launch offer")
         case ID.yearly:
             return Plan(id: id, title: "Yearly", price: (price ?? "$9.99") + " / year",
                         detail: "Less than a dollar a month.", badge: "Best value")
@@ -239,10 +220,7 @@ final class Purchases: ObservableObject {
             let plan = id == ID.yearly ? "Yearly" : "Monthly"
             if let renews { return "\(plan): renews \(renews.formatted(date: .abbreviated, time: .omitted))." }
             return "\(plan) subscription active."
-        case let .trial(ends):
-            return "Free trial: ends \(ends.formatted(date: .abbreviated, time: .shortened))."
-        case .trialEnded: return "Your free trial has ended."
-        case .none: return "Try everything free for \(Self.trialDays) days."
+        case .none: return "Choose a plan to start using \(AppInfo.name)."
         }
     }
 }
