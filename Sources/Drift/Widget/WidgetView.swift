@@ -1816,7 +1816,7 @@ private struct BlockEditor: View {
             Text("Split evenly").font(.system(size: 11)).foregroundStyle(Theme.tertiaryText)
             ForEach([2, 3, 4], id: \.self) { n in
                 Button("\(n)") { splitEvenly(n, draft) }
-                    .buttonStyle(PillButtonStyle(square: true, selected: count == n))
+                    .buttonStyle(PillButtonStyle(selected: count == n, square: true))
                     .disabled(n > most)
                     .help("Split into \(n) equal parts")
             }
