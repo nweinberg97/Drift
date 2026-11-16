@@ -1,6 +1,6 @@
 # App Store Connect answers
 
-The questionnaires App Store Connect asks, with Drift's answers. Each one is true because of how the app is built; the reason is beside it.
+The questionnaires App Store Connect asks, with Temro's answers. Each one is true because of how the app is built; the reason is beside it.
 
 ## App Privacy ("nutrition label")
 
@@ -23,7 +23,7 @@ Result: **4+**.
 
 ## Export compliance
 
-The Info.plist sets `ITSAppUsesNonExemptEncryption = NO`, so App Store Connect won't ask on each upload. If it ever does: **"None of the algorithms mentioned above"**. Drift uses no encryption of its own (and no network at all).
+The Info.plist sets `ITSAppUsesNonExemptEncryption = NO`, so App Store Connect won't ask on each upload. If it ever does: **"None of the algorithms mentioned above"**. Temro uses no encryption of its own (and no network at all).
 
 ## Content rights
 

@@ -1,4 +1,4 @@
-# Drift in Xcode, step by step
+# Temro in Xcode, step by step
 
 A walkthrough to follow on your Mac with HeyClicky watching your screen. Keep this page open beside Xcode. Each step says **what to do**, **what to say to Clicky** if you get stuck, and **how you know it worked**.
 
@@ -39,12 +39,12 @@ Time: about 45 minutes the first time, plus Apple's waiting times (enrollment an
 
 > **Say to Clicky:** "I'm cloning a GitHub repo in Terminal and opening the Xcode project."
 >
-> **It worked when:** Xcode opens a window titled **Drift** with a file list on the left.
+> **It worked when:** Xcode opens a window titled **Temro** with a file list on the left.
 
 ### A3. Know your way around (30 seconds)
 
-- **Left sidebar (Navigator):** the files. The blue **Drift** icon at the top is the project.
-- **Top bar:** the **▶ Run** button, then the **scheme** (should say **Drift**) and the **destination** (should say **My Mac**).
+- **Left sidebar (Navigator):** the files. The blue **Temro** icon at the top is the project.
+- **Top bar:** the **▶ Run** button, then the **scheme** (should say **Temro**) and the **destination** (should say **My Mac**).
 - **Middle:** the editor. **Right sidebar:** inspectors (you won't need them).
 
 > **Say to Clicky:** "Point out the Run button, the scheme menu and the project navigator."
@@ -63,14 +63,14 @@ Time: about 45 minutes the first time, plus Apple's waiting times (enrollment an
 
 ### B2. Pick your team for signing
 
-1. In the left sidebar click the blue **Drift** project icon.
-2. In the middle, under **TARGETS**, click **Drift** (not DriftCore).
+1. In the left sidebar click the blue **Temro** project icon.
+2. In the middle, under **TARGETS**, click **Temro** (not DriftCore).
 3. Click the **Signing & Capabilities** tab.
 4. Check **Automatically manage signing** is on.
 5. **Team:** choose **Forth Ventures** (or your personal team until the organization account is ready).
-6. **Bundle Identifier** should read **com.forthventures.drift**. Don't change it: it's permanent once uploaded.
+6. **Bundle Identifier** should read **com.forthventures.temro**. Don't change it: it's permanent once uploaded.
 
-> **Say to Clicky:** "I'm on Signing & Capabilities for the Drift target; help me pick my team."
+> **Say to Clicky:** "I'm on Signing & Capabilities for the Temro target; help me pick my team."
 >
 > **It worked when:** no red errors show under Signing. ("Provisioning profile: Xcode Managed Profile" is good.)
 
@@ -78,26 +78,26 @@ You'll also see **App Sandbox** (with Audio Input ticked) and **Hardened Runtime
 
 ### B3. Run it with test purchases
 
-1. Top bar: scheme **Drift**, destination **My Mac**.
+1. Top bar: scheme **Temro**, destination **My Mac**.
 2. Check the purchases test file is attached: **Product → Scheme → Edit Scheme…** → **Run** (left) → **Options** tab → **StoreKit Configuration** should say **Drift.storekit**. If it says None, pick **Drift.storekit** from the menu. Click **Close**.
 3. Press **▶ Run** (⌘ R). The first build takes a minute or two.
-4. If you already have Drift installed from the install script, quit it first (menu bar icon → Quit) so the two don't fight over ⌥ Space.
+4. If you already have Temro installed from the install script, quit it first (menu bar icon → Quit) so the two don't fight over ⌥ Space.
 
-> **It worked when:** the Drift icon appears in your menu bar and the Welcome window opens.
+> **It worked when:** the Temro icon appears in your menu bar and the Welcome window opens.
 
 ### B4. Test the paywall and purchases (no real money)
 
 With Drift.storekit attached, every purchase is fake and free.
 
-1. Press **⌥ Space**, type `Test 1m`, press Return. The **Unlock Drift** window should open (nothing bought yet).
+1. Press **⌥ Space**, type `Test 1m`, press Return. The **Unlock Temro** window should open (nothing bought yet).
 2. Pick **Lifetime** → **Buy Lifetime** → confirm. The window closes; start the timer again and it runs.
 3. Test buying: menu bar: **Debug → StoreKit → Manage Transactions…** shows what you've "bought". Select the purchase and click the **delete** (trash) button to remove it, then repeat step 1 and subscribe to **Yearly** or **Monthly** instead.
-4. Test a subscription running out: in the Edit Scheme StoreKit options set a faster time rate, or expire it in **Manage Transactions**. Drift should lock and show the paywall again.
+4. Test a subscription running out: in the Edit Scheme StoreKit options set a faster time rate, or expire it in **Manage Transactions**. Temro should lock and show the paywall again.
 5. **Settings → Purchase** should show your plan, **Restore Purchases**, and **Manage Subscription** for a subscription.
 
 > **Say to Clicky:** "I'm testing StoreKit purchases in Xcode. Show me the Manage Transactions window."
 >
-> **It worked when:** each plan unlocks Drift, and deleting the transaction locks it again.
+> **It worked when:** each plan unlocks Temro, and deleting the transaction locks it again.
 
 **Take the review screenshot now:** with the paywall open, press **⌘ Shift 4**, then **Space**, then click the paywall window. Save it; App Store Connect asks for it on each in-app purchase.
 
@@ -118,7 +118,7 @@ Needs your paid developer account. Open **appstoreconnect.apple.com**.
 ### C2. Create the app record
 
 1. **Apps → + → New App**.
-2. **Platforms:** macOS. **Name:** your cleared name, e.g. "Driftwell – Focus Timer" (see `listing.md`). **Primary language:** English (U.S.). **Bundle ID:** com.forthventures.drift. **SKU:** forth-drift-mac-1. **User access:** Full.
+2. **Platforms:** macOS. **Name:** your cleared name, e.g. "Driftwell – Focus Timer" (see `listing.md`). **Primary language:** English (U.S.). **Bundle ID:** com.forthventures.temro. **SKU:** forth-drift-mac-1. **User access:** Full.
 3. Click **Create**. The name is now reserved for you.
 
 > **Say to Clicky:** "I'm creating a new macOS app in App Store Connect; help me fill the form."
@@ -128,7 +128,7 @@ Needs your paid developer account. Open **appstoreconnect.apple.com**.
 Use the table in `appstore/listing.md` → Pricing. The **Product IDs must match exactly**.
 
 1. Left sidebar: **Monetization → In-App Purchases → +**: create **drift.lifetime** (Non-Consumable, $4.99).
-2. **Monetization → Subscriptions → Create** a group **Drift Pro**, then add **drift.pro.yearly** (1 year, $9.99) and **drift.pro.monthly** (1 month, $1.99). Don't add introductory offers.
+2. **Monetization → Subscriptions → Create** a group **Temro Pro**, then add **drift.pro.yearly** (1 year, $9.99) and **drift.pro.monthly** (1 month, $1.99). Don't add introductory offers.
 3. For each one: display name, description, **Review Screenshot** (from B4), review notes from `listing.md`.
 4. Turn on **Family Sharing** for Lifetime and both subscriptions.
 
@@ -144,7 +144,7 @@ From `appstore/listing.md` and `appstore/app-store-connect.md`: subtitle, promot
 
 ### D1. Set the version
 
-In `scripts/gen-xcodeproj.py`, `marketing_version` is **1.0** and `build` is **1**. For every new upload, raise `build` (2, 3, …) and run `python3 scripts/gen-xcodeproj.py` in Terminal from the Drift folder. Or change **Version** / **Build** in the Drift target's **General** tab.
+In `scripts/gen-xcodeproj.py`, `marketing_version` is **1.0** and `build` is **1**. For every new upload, raise `build` (2, 3, …) and run `python3 scripts/gen-xcodeproj.py` in Terminal from the Temro folder. Or change **Version** / **Build** in the Temro target's **General** tab.
 
 ### D2. Archive
 
@@ -163,7 +163,7 @@ In `scripts/gen-xcodeproj.py`, `marketing_version` is **1.0** and `build` is **1
 
 ### D4. TestFlight (recommended)
 
-1. **TestFlight → Internal Testing → +** → add yourself → install **TestFlight** from the Mac App Store → install Drift from it.
+1. **TestFlight → Internal Testing → +** → add yourself → install **TestFlight** from the Mac App Store → install Temro from it.
 2. Purchases in TestFlight use the sandbox: free, and subscriptions renew every few minutes.
 3. Add external testers (friends, the waitlist) with a public link; the first external build gets a quick Beta Review.
 
@@ -189,6 +189,6 @@ Review usually takes one to three days. If it comes back with questions, the "If
 | Red "No account for team" or "Signing requires a development team" | Part B1–B2 again; pick a team. |
 | "No such module" or build errors after pulling new code | **Product → Clean Build Folder** (⌘ ⇧ K), then Run. Still failing? Copy the first red error and send it to Claude. |
 | Paywall shows "The App Store didn't respond" when running from Xcode | Edit Scheme → Run → Options → StoreKit Configuration → **Drift.storekit**. |
-| ⌥ Space does nothing | Another Drift (or Raycast/Alfred) has it. Quit the other one. |
-| Upload says the bundle ID isn't available | The App Store Connect app record (C2) must use com.forthventures.drift, under the same team as in Xcode. |
+| ⌥ Space does nothing | Another Temro (or Raycast/Alfred) has it. Quit the other one. |
+| Upload says the bundle ID isn't available | The App Store Connect app record (C2) must use com.forthventures.temro, under the same team as in Xcode. |
 | "Invalid binary: missing purpose string" | Shouldn't happen (they're in Info.plist). Send the email to Claude. |

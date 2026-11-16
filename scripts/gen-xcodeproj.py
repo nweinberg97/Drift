@@ -21,8 +21,8 @@ import os
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 SETTINGS = {
-    "name": "Drift",                          # product + executable name
-    "bundle_id": "com.forthventures.drift",   # permanent once uploaded
+    "name": "Temro",                          # product + executable name
+    "bundle_id": "com.forthventures.temro",   # permanent once uploaded
     "marketing_version": "1.0",
     "build": "1",
     "deployment_target": "13.0",

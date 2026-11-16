@@ -149,7 +149,7 @@ final class Purchases: ObservableObject {
                 if case .verified(let t) = verification { await t.finish() }
                 await refresh()
             case .pending:
-                message = "Waiting for approval. Drift unlocks as soon as it’s approved."
+                message = "Waiting for approval. \(AppInfo.name) unlocks as soon as it’s approved."
             case .userCancelled:
                 break
             @unknown default:

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Builds build/Drift.app from source.
+# Builds build/Temro.app from source.
 #
 #   ./scripts/build-app.sh            release build for this Mac
 #   ./scripts/build-app.sh --universal  Apple silicon + Intel (needs full Xcode)
@@ -10,7 +10,7 @@ set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
 
-APP="build/Drift.app"
+APP="build/Temro.app"
 ARCH_FLAGS=()
 if [[ "${1:-}" == "--universal" ]]; then
   ARCH_FLAGS=(--arch arm64 --arch x86_64)
@@ -20,7 +20,7 @@ echo "› Compiling…"
 swift build -c release ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"}
 BIN_DIR="$(swift build -c release ${ARCH_FLAGS[@]+"${ARCH_FLAGS[@]}"} --show-bin-path)"
 
-echo "› Assembling Drift.app…"
+echo "› Assembling Temro.app…"
 rm -rf "$APP"
 mkdir -p "$APP/Contents/MacOS" "$APP/Contents/Resources"
 cp "$BIN_DIR/Drift" "$APP/Contents/MacOS/Drift"

@@ -21,7 +21,7 @@
 /* End PBXContainerItemProxy section */
 
 /* Begin PBXFileReference section */
-		99006388588CE7D539A04F10 /* Drift.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Drift.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		99006388588CE7D539A04F10 /* Temro.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Temro.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		604E474C4D86A7143B14D714 /* libDriftCore.a */ = {isa = PBXFileReference; explicitFileType = archive.ar; includeInIndex = 0; path = libDriftCore.a; sourceTree = BUILT_PRODUCTS_DIR; };
 		553964F95E0F5DFBBB4736F9 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2AAF0FFB101CFE2B72D7FEC0 /* Drift.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = Drift.entitlements; sourceTree = "<group>"; };
@@ -78,7 +78,7 @@
 		BF7A2D27A78D590BDEF15AF2 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				99006388588CE7D539A04F10 /* Drift.app */,
+				99006388588CE7D539A04F10 /* Temro.app */,
 				604E474C4D86A7143B14D714 /* libDriftCore.a */,
 			);
 			name = Products;
@@ -106,7 +106,7 @@
 			);
 			name = Drift;
 			productName = Drift;
-			productReference = 99006388588CE7D539A04F10 /* Drift.app */;
+			productReference = 99006388588CE7D539A04F10 /* Temro.app */;
 			productType = "com.apple.product-type.application";
 		};
 		63E7F166344BFFC5E31F73F9 /* DriftCore */ = {
@@ -262,8 +262,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.drift;
-				PRODUCT_NAME = Drift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.temro;
+				PRODUCT_NAME = Temro;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APPSTORE";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 			};
@@ -287,8 +287,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.drift;
-				PRODUCT_NAME = Drift;
+				PRODUCT_BUNDLE_IDENTIFIER = com.forthventures.temro;
+				PRODUCT_NAME = Temro;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) APPSTORE";
 				SWIFT_EMIT_LOC_STRINGS = NO;
 			};

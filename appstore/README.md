@@ -1,4 +1,4 @@
-# Getting Drift onto the Mac App Store
+# Getting Temro onto the Mac App Store
 
 > **Doing this for the first time?** Follow [`XCODE-SETUP.md`](XCODE-SETUP.md): the same steps, click by click, including testing purchases. This page is the short reference.
 
@@ -50,16 +50,16 @@ open Drift/Drift.xcodeproj
 ## 4. Sign in and pick your team (once)
 
 1. Xcode → **Settings → Accounts** → **+** → Apple ID → sign in.
-2. In the project navigator click **Drift** (the blue project icon) → target **Drift** → **Signing & Capabilities**.
+2. In the project navigator click **Temro** (the blue project icon) → target **Temro** → **Signing & Capabilities**.
 3. **Team:** choose your name or company. Leave "Automatically manage signing" on.
-   Xcode registers the bundle ID `com.forthventures.drift` for you.
+   Xcode registers the bundle ID `com.forthventures.temro` for you.
 
-Try it: press **⌘R**. Drift runs from Xcode exactly as the store version will (sandboxed). Quit it from its menu bar icon.
+Try it: press **⌘R**. Temro runs from Xcode exactly as the store version will (sandboxed). Quit it from its menu bar icon.
 
 ## 5. Create the app in App Store Connect
 
 1. **appstoreconnect.apple.com → Apps → + → New App**
-2. Platform **macOS**; Name from `listing.md`; Primary language English (U.S.); Bundle ID **com.forthventures.drift**; SKU `forth-drift-mac-1`; User access: Full.
+2. Platform **macOS**; Name from `listing.md`; Primary language English (U.S.); Bundle ID **com.forthventures.temro**; SKU `forth-drift-mac-1`; User access: Full.
 3. Fill in, using `listing.md` and `app-store-connect.md`:
    - **App Information:** subtitle, categories, content rights, age rating
    - **Pricing and Availability:** Free, all regions; then the four in-app purchases in `listing.md`
@@ -68,14 +68,14 @@ Try it: press **⌘R**. Drift runs from Xcode exactly as the store version will 
 
 ## 6. Upload the build
 
-1. In Xcode's toolbar choose the **Drift** scheme and **Any Mac** as the destination.
+1. In Xcode's toolbar choose the **Temro** scheme and **Any Mac** as the destination.
 2. **Product → Archive.** When it finishes, the Organizer opens.
 3. **Distribute App → App Store Connect → Distribute.** Accept the defaults.
 4. Wait for the email "has completed processing" (10–30 minutes).
 
 ## 7. Test it (recommended)
 
-In App Store Connect → **TestFlight**, add yourself as an internal tester, then install the **TestFlight** app on your Mac and install Drift from it. This is exactly what buyers will get.
+In App Store Connect → **TestFlight**, add yourself as an internal tester, then install the **TestFlight** app on your Mac and install Temro from it. This is exactly what buyers will get.
 
 ## 8. Submit for review
 

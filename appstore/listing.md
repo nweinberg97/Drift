@@ -1,7 +1,7 @@
 # App Store listing
 
 Everything to paste into App Store Connect. Character limits are Apple's; every field here fits.
-Where it says **Drift**, use the final name once it clears (`scripts/rename.py` updates the app and website; update this file too).
+Where it says **Temro**, use the final name once it clears (`scripts/rename.py` updates the app and website; update this file too).
 
 ---
 
@@ -9,17 +9,17 @@ Where it says **Drift**, use the final name once it clears (`scripts/rename.py` 
 
 | Field | Value |
 |---|---|
-| **Name** (30) | Drift – Focus Timer *(placeholder until the name clears; e.g. "Driftwell – Focus Timer")* |
+| **Name** (30) | Temro – Focus Timer *(placeholder until the name clears; e.g. "Driftwell – Focus Timer")* |
 | **Subtitle** (30) | Calm timeboxing for your Mac |
 | **Primary category** | Productivity |
 | **Secondary category** | Utilities |
-| **Bundle ID** | com.forthventures.drift *(permanent once uploaded; it never shows to customers)* |
+| **Bundle ID** | com.forthventures.temro *(permanent once uploaded; it never shows to customers)* |
 | **SKU** (private, anything unique) | forth-drift-mac-1 |
 | **Content rights** | Does not contain, show or access third-party content |
 | **Age rating** | 4+ (answer "None" / "No" to every question; see `app-store-connect.md`) |
 | **Copyright** | 2026 Forth Ventures Inc. *(the exact legal name from incorporation)* |
 
-> "Drift Focus: Study Timer" and "DRIFT: Tide Focus Timer" are already on the App Store, and Drift.com/Salesloft own DRIFT for software. Keep "Mac" out of the name (it's fine in the subtitle). See the launch-plan doc, "Name and trademark".
+> "Temro Focus: Study Timer" and "DRIFT: Tide Focus Timer" are already on the App Store, and Drift.com/Salesloft own DRIFT for software. Keep "Mac" out of the name (it's fine in the subtitle). See the launch-plan doc, "Name and trademark".
 
 ## Pricing
 
@@ -29,11 +29,11 @@ The app is a **free download** that unlocks with in-app purchases. Price: **Free
 
 | Reference name | Product ID | Type | Price | Display name (30) | Description (45) |
 |---|---|---|---|---|---|
-| Lifetime | `drift.lifetime` | Non-Consumable | $4.99 | Drift Lifetime | Every feature, forever. One-time purchase. |
-| Pro Yearly | `drift.pro.yearly` | Auto-Renewable Subscription | $9.99 / 1 year | Drift Pro Yearly | Every feature. Renews every year. |
-| Pro Monthly | `drift.pro.monthly` | Auto-Renewable Subscription | $1.99 / 1 month | Drift Pro Monthly | Every feature. Renews every month. |
+| Lifetime | `drift.lifetime` | Non-Consumable | $4.99 | Temro Lifetime | Every feature, forever. One-time purchase. |
+| Pro Yearly | `drift.pro.yearly` | Auto-Renewable Subscription | $9.99 / 1 year | Temro Pro Yearly | Every feature. Renews every year. |
+| Pro Monthly | `drift.pro.monthly` | Auto-Renewable Subscription | $1.99 / 1 month | Temro Pro Monthly | Every feature. Renews every month. |
 
-- **Subscription group:** reference name "Drift Pro", display name "Drift Pro". Put Yearly at level 1 and Monthly at level 2.
+- **Subscription group:** reference name "Temro Pro", display name "Temro Pro". Put Yearly at level 1 and Monthly at level 2.
 - **No free trial and no introductory offers.** The download is free; the paywall asks for a plan before the first timer.
 - **Family Sharing:** turn on for Lifetime and both subscriptions.
 - **Review screenshot** for each product: `50-paywall.png` from the `ci-snapshots` branch (the paywall as it appears in the app).
@@ -58,7 +58,7 @@ For an app with subscriptions, the description must also include the Terms of Us
 Launch week: lifetime price, launch week only.
 
 ```
-Launch offer: get Drift for life for $4.99, once. After launch it's $1.99/month or $9.99/year. Write what you're working on, and Drift keeps the time.
+Launch offer: get Temro for life for $4.99, once. After launch it's $1.99/month or $9.99/year. Write what you're working on, and Temro keeps the time.
 ```
 
 After launch:
@@ -78,7 +78,7 @@ pomodoro,time blocking,deep work,planner,routine,menu bar,productivity,schedule,
 ## Description
 
 ```
-Drift is a calm focus timer that lives in the corner of your screen.
+Temro is a calm focus timer that lives in the corner of your screen.
 
 Press ⌥ Space in any app, write what you're working on and for how long, and press Return. "Reply to emails 25m." "Draft proposal 45m." A small timer appears, named for your task, and you get back to work.
 
@@ -102,12 +102,12 @@ PLAN A WORK SESSION ON A TIMELINE
 • Time blocks show as segments: drag a divider, or click + to add one.
 • Step by 1, 5 or 10 minutes, or click a time and type it.
 • Plan for later today, or make it a routine for your weekdays.
-• When it's time, Drift asks. Ignore it and it starts by itself.
+• When it's time, Temro asks. Ignore it and it starts by itself.
 
 WRITE IT THE WAY YOU'D SAY IT
 • "Client call at 2pm for 30m" is planned for later today.
 • "Deep work 9–10:30 weekdays" becomes a routine.
-• Durations light up in orange, times of day in blue, so you can see Drift understood.
+• Durations light up in orange, times of day in blue, so you can see Temro understood.
 • Press ⌥ Space twice and just say it. Speech is recognised on your Mac.
 
 CHANGE IT WITHOUT STOPPING
@@ -133,7 +133,7 @@ Subscriptions renew automatically until cancelled in your App Store account sett
 Terms of Use: https://www.apple.com/legal/internet-services/itunes/dev/stdeula/
 Privacy: https://nweinberg97.github.io/Drift/privacy.html
 
-Drift is made by Forth Ventures.
+Temro is made by Forth Ventures.
 ```
 
 ## What's New (for later versions)
@@ -150,7 +150,7 @@ All 2880 × 1800 (16:10), rendered from the app's real interface by CI on every 
 
 | # | File | Headline on the image |
 |---|---|---|
-| 1 | `store-1-launcher.png` | Type your plan. Drift keeps the time. |
+| 1 | `store-1-launcher.png` | Type your plan. Temro keeps the time. |
 | 2 | `store-2-session.png` | Time blocks that hand off on their own. |
 | 3 | `store-3-planner.png` | Plan a session. Drag it into place. |
 | 4 | `store-4-today.png` | Today at a glance. Routines repeat. |
@@ -168,7 +168,7 @@ All 2880 × 1800 (16:10), rendered from the app's real interface by CI on every 
 **Notes for the reviewer** (paste as is):
 
 ```
-Drift is a menu-bar utility (no Dock icon). On first launch a "Welcome" window explains everything; reopen it from the menu bar icon → Help → Getting Started.
+Temro is a menu-bar utility (no Dock icon). On first launch a "Welcome" window explains everything; reopen it from the menu bar icon → Help → Getting Started.
 
 In-app purchases: the app is free to download. Starting a timer without a plan opens the paywall, which offers Lifetime (non-consumable, launch offer) and Pro Monthly/Yearly (auto-renewable, one group). There is no free trial. Restore Purchases, Terms of Use and Privacy links are on the paywall and in Settings → Purchase. The paywall is also in the menu bar → Unlock Drift.
 
@@ -176,7 +176,7 @@ How to test in under a minute (buy Lifetime in the sandbox first):
 1. Press Option-Space from any app. Type "Reply to emails 25m" and press Return. A timer appears in the widget at the top left.
 2. Click the timer's name to rename it. Click its time to open the dial; double-click it to type a time.
 3. Press Option-Space, type "Inbox 1m, plan the day 1m" and press Return. When the first block ends, a card shows what's next and starts it. At the end the widget shakes and shows Session complete.
-4. In the widget with nothing running, choose Plan → Today. Drag the session on the timeline and click Plan it. When the time comes, Drift shows Start / In 5 min / Skip today; if ignored it starts by itself after a minute.
+4. In the widget with nothing running, choose Plan → Today. Drag the session on the timeline and click Plan it. When the time comes, Temro shows Start / In 5 min / Skip today; if ignored it starts by itself after a minute.
 5. Option-T hides and shows the widget. Everything is also in the menu bar icon.
 
 Microphone and speech recognition are optional: they're only requested if you press the microphone button or press Option-Space twice. Recognition is on-device.

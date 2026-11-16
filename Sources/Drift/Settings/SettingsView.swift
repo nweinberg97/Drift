@@ -232,7 +232,7 @@ struct SettingsView: View {
             } header: {
                 Text("General")
             } footer: {
-                Text("\(AppInfo.name) works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.\n\n\(AppInfo.name) \(AppInfo.version) · A \(AppInfo.company) app")
+                Text("\(AppInfo.name) works entirely on your Mac: no account, no network, no analytics. Voice is processed on-device and never recorded.\n\n\(AppInfo.name) \(AppInfo.version) · Built by \(AppInfo.company)")
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }

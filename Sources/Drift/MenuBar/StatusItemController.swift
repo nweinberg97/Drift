@@ -254,7 +254,7 @@ final class StatusItemController: NSObject, NSMenuDelegate {
         helpMenu.addItem(action("Getting Started", #selector(gettingStarted)))
         helpMenu.addItem(action("Help & Support", #selector(openSupport)))
         helpMenu.addItem(.separator())
-        let about = NSMenuItem(title: "\(AppInfo.name) \(AppInfo.version) · A \(AppInfo.company) app", action: nil, keyEquivalent: "")
+        let about = NSMenuItem(title: "\(AppInfo.name) \(AppInfo.version) · Built by \(AppInfo.company)", action: nil, keyEquivalent: "")
         about.isEnabled = false
         helpMenu.addItem(about)
         help.submenu = helpMenu

@@ -15,7 +15,7 @@
             <BuildableReference
                BuildableIdentifier = "primary"
                BlueprintIdentifier = "778130C49534A4D32801D13D"
-               BuildableName = "Drift.app"
+               BuildableName = "Temro.app"
                BlueprintName = "Drift"
                ReferencedContainer = "container:Drift.xcodeproj">
             </BuildableReference>
@@ -43,7 +43,7 @@
          <BuildableReference
             BuildableIdentifier = "primary"
             BlueprintIdentifier = "778130C49534A4D32801D13D"
-            BuildableName = "Drift.app"
+            BuildableName = "Temro.app"
             BlueprintName = "Drift"
             ReferencedContainer = "container:Drift.xcodeproj">
          </BuildableReference>

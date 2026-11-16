@@ -338,7 +338,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         )
         await renderShot(
             name: "store-1-launcher",
-            headline: "Type your plan.\nDrift keeps the time.",
+            headline: "Type your plan.\n\(AppInfo.name) keeps the time.",
             sub: "Press ⌥ Space in any app. One line for a task, or a whole session of time blocks.",
             layout: .stacked
         ) {
@@ -366,7 +366,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         // 4. Today and routines.
         let w4 = widget([writing], primary: writing.id, blocks: plan) { ui in ui.expanded = true }
         await renderShot(name: "store-4-today", headline: "Today at a glance.\nRoutines repeat.",
-                         sub: "Type “Deep work 9–10:30 weekdays” once. When it's time, Drift asks, then starts it.",
+                         sub: "Type “Deep work 9–10:30 weekdays” once. When it's time, \(AppInfo.name) asks, then starts it.",
                          layout: .side) {
             w4.fixedSize().scaleEffect(1.8).position(x: 1_060, y: 450)
         }

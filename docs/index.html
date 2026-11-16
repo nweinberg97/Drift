@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Drift: a calm focus timer for Mac</title>
-<meta name="description" content="Drift is a calm focus timer for your Mac. Press ⌥ Space, type what you're working on and for how long, and get back to it.">
+<title>Temro: a calm focus timer for Mac</title>
+<meta name="description" content="Temro is a calm focus timer for your Mac. Press ⌥ Space, type what you're working on and for how long, and get back to it.">
 <meta name="theme-color" content="#161412">
-<meta property="og:title" content="Drift: Stay with it.">
+<meta property="og:title" content="Temro: Stay with it.">
 <meta property="og:description" content="A calm focus timer for your Mac. Type the task and the time, and keep working.">
 <meta property="og:image" content="icon.png">
 <link rel="icon" type="image/png" href="favicon.png">
@@ -176,6 +176,8 @@ h2 { font: 700 clamp(30px, 4.6vw, 46px)/1.08 var(--display); letter-spacing: -0.
 .final img { width: 72px; height: 72px; }
 .final h2 { margin-top: 14px; }
 .final p { color: var(--muted); margin: 12px 0 26px; }
+.final .name-story { margin: 10px 0 0; font: 500 19px var(--display); color: var(--cream); }
+.final .name-story b { color: var(--ember); font-weight: 650; }
 .soon { display: inline-flex; align-items: center; gap: 10px; height: 52px; padding: 0 22px; border-radius: 14px; background: var(--cream); color: #1B1714; font: 600 16px var(--sans); }
 .soon svg { width: 20px; height: 20px; }
 footer { padding-block: 40px 56px; display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: center; color: var(--faint); font-size: 14px; }
@@ -197,9 +199,9 @@ footer a:hover { color: var(--cream); }
 
 <nav aria-label="Main">
   <div class="wrap">
-    <a class="brand" href="#top"><img src="icon.png" alt="">Drift</a>
+    <a class="brand" href="#top"><img src="icon.png" alt="">Temro</a>
     <ul><li><a href="#features">Features</a></li><li><a href="#pricing">Pricing</a></li><li><a href="more.html">More info</a></li></ul>
-    <a class="btn btn-ember" href="#get">Get Drift</a>
+    <a class="btn btn-ember" href="#get">Get Temro</a>
   </div>
 </nav>
 
@@ -207,13 +209,13 @@ footer a:hover { color: var(--cream); }
   <div class="wrap">
     <div class="ring">
       <svg viewBox="0 0 200 200" aria-hidden="true"><circle class="trk" cx="100" cy="100" r="92" fill="none" stroke-width="5"/><circle class="arc" id="arc" cx="100" cy="100" r="92" fill="none" stroke-width="5" stroke-linecap="round" stroke-dasharray="578" stroke-dashoffset="190"/></svg>
-      <div class="ring-in"><h1>Drift</h1><div class="tag">Stay with it.</div><div class="left"><b id="left">18:00</b> left on this one</div></div>
+      <div class="ring-in"><h1>Temro</h1><div class="tag">Stay with it.</div><div class="left"><b id="left">18:00</b> left on this one</div></div>
     </div>
     <p class="lede">A calm focus timer for your Mac. Press <kbd>⌥ Space</kbd>, type what you're working on and for how long, and get back to it.</p>
     <div class="cta"><a class="btn btn-ember" href="#pricing">Get the launch offer</a><a class="btn btn-ghost" href="#features">See what it does</a></div>
     <p class="fine"><b>Launch offer: $4.99 for life.</b> After launch, $1.99/month or $9.99/year.</p>
 
-    <div class="type" aria-label="Example: typing a task into Drift">
+    <div class="type" aria-label="Example: typing a task into Temro">
       <div class="type-in"><span class="d"></span><span class="txt" id="typed"></span></div>
       <div class="type-st" id="typest"><span>Type a task, or a whole session</span><kbd>Return</kbd></div>
     </div>
@@ -223,7 +225,7 @@ footer a:hover { color: var(--cream); }
 <main class="wrap">
   <section id="features">
     <h2 class="rise">Everything a timer should do. Nothing it shouldn't.</h2>
-    <p class="sub rise">Six things Drift does well, all included.</p>
+    <p class="sub rise">Six things Temro does well, all included.</p>
     <div class="tiles">
       <article class="tile rise">
         <div class="viz v-type"><div class="mini"><span class="tw">Reply to emails <b>25m</b></span></div></div>
@@ -275,7 +277,7 @@ footer a:hover { color: var(--cream); }
     <div class="buy rise">
       <div class="buy-l">
         <h2>Get in at launch, keep it for life.</h2>
-        <p class="sub">Everyone who gets Drift during the launch pays once and keeps it forever. After that it's a subscription.</p>
+        <p class="sub">Everyone who gets Temro during the launch pays once and keeps it forever. After that it's a subscription.</p>
         <p class="after"><span>After launch</span> <b>$1.99</b> / month or <b>$9.99</b> / year</p>
       </div>
       <div class="buy-r">
@@ -290,13 +292,14 @@ footer a:hover { color: var(--cream); }
   <div class="final rise" id="get">
     <img src="icon.png" alt="">
     <h2>Stay with it.</h2>
+    <p class="name-story"><b>Tem</b>, for time. <b>Ro</b>, for calm.</p>
     <p>For macOS 13 Ventura or newer, on Apple silicon and Intel.</p>
     <span class="soon"><svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7-1.1-1.7-2.9-1.9-3.5-1.9-1.5-.2-2.9.9-3.7.9-.8 0-1.9-.9-3.2-.8-1.6 0-3.1 1-4 2.4-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8 1.5 0 1.9.8 3.2.8 1.3 0 2.2-1.2 3-2.4.9-1.4 1.3-2.7 1.3-2.8 0 0-2.5-1-2.5-3.9zM14 5.5c.7-.8 1.1-1.9 1-3-1 0-2.1.7-2.8 1.5-.6.7-1.2 1.8-1 2.9 1 .1 2.1-.6 2.8-1.4z"/></svg>Coming soon to the Mac App Store</span>
   </div>
 </main>
 
 <footer class="wrap">
-  <img src="icon.png" alt=""><span>Drift · A Forth Ventures app · © 2026 Forth Ventures</span>
+  <img src="icon.png" alt=""><span>Temro · Built by Forth Ventures · © 2026 Forth Ventures</span>
   <span class="links"><a href="more.html">More info</a><a href="more.html#faq">FAQ</a><a href="more.html#privacy">Privacy</a></span>
 </footer>
 

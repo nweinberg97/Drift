@@ -7,7 +7,7 @@ enum AppInfo {
         let info = Bundle.main.infoDictionary
         if let display = info?["CFBundleDisplayName"] as? String, !display.isEmpty { return display }
         if let bundle = info?["CFBundleName"] as? String, !bundle.isEmpty { return bundle }
-        return "Drift"
+        return "Temro"
     }
 
     /// Help pages on the website. Opening a link uses the browser, so the app

@@ -34,26 +34,26 @@ jobs:
       - name: Test core logic
         run: scripts/ci-run.sh swift test
 
-      - name: Build Drift.app (universal)
+      - name: Build Temro.app (universal)
         run: ./scripts/build-app.sh --universal
 
       - name: Verify signature & entitlements
         run: |
-          codesign --verify --strict --verbose=2 build/Drift.app
-          codesign -d --entitlements - build/Drift.app
-          lipo -info build/Drift.app/Contents/MacOS/Drift
+          codesign --verify --strict --verbose=2 build/Temro.app
+          codesign -d --entitlements - build/Temro.app
+          lipo -info build/Temro.app/Contents/MacOS/Drift
 
       - name: Package with checksum
         run: |
-          ditto -c -k --keepParent build/Drift.app build/Drift.zip
-          shasum -a 256 build/Drift.zip | tee build/Drift.zip.sha256
+          ditto -c -k --keepParent build/Temro.app build/Temro.zip
+          shasum -a 256 build/Temro.zip | tee build/Temro.zip.sha256
 
       - uses: actions/upload-artifact@v4
         with:
           name: Drift
           path: |
-            build/Drift.zip
-            build/Drift.zip.sha256
+            build/Temro.zip
+            build/Temro.zip.sha256
           retention-days: 30
 
   # The App Store build: archives Drift.xcodeproj (unsigned here; you sign
@@ -85,7 +85,7 @@ jobs:
           test -f "$APP/Contents/Resources/Assets.car" || { echo "::error::Asset catalog (app icon) missing"; exit 1; }
           test -f "$APP/Contents/Resources/AppIcon.icns" || echo "::warning::No AppIcon.icns (asset catalog only)"
           /usr/libexec/PlistBuddy -c "Print :ITSAppUsesNonExemptEncryption" "$APP/Contents/Info.plist"
-          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.forthventures.drift
+          /usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$APP/Contents/Info.plist" | grep -q com.forthventures.temro
           /usr/libexec/PlistBuddy -c "Print :LSApplicationCategoryType" "$APP/Contents/Info.plist"
           lipo -info "$APP"/Contents/MacOS/*
 
