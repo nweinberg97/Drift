@@ -261,7 +261,7 @@ struct WidgetView: View {
         }
         .frame(width: width, alignment: .leading)
         .driftSurface(cornerRadius: Theme.cornerRadius * min(scale, 1.15), opacity: settings.widgetOpacity)
-        .overlay(AlertPulse(active: ui.alerting, cornerRadius: Theme.cornerRadius * min(scale, 1.15)))
+        .overlay(AlertPulse(active: ui.alerting || ui.shaking, cornerRadius: Theme.cornerRadius * min(scale, 1.15)))
         .contextMenu { contextMenu }
         .animation(reduceMotion ? nil : Theme.quick, value: ui.expanded)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.hideHint)
@@ -495,7 +495,7 @@ private struct AlertPulse: View {
 
     private func start(_ isActive: Bool) {
         guard isActive, !reduceMotion else { on = false; return }
-        withAnimation(.easeInOut(duration: 0.7).repeatForever(autoreverses: true)) { on = true }
+        withAnimation(.easeInOut(duration: 1.2).repeatForever(autoreverses: true)) { on = true }
     }
 }
 
@@ -1654,15 +1654,9 @@ private struct BlockEditor: View {
                     Button("Don’t split") { ui.blockDraft?.steps = nil }
                         .buttonStyle(PillButtonStyle())
                         .help("Run it as one timer")
-                } else {
-                    Text("Split evenly").font(.system(size: 11)).foregroundStyle(Theme.tertiaryText)
-                    ForEach([2, 3, 4], id: \.self) { n in
-                        Button("\(n)") { splitEvenly(n, draft) }
-                            .buttonStyle(PillButtonStyle(square: true))
-                            .help("Split into \(n) equal parts")
-                    }
                 }
             }
+            splitEvenlyRow(draft)
             Text("Split this work session into steps that run back to back, like inbox → plan → review.")
                 .font(.system(size: 11))
                 .foregroundStyle(Theme.tertiaryText)
@@ -1778,11 +1772,69 @@ private struct BlockEditor: View {
         reframe()
     }
 
+    /// "Split evenly 2 3 4 +": past 4, the + becomes a − n + counter, up to
+    /// 12 blocks and never shorter than 5 minutes each.
+    @ViewBuilder
+    private func splitEvenlyRow(_ draft: BlockDraft) -> some View {
+        let count = draft.steps?.count ?? 0
+        let most = Self.mostBlocks(draft.duration)
+        HStack(spacing: 4) {
+            Text("Split evenly").font(.system(size: 11)).foregroundStyle(Theme.tertiaryText)
+            ForEach([2, 3, 4], id: \.self) { n in
+                Button("\(n)") { splitEvenly(n, draft) }
+                    .buttonStyle(PillButtonStyle(square: true, selected: count == n))
+                    .disabled(n > most)
+                    .help("Split into \(n) equal parts")
+            }
+            if count > 4 {
+                HStack(spacing: 0) {
+                    Button { splitEvenly(count - 1, draft) } label: {
+                        Image(systemName: "minus").font(.system(size: 9, weight: .bold)).frame(width: 22, height: 24).contentShape(Rectangle())
+                    }
+                    .help("One block fewer")
+                    Text("\(count)")
+                        .font(.system(size: 11.5, weight: .semibold))
+                        .monospacedDigit()
+                        .frame(minWidth: 16)
+                    Button { splitEvenly(count + 1, draft) } label: {
+                        Image(systemName: "plus").font(.system(size: 9, weight: .bold)).frame(width: 22, height: 24).contentShape(Rectangle())
+                    }
+                    .disabled(count >= most)
+                    .help(count >= most ? "Blocks stay at least 5 minutes" : "One block more")
+                }
+                .buttonStyle(.plain)
+                .foregroundStyle(Color.white)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.accent))
+            } else {
+                Button { splitEvenly(max(5, count + 1), draft) } label: {
+                    Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                }
+                .buttonStyle(PillButtonStyle(square: true))
+                .disabled(most < 5)
+                .help(most < 5 ? "Make the session longer to split it further" : "More blocks: 5 and up")
+            }
+            if count >= most && count > 0 {
+                Text("max").font(.system(size: 10.5)).foregroundStyle(Theme.tertiaryText)
+            }
+        }
+    }
+
+    static func mostBlocks(_ duration: TimeInterval) -> Int {
+        min(12, max(1, Int(duration / 300)))
+    }
+
+    /// Splits evenly into whole minutes; the last block takes what's left.
+    /// Names you've already given the first blocks are kept.
     private func splitEvenly(_ n: Int, _ draft: BlockDraft) {
+        let n = max(2, min(n, Self.mostBlocks(draft.duration)))
+        guard n >= 2 else { return }
         let each = max(60, (draft.duration / Double(n) / 60).rounded(.down) * 60)
         let base = draft.name.isEmpty ? "Part" : draft.name
+        let old = draft.steps ?? []
+        let generated = { (i: Int, name: String) in name == "\(base) \(i + 1)" || name == "Block \(i + 1)" }
         ui.blockDraft?.steps = (0..<n).map { i in
-            TimeBlock(name: "\(base) \(i + 1)", seconds: i == n - 1 ? draft.duration - each * Double(n - 1) : each)
+            let keep = old.indices.contains(i) && !generated(i, old[i].name) ? old[i].name : "\(base) \(i + 1)"
+            return TimeBlock(name: keep, seconds: i == n - 1 ? draft.duration - each * Double(n - 1) : each)
         }
     }
 

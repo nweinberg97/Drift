@@ -123,46 +123,28 @@ final class WidgetController: NSObject, NSWindowDelegate {
     private var mouseMonitor: Any?
     private var scrollAccumulated: CGFloat = 0
     private var shakeTimer: Timer?
-    private var shakeStart = Date()
-    private var shakeBaseX: CGFloat?
     private var confirmationCheck: DispatchWorkItem?
 
     // MARK: - Shake
 
-    /// Time's up: short shakes every couple of seconds, for up to a minute,
-    /// so it's seen even with the sound off. Any touch stops it.
+    /// Time's up: the card nudges itself a few points every four seconds and
+    /// its border glows, for up to a minute (see TimesUpCard). The window
+    /// itself never moves, so Done stays under the pointer. Any touch stops it.
     func startShake() {
+        guard !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
         ui.shaking = true
-        guard shakeTimer == nil, !NSWorkspace.shared.accessibilityDisplayShouldReduceMotion else { return }
-        shakeStart = Date()
-        shakeBaseX = panel.frame.minX
-        let t = Timer(timeInterval: 1.0 / 60, repeats: true) { [weak self] _ in
-            guard let self else { return }
-            Task { @MainActor in self.shakeStep() }
+        shakeTimer?.invalidate()
+        let t = Timer(timeInterval: 60, repeats: false) { [weak self] _ in
+            Task { @MainActor in self?.stopShake() }
         }
         RunLoop.main.add(t, forMode: .common)
         shakeTimer = t
-    }
-
-    private func shakeStep() {
-        guard let base = shakeBaseX, panel.isVisible else { stopShake(); return }
-        let elapsed = Date().timeIntervalSince(shakeStart)
-        if elapsed > 60 { stopShake(); return }
-        let cycle = elapsed.truncatingRemainder(dividingBy: 2.6)
-        var dx: CGFloat = 0
-        if cycle < 0.62 {
-            let p = cycle / 0.62
-            dx = CGFloat(sin(p * .pi * 8) * 7 * (1 - p))
-        }
-        panel.setFrameOrigin(NSPoint(x: base + dx, y: panel.frame.minY))
     }
 
     func stopShake() {
         ui.shaking = false
         shakeTimer?.invalidate()
         shakeTimer = nil
-        if let base = shakeBaseX { panel.setFrameOrigin(NSPoint(x: base, y: panel.frame.minY)) }
-        shakeBaseX = nil
     }
 
     // MARK: - Scheduled confirmation

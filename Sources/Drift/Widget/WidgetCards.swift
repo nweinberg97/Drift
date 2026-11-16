@@ -273,12 +273,37 @@ struct TimesUpCard: View {
         return s
     }
 
+    /// Pointer over the card: the nudge stops so Done holds still.
+    @State private var hovering = false
+
     var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 60, paused: !ui.shaking || hovering)) { context in
+            let n = ui.shaking && !hovering ? Self.nudge(context.date) : (dx: 0, angle: 0)
+            card(bell: n.angle)
+                .offset(x: n.dx)
+        }
+        .onHover { hovering = $0 }
+    }
+
+    /// Every four seconds: a short, damped nudge of at most 3 points, and the
+    /// bell swings. Stays inside the widget's own padding.
+    static func nudge(_ date: Date) -> (dx: CGFloat, angle: Double) {
+        let t = date.timeIntervalSinceReferenceDate.truncatingRemainder(dividingBy: 4)
+        guard t < 0.6 else { return (0, 0) }
+        let p = t / 0.6
+        let wave = sin(p * .pi * 6) * (1 - p)
+        return (CGFloat(wave * 3), wave * 16)
+    }
+
+    @ViewBuilder
+    private func card(bell: Double) -> some View {
         let room = store.extraLeft(timer)
         let canAdd = !timer.isSession || settings.extraInSessions
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 6) {
-                Image(systemName: "checkmark").font(.system(size: 10, weight: .bold))
+                Image(systemName: timer.isSession ? "checkmark" : "bell.fill")
+                    .font(.system(size: 10, weight: .bold))
+                    .rotationEffect(.degrees(bell), anchor: .top)
                 Text(timer.isSession ? "SESSION COMPLETE" : "TIME’S UP")
                     .font(.system(size: 11, weight: .semibold))
                     .kerning(0.4)
@@ -315,6 +340,7 @@ struct TimesUpCard: View {
                     Text("Done").frame(maxWidth: .infinity)
                 }
                 .buttonStyle(CardButtonStyle(scale: scale, prominent: true))
+                .keyboardShortcut(.defaultAction)
                 .help("Clear it")
                 if canAdd {
                     Button(room.isInfinite || room >= 300 ? "+5 min" : "+\(TimeFormatter.compact(max(60, room)))") {
