@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Drift: Everything It Does</title>
+<link rel="icon" type="image/png" href="favicon.png">
+<style>
+  /* Layout: a sticky contents list beside one reading column; each feature is a screenshot plus a short list of what you can do. */
+  :root {
+    --night: #161412; --coal: #1F1C1A; --ash: #2A2724;
+    --ember: #F2A36E; --ember-hot: #F7B98C; --ember-wash: rgba(242,163,110,0.12);
+    --cream: #F4EEE6; --muted: #A69D93; --faint: #6F675F; --line: rgba(244,238,230,0.09);
+    --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+    --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+    color-scheme: dark;
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body { margin: 0; background: var(--night); color: var(--cream); font: 16.5px/1.6 var(--sans); -webkit-font-smoothing: antialiased; padding-top: env(safe-area-inset-top, 0px); }
+  a { color: var(--ember); }
+  .wrap { max-width: 1120px; margin: 0 auto; padding-left: max(20px, env(safe-area-inset-left, 0px)); padding-right: max(20px, env(safe-area-inset-right, 0px)); }
+  .top { display: flex; align-items: center; gap: 12px; height: 64px; border-bottom: 1px solid var(--line); }
+  .top img { width: 28px; height: 28px; }
+  .top b { font: 650 18px var(--display); }
+  .top a.home { color: var(--cream); text-decoration: none; display: flex; align-items: center; gap: 10px; }
+  .top .btn { margin-left: auto; height: 36px; padding: 0 16px; border-radius: 18px; background: var(--ember); color: #1B1714; font: 600 14px var(--sans); text-decoration: none; display: inline-flex; align-items: center; }
+  .grid { display: grid; grid-template-columns: 210px minmax(0, 1fr); gap: 56px; padding-block: 40px 80px; }
+  .toc { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 24px); align-self: start; font-size: 14px; display: grid; gap: 2px; }
+  .toc a { color: var(--muted); text-decoration: none; padding: 4px 0 4px 12px; border-left: 1px solid var(--line); }
+  .toc a:hover { color: var(--cream); border-left-color: var(--ember); }
+  main { min-width: 0; max-width: 760px; }
+  h1 { font: 700 clamp(34px, 5vw, 50px)/1.05 var(--display); letter-spacing: -0.03em; margin: 0 0 12px; text-wrap: balance; }
+  .intro { color: var(--muted); font-size: 19px; margin: 0; }
+  .feat { padding-top: 56px; scroll-margin-top: 16px; }
+  .feat h2 { font: 700 28px/1.15 var(--display); letter-spacing: -0.02em; margin: 0 0 8px; }
+  .feat > p { color: var(--muted); margin: 0 0 16px; }
+  .feat img { width: 100%; height: auto; display: block; border-radius: 14px; border: 1px solid var(--line); margin-bottom: 18px; }
+  ul.do { margin: 0; padding: 0; list-style: none; display: grid; gap: 10px; }
+  ul.do li { display: grid; grid-template-columns: 18px minmax(0, 1fr); gap: 10px; color: #DCD4CA; }
+  ul.do li::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--ember); margin-top: 9px; }
+  ul.do b { color: var(--cream); font-weight: 600; }
+  kbd { font: 600 0.85em var(--sans); background: var(--ash); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 5px; padding: 0 6px; color: var(--cream); }
+  code { font: 0.9em ui-monospace, "SF Mono", Menlo, monospace; background: var(--ash); border-radius: 5px; padding: 1px 6px; }
+  .ex { margin: 16px 0 0; display: grid; gap: 6px; }
+  .ex div { display: flex; gap: 14px; flex-wrap: wrap; padding: 10px 14px; background: var(--coal); border: 1px solid var(--line); border-radius: 10px; font-size: 15px; }
+  .ex div b { font-weight: 500; color: var(--cream); font-family: var(--display); }
+  .ex div span { color: var(--muted); margin-left: auto; }
+  .tbl { overflow-x: auto; border: 1px solid var(--line); border-radius: 12px; margin-top: 8px; }
+  table { border-collapse: collapse; width: 100%; font-size: 15px; }
+  th, td { text-align: left; padding: 11px 14px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  th { color: var(--muted); font-weight: 600; font-size: 13px; background: var(--coal); }
+  tr:last-child td { border-bottom: 0; }
+  .faq details { border: 1px solid var(--line); border-radius: 12px; background: var(--coal); padding: 0 18px; margin-top: 8px; }
+  .faq summary { cursor: pointer; list-style: none; padding: 15px 0; font-weight: 600; display: flex; justify-content: space-between; gap: 16px; }
+  .faq summary::-webkit-details-marker { display: none; }
+  .faq summary::after { content: "+"; color: var(--ember); font-size: 20px; line-height: 1; }
+  .faq details[open] summary::after { content: "–"; }
+  .faq details p { margin: 0 0 16px; color: var(--muted); }
+  footer { border-top: 1px solid var(--line); padding-block: 28px 48px; color: var(--faint); font-size: 14px; display: flex; gap: 20px; flex-wrap: wrap; }
+  footer a { color: var(--muted); text-decoration: none; }
+  :focus-visible { outline: 2px solid var(--ember); outline-offset: 3px; border-radius: 6px; }
+  @media (max-width: 860px) { .grid { grid-template-columns: minmax(0, 1fr); gap: 24px; } .toc { position: static; grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header class="top"><a class="home" href="./"><img src="icon.png" alt=""><b>Drift</b></a><a class="btn" href="./#get">Get Drift</a></header>
+  <div class="grid">
+    <nav class="toc" aria-label="Contents">
+      <a href="#start">Start a timer</a><a href="#widget">The widget</a><a href="#sessions">Time blocks</a><a href="#plan">Plans and routines</a><a href="#timesup">Time's up</a><a href="#pomodoro">Pomodoro and sounds</a><a href="#yours">Make it yours</a><a href="#pricing">Pricing</a><a href="#privacy">Privacy</a><a href="#faq">FAQ</a>
+    </nav>
+    <main>
+      <h1>Everything Drift does.</h1>
+      <p class="intro">The whole app, feature by feature. Every plan includes all of it.</p>
+
+      <section class="feat" id="start">
+        <h2>Start a timer</h2>
+        <p>Press <kbd>⌥ Space</kbd> in any app. Write what you're doing and for how long, then press Return.</p>
+        <img src="shots/store-1-launcher.jpg" alt="The launcher" width="1440" height="900" loading="lazy">
+        <ul class="do">
+          <li><span><b>Write it the way you'd say it.</b> Durations light up orange, times of day blue, so you can see Drift understood.</span></li>
+          <li><span><b>Or say it.</b> Press <kbd>⌥ Space</kbd> twice, or click the mic. Speech is recognised on your Mac.</span></li>
+          <li><span><b>One tap from the widget.</b> With nothing running, choose Start now, Pomodoro or Plan; Start 25m or a quick length starts straight away.</span></li>
+          <li><span><b>Name it later.</b> Click "Name it" on a running timer and type, or tap the mic and say what it's for.</span></li>
+        </ul>
+        <div class="ex">
+          <div><b>Reply to emails 25m</b><span>a 25-minute timer</span></div>
+          <div><b>Client call at 2pm for 30m</b><span>planned for later today</span></div>
+          <div><b>Deep work 9–10:30 weekdays</b><span>a routine</span></div>
+        </div>
+      </section>
+
+      <section class="feat" id="widget">
+        <h2>The widget</h2>
+        <p>A small timer in the corner of your screen. It never takes focus from the app you're working in.</p>
+        <img src="shots/store-5-dial.jpg" alt="The time dial" width="1440" height="900" loading="lazy">
+        <ul class="do">
+          <li><span><b>Change the time without stopping.</b> Click it for the dial, double-click to type, or use −5 / +5 min.</span></li>
+          <li><span><b>Run several timers at once.</b> The others line up underneath.</span></li>
+          <li><span><b>Hide it with <kbd>⌥ T</kbd>.</b> The time moves to the menu bar until you bring it back.</span></li>
+          <li><span><b>Drag it anywhere.</b> It follows you across Spaces and over full-screen apps.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="sessions">
+        <h2>Time blocks</h2>
+        <p>One session, several steps, back to back.</p>
+        <img src="shots/store-2-session.jpg" alt="A running session" width="1440" height="900" loading="lazy">
+        <ul class="do">
+          <li><span><b>Type them in one line:</b> "Morning startup: inbox 10m, plan the day 10m, review 5m".</span></li>
+          <li><span><b>They hand off on their own,</b> with a short card saying what's next and a moment to breathe.</span></li>
+          <li><span><b>Split any session evenly</b> into 2, 3, 4 or more blocks, then rename or resize each one.</span></li>
+          <li><span><b>Save a session by name</b> and start it again in one click from the menu bar.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="plan">
+        <h2>Plans and routines</h2>
+        <p>Plan a work session for later today, or make it repeat.</p>
+        <img src="shots/store-3-planner.jpg" alt="Planning a work session" width="1440" height="900" loading="lazy">
+        <ul class="do">
+          <li><span><b>Drag it onto the timeline.</b> Move the session, pull either end to resize, step by 1, 5 or 10 minutes.</span></li>
+          <li><span><b>Routines</b> for weekdays, every day or the days you pick.</span></li>
+          <li><span><b>It starts on time.</b> Drift asks Start, In 5 min or Skip; if you're busy it starts by itself after a minute.</span></li>
+          <li><span><b>Today at a glance</b> in the expanded widget and the menu bar.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="timesup">
+        <h2>Time's up</h2>
+        <p>Hard to miss, easy to dismiss.</p>
+        <ul class="do">
+          <li><span><b>A soft chime and a notification,</b> plus a gentle nudge and glow on the widget so you see it with the sound off.</span></li>
+          <li><span><b>It holds still under your pointer,</b> so Done is one click. Return works too.</span></li>
+          <li><span><b>+5 min or Again</b> if you need a little more.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="pomodoro">
+        <h2>Pomodoro and focus sounds</h2>
+        <img src="shots/store-6-pomodoro.jpg" alt="A pomodoro round with focus sound" width="1440" height="900" loading="lazy">
+        <ul class="do">
+          <li><span><b>25/5, 50/10 or 90/15</b> cycles, with a long break after four rounds.</span></li>
+          <li><span><b>Focus sounds made live on your Mac:</b> rain, ocean, fireplace, lo-fi, Hush and more, with their own volume.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="yours">
+        <h2>Make it yours</h2>
+        <ul class="do">
+          <li><span><b>Turn off what you don't use.</b> Planning, Pomodoro, focus sounds or voice disappear from every menu.</span></li>
+          <li><span><b>Your default length and quick lengths,</b> sounds, and how long the widget waits between blocks.</span></li>
+          <li><span><b>Shortcuts, Siri and Raycast</b> through <code>drift://</code> links: start, pause, resume or extend a timer.</span></li>
+          <li><span><b>No Dock icon.</b> Everything is also in the menu bar.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat" id="pricing">
+        <h2>Pricing</h2>
+        <p>Every plan includes every feature. Try it all free for 7 days; no card needed.</p>
+        <div class="tbl"><table>
+          <tr><th>Plan</th><th>Price</th><th>Good to know</th></tr>
+          <tr><td>Lifetime</td><td>$4.99 once</td><td>Launch offer only. Yours forever, with updates.</td></tr>
+          <tr><td>Yearly</td><td>$9.99 / year</td><td>Less than a dollar a month.</td></tr>
+          <tr><td>Monthly</td><td>$1.99 / month</td><td>Cancel any time in the App Store.</td></tr>
+        </table></div>
+        <p style="color:var(--muted);margin-top:12px;font-size:15px">Family Sharing on every plan. US prices shown; the App Store shows your local price.</p>
+      </section>
+
+      <section class="feat" id="privacy">
+        <h2>Privacy</h2>
+        <ul class="do">
+          <li><span><b>No account, no analytics, no ads.</b></span></li>
+          <li><span><b>No network access.</b> The app can't reach the internet. Timers, plans and settings stay on your Mac.</span></li>
+          <li><span><b>Voice stays local:</b> recognised on-device, only while you're talking, never stored.</span></li>
+          <li><span><b>Purchases go through Apple.</b> Drift never sees your Apple ID or payment details.</span></li>
+        </ul>
+      </section>
+
+      <section class="feat faq" id="faq">
+        <h2>Questions</h2>
+        <details><summary>What happens after the 7-day trial?</summary><p>Drift asks you to pick a plan the next time you start a timer. The trial never turns into a charge on its own.</p></details>
+        <details><summary>Is $4.99 lifetime really forever?</summary><p>Yes, including future updates. After launch the Lifetime option comes off the App Store; anyone who bought it keeps it.</p></details>
+        <details><summary>Which Macs does it run on?</summary><p>macOS 13 Ventura or newer, on Apple silicon and Intel Macs.</p></details>
+        <details><summary>How do I cancel a subscription?</summary><p>In the App Store: your name → Account Settings → Subscriptions. You keep Drift until the end of the period you paid for.</p></details>
+        <details><summary>I got a new Mac. How do I get Drift back?</summary><p>Install it from the App Store with the same Apple ID, then Settings → Purchase → Restore Purchases.</p></details>
+      </section>
+    </main>
+  </div>
+  <footer><span>Drift · A Forth Ventures app · © 2026 Forth Ventures</span><a href="./">Home</a><a href="#faq">FAQ</a><a href="#privacy">Privacy</a></footer>
+</div>
+</body>
+</html>

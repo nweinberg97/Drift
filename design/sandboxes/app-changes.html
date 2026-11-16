@@ -1,0 +1,505 @@
+<title>Drift Changes Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: one column of four "stations". Each pairs a short explanation with a live, clickable piece of the widget on a desktop backdrop. */
+:root {
+  --page: #EEEBE7; --page-ink: #1F1C19; --page-muted: #6B645D; --page-line: rgba(31,28,25,0.12);
+  --ember: #B95A2B; --ember-soft: rgba(185,90,43,0.12);
+  /* the widget, light appearance */
+  --desk-a: #E9D9C9; --desk-b: #D7B79C; --desk-c: #B9805C;
+  --surface: rgba(251,249,246,0.94); --hair: rgba(31,28,25,0.12);
+  --ink: #1C1A17; --ink2: rgba(28,26,23,0.62); --ink3: rgba(28,26,23,0.40);
+  --ctl: rgba(0,0,0,0.07); --ctl2: rgba(0,0,0,0.12);
+  --accent: #B0522A; --accent-soft: rgba(176,82,42,0.13); --on-accent: #fff;
+  --shadow: 0 14px 34px -12px rgba(40,30,20,0.38), 0 2px 6px rgba(40,30,20,0.10);
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #141210; --page-ink: #F2EDE6; --page-muted: #A39A91; --page-line: rgba(242,237,230,0.10);
+    --ember: #F2A36E; --ember-soft: rgba(242,163,110,0.14);
+    --desk-a: #1B1816; --desk-b: #2A201A; --desk-c: #8A4C2A;
+    --surface: rgba(38,35,32,0.94); --hair: rgba(255,255,255,0.12);
+    --ink: #F4EFE8; --ink2: rgba(244,239,232,0.62); --ink3: rgba(244,239,232,0.40);
+    --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
+    --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
+    --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #141210; --page-ink: #F2EDE6; --page-muted: #A39A91; --page-line: rgba(242,237,230,0.10);
+  --ember: #F2A36E; --ember-soft: rgba(242,163,110,0.14);
+  --desk-a: #1B1816; --desk-b: #2A201A; --desk-c: #8A4C2A;
+  --surface: rgba(38,35,32,0.94); --hair: rgba(255,255,255,0.12);
+  --ink: #F4EFE8; --ink2: rgba(244,239,232,0.62); --ink3: rgba(244,239,232,0.40);
+  --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
+  --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
+  --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--page-ink); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header h1 { font: 650 clamp(26px, 4vw, 34px)/1.1 var(--display); letter-spacing: -0.02em; margin: 0 0 8px; text-wrap: balance; }
+header p { margin: 0; color: var(--page-muted); max-width: 66ch; }
+.station { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 28px; padding-top: 28px; border-top: 1px solid var(--page-line); align-items: start; }
+.station .copy .n { font: 650 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ember); }
+.station h2 { font: 650 22px/1.2 var(--display); margin: 6px 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+.station .copy p { margin: 0 0 10px; color: var(--page-muted); }
+.station ul { margin: 0; padding-left: 18px; color: var(--page-muted); display: grid; gap: 4px; }
+.station li b, .station p b { color: var(--page-ink); font-weight: 600; }
+.try { margin-top: 12px; font-size: 13.5px; color: var(--page-ink); background: var(--ember-soft); border-radius: 10px; padding: 9px 12px; }
+.desk { position: relative; border-radius: 14px; padding: 28px; min-height: 260px; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(80% 70% at 85% 110%, var(--desk-c), transparent 70%), radial-gradient(70% 60% at 0% 100%, var(--desk-b), transparent 70%), linear-gradient(160deg, var(--desk-a), var(--desk-b));
+  box-shadow: 0 0 0 1px var(--page-line); color: var(--ink); font: 13px/1.35 var(--sans); user-select: none; }
+.toggle { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; border: 1px solid var(--page-line); margin-bottom: 12px; }
+.toggle button { border: 0; background: none; color: var(--page-muted); font: 600 13px var(--sans); padding: 5px 12px; border-radius: 7px; cursor: pointer; }
+.toggle button.on { background: var(--ember); color: #fff; }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.desk button { border: 0; background: none; cursor: pointer; padding: 0; }
+
+/* Widget pieces */
+.widget { position: relative; width: 330px; max-width: 100%; background: var(--surface); backdrop-filter: blur(24px); border: 0.5px solid var(--hair); border-radius: 12px; box-shadow: var(--shadow); }
+.row { display: flex; align-items: baseline; gap: 8px; padding: 9px 8px 9px 13px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; align-self: center; }
+.name { min-width: 0; flex: 0 1 auto; max-width: 190px; font: 500 13px var(--sans); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; border-radius: 5px; padding: 1px 4px; margin-left: -4px; cursor: pointer; }
+.name:hover { background: var(--ctl); color: var(--ink); }
+.name.empty { color: var(--ink3); display: inline-flex; align-items: baseline; gap: 4px; }
+.name.empty svg { width: 10px; height: 10px; align-self: center; }
+.time { font: 500 24px/1 var(--display); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; color: var(--ink); }
+.sp { flex: 1; }
+.ib { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; color: var(--ink2); align-self: center; }
+.ib:hover { background: var(--ctl); color: var(--ink); }
+.ib svg { width: 11px; height: 11px; }
+.prog { height: 2px; margin: 0 13px 9px; background: var(--ctl); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; width: 38%; background: var(--accent); }
+
+/* 1. Name it with a mic */
+.namefield { flex: 1; min-width: 0; display: flex; align-items: center; gap: 2px; height: 26px; border-radius: 7px; background: var(--ctl); box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 4px var(--accent-soft); padding: 0 2px 0 8px; align-self: center; }
+.namefield input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--ink); font: 500 13px var(--sans); }
+.namefield input::placeholder { color: var(--ink3); }
+.mic { width: 22px; height: 22px; border-radius: 6px; display: grid; place-items: center; color: var(--ink2); flex: none; opacity: 0; transform: scale(.8); transition: opacity .18s, transform .18s; }
+.namefield.ready .mic { opacity: 1; transform: none; }
+.mic:hover { background: var(--ctl2); color: var(--ink); }
+.mic svg { width: 12px; height: 12px; }
+.namefield.listening { box-shadow: 0 0 0 1.5px var(--accent), 0 0 0 5px var(--accent-soft); }
+.namefield.listening .mic { background: var(--accent); color: var(--on-accent); }
+.bars { display: none; gap: 2px; align-items: center; height: 12px; margin-right: 4px; }
+.namefield.listening .bars { display: flex; }
+.bars i { width: 2px; border-radius: 1px; background: var(--accent); height: 4px; animation: bar .8s ease-in-out infinite; }
+.bars i:nth-child(2) { animation-delay: .12s; } .bars i:nth-child(3) { animation-delay: .24s; } .bars i:nth-child(4) { animation-delay: .36s; }
+@keyframes bar { 50% { height: 12px; } }
+.hint { padding: 0 13px 10px; font-size: 11px; color: var(--ink3); }
+.hint kbd { font: 500 10.5px var(--sans); background: var(--ctl); border-radius: 4px; padding: 1px 5px; color: var(--ink2); }
+
+/* 2. Time blocks */
+.editor { width: 340px; max-width: 100%; padding: 12px; }
+.ed-h { display: flex; align-items: center; gap: 8px; font-size: 11.5px; color: var(--ink2); }
+.ed-h b { color: var(--ink); font-weight: 650; }
+.chips { display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+.chip { height: 24px; min-width: 26px; padding: 0 8px; border-radius: 7px; background: var(--ctl); font-size: 12px; font-weight: 600; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.chip:hover { background: var(--ctl2); color: var(--ink); }
+.chip.on { background: var(--accent); color: var(--on-accent); }
+.stepper { display: inline-flex; align-items: center; height: 24px; border-radius: 7px; background: var(--ctl); overflow: hidden; }
+.stepper.on { background: var(--accent); color: var(--on-accent); }
+.stepper button { width: 24px; height: 24px; font-size: 14px; font-weight: 600; color: inherit; }
+.stepper button:hover { background: var(--ctl2); }
+.stepper button[disabled] { opacity: .35; cursor: default; background: none; }
+.stepper span { min-width: 18px; text-align: center; font-size: 12px; font-weight: 650; font-variant-numeric: tabular-nums; }
+.plus { width: 24px; height: 24px; border-radius: 7px; background: var(--ctl); font-size: 15px; font-weight: 600; color: var(--ink2); }
+.plus:hover { background: var(--ctl2); color: var(--ink); }
+.lens { display: flex; gap: 4px; margin: 10px 0 8px; align-items: center; font-size: 11.5px; color: var(--ink3); }
+.sbar { display: flex; gap: 2px; height: 30px; border-radius: 7px; overflow: hidden; }
+.seg { min-width: 0; flex: var(--f) 1 0; display: flex; flex-direction: column; justify-content: center; padding: 0 5px; color: var(--on-accent); font-size: 10px; line-height: 1.15; white-space: nowrap; overflow: hidden; background: color-mix(in srgb, var(--accent) calc(62% + var(--k) * 12%), var(--surface)); transition: flex-grow .3s cubic-bezier(.2,.8,.2,1); animation: segin .3s both; }
+.seg b { font-weight: 650; overflow: hidden; text-overflow: ellipsis; }
+.seg em { font-style: normal; opacity: .85; font-variant-numeric: tabular-nums; }
+@keyframes segin { from { opacity: 0; } }
+.slist { margin-top: 8px; display: grid; gap: 1px; max-height: 150px; overflow: auto; }
+.slist div { display: flex; gap: 8px; font-size: 11.5px; color: var(--ink2); padding: 2px 0; }
+.slist em { font-style: normal; color: var(--ink3); width: 36px; font-variant-numeric: tabular-nums; }
+.slist span { margin-left: auto; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.note { font-size: 11px; color: var(--ink3); margin-top: 8px; }
+
+/* 3. Planner timeline */
+.planner { width: 520px; max-width: 100%; padding: 12px; }
+.pl-when { display: flex; align-items: baseline; justify-content: space-between; margin: 0 2px 8px; }
+.pl-when b { font: 500 20px var(--display); font-variant-numeric: tabular-nums; letter-spacing: -0.3px; }
+.pl-when span { font-size: 11.5px; color: var(--ink2); }
+.tl { position: relative; height: 64px; border-radius: 9px; background: var(--ctl); overflow: hidden; touch-action: none; cursor: grab; }
+.tl.dragging { cursor: grabbing; }
+.track { position: absolute; top: 0; bottom: 0; left: 0; will-change: transform; }
+.tick { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--hair); }
+.tick.q { top: 46px; background: var(--hair); opacity: .7; }
+.tick span { position: absolute; top: 4px; left: 4px; font-size: 9.5px; color: var(--ink3); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.nowl { position: absolute; top: 0; bottom: 0; width: 1.5px; background: var(--accent); opacity: .65; }
+.other { position: absolute; top: 24px; height: 28px; border-radius: 6px; background: var(--ctl2); font-size: 10px; color: var(--ink3); padding: 0 6px; display: flex; align-items: center; white-space: nowrap; overflow: hidden; }
+.ghost { position: absolute; top: 22px; height: 32px; border-radius: 7px; border: 1.5px dashed var(--accent); opacity: 0; transition: opacity .15s; }
+.tl.dragging .ghost { opacity: .5; }
+.blk { position: absolute; top: 22px; height: 32px; border-radius: 7px; background: var(--accent); color: var(--on-accent); display: flex; overflow: hidden; box-shadow: 0 2px 6px -2px rgba(0,0,0,.3); cursor: grab; transition: box-shadow .15s, transform .15s; }
+.tl.dragging .blk { box-shadow: 0 10px 22px -8px rgba(0,0,0,.45); transform: translateY(-2px); cursor: grabbing; }
+.blk.settle { transition: left .18s cubic-bezier(.2,.8,.2,1), width .18s cubic-bezier(.2,.8,.2,1), box-shadow .15s, transform .15s; }
+.bseg { flex: var(--f) 1 0; min-width: 0; padding: 0 6px; display: flex; align-items: center; font-size: 10.5px; font-weight: 650; white-space: nowrap; overflow: hidden; border-left: 1px solid rgba(255,255,255,.35); }
+.bseg:first-child { border-left: 0; }
+.edge { position: absolute; top: 0; bottom: 0; width: 12px; cursor: ew-resize; z-index: 2; }
+.edge.l { left: 0; } .edge.r { right: 0; }
+.edge::after { content: ""; position: absolute; top: 9px; bottom: 9px; width: 3px; border-radius: 2px; background: rgba(255,255,255,.85); opacity: 0; transition: opacity .15s; }
+.edge.l::after { left: 3px; } .edge.r::after { right: 3px; }
+.blk:hover .edge::after, .tl.dragging .edge::after { opacity: 1; }
+.bubble { position: absolute; top: 2px; transform: translateX(-50%); font: 600 10.5px var(--sans); color: var(--on-accent); background: var(--accent); padding: 1px 7px; border-radius: 8px; white-space: nowrap; pointer-events: none; opacity: 0; transition: opacity .12s; font-variant-numeric: tabular-nums; }
+.tl.dragging .bubble { opacity: 1; }
+.pl-row { display: flex; align-items: center; gap: 5px; margin-top: 10px; flex-wrap: wrap; font-size: 11.5px; color: var(--ink2); }
+.pl-row .lab { width: 44px; }
+.pl-hint { margin-top: 8px; font-size: 11px; color: var(--ink3); }
+
+/* 4. Time's up */
+.tup { padding: 12px 12px 12px 14px; position: relative; }
+.tup-h { display: flex; align-items: center; gap: 6px; font-size: 11px; font-weight: 650; letter-spacing: 0.03em; text-transform: uppercase; color: var(--accent); }
+.tup-h svg { width: 13px; height: 13px; transform-origin: 50% 10%; }
+.tup-h .at { margin-left: auto; color: var(--ink3); font-weight: 500; text-transform: none; letter-spacing: 0; font-variant-numeric: tabular-nums; }
+.tup-n { margin-top: 5px; font: 600 17px/1.25 var(--display); }
+.tup-s { margin-top: 2px; font-size: 11.5px; color: var(--ink2); }
+.tup-b { display: flex; gap: 6px; margin-top: 12px; }
+.tup-b button { height: 32px; padding: 0 12px; border-radius: 8px; background: var(--ctl); font-size: 12.5px; font-weight: 600; white-space: nowrap; }
+.tup-b button:hover { background: var(--ctl2); }
+.tup-b button.pri { flex: 1; background: var(--accent); color: var(--on-accent); }
+.tup-b button.pri:hover { filter: brightness(1.06); }
+.idlemsg { font-size: 13px; color: var(--ink2); padding: 16px; text-align: center; }
+/* the new nudge: the window stays put; only the card's contents move, a few points, inside its own border */
+.widget.ring::after { content: ""; position: absolute; inset: -1px; border-radius: 13px; box-shadow: 0 0 0 2px var(--accent); opacity: 0; animation: glow 2.4s ease-in-out infinite; pointer-events: none; }
+@keyframes glow { 50% { opacity: .9; } }
+.widget.ring .tup-in { animation: nudge 4s cubic-bezier(.36,.07,.19,.97) infinite; }
+.widget.ring .tup-h svg { animation: bell 4s ease-in-out infinite; }
+@keyframes nudge { 0%, 14%, 100% { transform: none; } 2% { transform: translateX(-3px); } 5% { transform: translateX(3px); } 8% { transform: translateX(-2px); } 11% { transform: translateX(1px); } }
+@keyframes bell { 0%, 16%, 100% { transform: none; } 2% { transform: rotate(-16deg); } 5% { transform: rotate(14deg); } 8% { transform: rotate(-10deg); } 11% { transform: rotate(6deg); } }
+.widget.ring:hover .tup-in, .widget.ring:hover .tup-h svg, .widget.ring:focus-within .tup-in, .widget.ring:focus-within .tup-h svg { animation-play-state: paused; }
+/* today's version, for comparison: the whole window jumps 7 points and tilts */
+.widget.old { animation: oldshake 2.6s ease-in-out infinite; }
+@keyframes oldshake { 0%, 26%, 100% { transform: none; } 3% { transform: translateX(-14px) rotate(-1.4deg); } 6% { transform: translateX(14px) rotate(1.4deg); } 9% { transform: translateX(-12px) rotate(-1deg); } 12% { transform: translateX(12px) rotate(1deg); } 15% { transform: translateX(-8px); } 18% { transform: translateX(8px); } 21% { transform: translateX(-4px); } 24% { transform: translateX(2px); } }
+.toast { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); font-size: 12px; background: var(--surface); color: var(--ink); border: 0.5px solid var(--hair); border-radius: 8px; padding: 5px 10px; box-shadow: var(--shadow); white-space: nowrap; }
+.fire { margin-top: 12px; border: 1px solid var(--page-line); background: none; color: var(--page-ink); border-radius: 9px; padding: 7px 14px; font: 600 13.5px var(--sans); cursor: pointer; }
+.fire:hover { border-color: var(--ember); }
+.bug { padding: 20px 22px; border-radius: 14px; border: 1px solid var(--page-line); }
+.bug h2 { margin-top: 4px; }
+@media (max-width: 820px) { .station { grid-template-columns: minmax(0, 1fr); } .desk { padding: 18px 12px; } }
+@media (prefers-reduced-motion: reduce) { .widget.ring .tup-in, .widget.ring .tup-h svg, .widget.old, .bars i { animation: none; } }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Drift: what's changing</h1>
+    <p>Try each change here before I build it into the app. Everything below is clickable. The landing page has its own preview.</p>
+  </header>
+
+  <!-- 1. Time blocks -->
+  <section class="station" id="blocks">
+    <div class="copy">
+      <div class="n">1 · Time blocks</div>
+      <h2>Split into as many blocks as you like</h2>
+      <p>Today you can only split evenly into 2, 3 or 4. Now a <b>+</b> after the 4 keeps going, and turns into a − / + counter once you're past 4.</p>
+      <ul>
+        <li>Up to 12 blocks, never shorter than 5 minutes each.</li>
+        <li>The bar and the list update as you click.</li>
+        <li>Renaming and resizing single blocks works as before.</li>
+      </ul>
+      <div class="try">Try it: pick 2 hours, then press + until you hit 8.</div>
+    </div>
+    <div class="desk">
+      <div class="widget editor">
+        <div class="ed-h"><b id="bk-title">4 time blocks</b><span class="sp"></span></div>
+        <div class="lens"><span>Session</span><span class="chips" id="bk-lens"></span></div>
+        <div class="ed-h" style="margin-bottom:8px"><span>Split evenly</span><span class="chips" id="bk-chips"></span></div>
+        <div class="sbar" id="bk-bar"></div>
+        <div class="slist" id="bk-list"></div>
+        <div class="note" id="bk-note"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 2. Time's up -->
+  <section class="station" id="shake">
+    <div class="copy">
+      <div class="n">2 · Time's up</div>
+      <h2>Still catches your eye, without jumping around</h2>
+      <p>Today the whole widget jumps sideways and tilts, so Done moves out from under your pointer. Now <b>the widget stays put</b>:</p>
+      <ul>
+        <li>A small nudge inside the card, three points at most, every four seconds.</li>
+        <li>The bell rings and the border glows, so it still stands out with the sound off.</li>
+        <li><b>Everything stops the moment your pointer reaches the card</b>, so Done is always still when you click it.</li>
+        <li>Done is a wide button; Return works too.</li>
+      </ul>
+      <div class="toggle" role="group" aria-label="Compare" style="margin-top:14px"><button class="on" data-mode="new">New</button><button data-mode="old">Today</button></div>
+      <div><button class="fire" id="fire">Finish the timer</button></div>
+    </div>
+    <div class="desk" style="min-height:280px">
+      <div class="widget" id="tw"><div class="idlemsg">Press "Finish the timer".</div></div>
+      <div class="toast" id="tw-toast" hidden></div>
+    </div>
+  </section>
+
+  <!-- 3. Planner -->
+  <section class="station" id="plan">
+    <div class="copy">
+      <div class="n">3 · Plan a work session</div>
+      <h2>Drag the session like a physical block</h2>
+      <p>The session now follows your pointer exactly while you drag, then settles onto the nearest step when you let go.</p>
+      <ul>
+        <li><b>Grab anywhere</b> on the session to move it; the ends show handles on hover to resize.</li>
+        <li>A label above it shows the new time as you drag, and a dashed outline shows where it was.</li>
+        <li>Drag toward either side and the timeline <b>scrolls by itself</b>, so you can move a session across the whole day.</li>
+        <li>Drag on empty space to scroll the day. Arrow keys nudge by one step.</li>
+      </ul>
+      <div class="try">Try it: drag the session past the right edge to move it into the evening.</div>
+    </div>
+    <div class="desk">
+      <div class="widget planner">
+        <div class="pl-when"><b id="pl-time">2:00 – 3:00 PM</b><span id="pl-len">1h · 3 blocks</span></div>
+        <div class="tl" id="tl" tabindex="0" aria-label="Session timeline. Arrow keys move it.">
+          <div class="track" id="track"></div>
+        </div>
+        <div class="pl-row"><span class="lab">Step</span><span class="chips" id="pl-steps"></span></div>
+        <div class="pl-hint">Drag the session to move it, either end to resize. Drag empty space to scroll the day.</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 4. Name it -->
+  <section class="station" id="name">
+    <div class="copy">
+      <div class="n">4 · Name it</div>
+      <h2>Say the task instead of typing it</h2>
+      <p>Click <b>Name it</b> and a small mic appears on the right of the box. Type as usual, or click the mic and say it. It stops listening when you pause, and the name is saved.</p>
+      <ul>
+        <li>"Name it" now sits on the same line as the timer's numbers.</li>
+        <li>Speech is recognised on your Mac, as in the launcher.</li>
+        <li>Esc cancels; Return saves what's there.</li>
+      </ul>
+      <div class="try">Try it: click Name it, then the mic.</div>
+    </div>
+    <div class="desk">
+      <div class="widget" id="nw"></div>
+    </div>
+  </section>
+
+  <!-- 5. Bug -->
+  <section class="bug">
+    <div class="n" style="font:650 12px var(--sans);letter-spacing:.08em;text-transform:uppercase;color:var(--ember)">5 · Behind the scenes</div>
+    <h2 style="font:650 20px/1.2 var(--display);margin:6px 0 8px">The widget comes back after sleep and restarts</h2>
+    <p style="margin:0;color:var(--page-muted);max-width:75ch">Nothing to try here: it's a fix. After you open the lid, log in, or plug in or remove a display, Drift will check the widget is on a screen you can see and bring it back if it isn't (for example when it was last on a display that's no longer connected). It also re-shows itself if macOS hid it while the Mac slept.</p>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const fmt = m => { m = ((m % 1440) + 1440) % 1440; const h = Math.floor(m / 60), mm = m % 60; const h12 = h % 12 || 12; return `${h12}:${String(mm).padStart(2, '0')}`; };
+  const ap = m => (((m % 1440) + 1440) % 1440) < 720 ? 'AM' : 'PM';
+  const dur = s => { const h = Math.floor(s / 60), m = s % 60; return h && m ? `${h}h ${m}m` : h ? `${h}h` : `${m}m`; };
+  const ICON = {
+    pause: '<svg viewBox="0 0 12 12" fill="currentColor"><rect x="2.5" y="2" width="2.4" height="8" rx=".6"/><rect x="7.1" y="2" width="2.4" height="8" rx=".6"/></svg>',
+    x: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"><path d="M3 3l6 6M9 3l-6 6"/></svg>',
+    pencil: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M2 10l.6-2.4L8 2.2l1.8 1.8-5.4 5.4L2 10z"/></svg>',
+    mic: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><rect x="4.6" y="1.5" width="4.8" height="7" rx="2.4"/><path d="M2.6 6.8a4.4 4.4 0 0 0 8.8 0M7 11.2V13"/></svg>',
+    bell: '<svg viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M3.2 10V6.4a3.8 3.8 0 0 1 7.6 0V10l1 1.2H2.2z"/><path d="M5.6 12.4a1.5 1.5 0 0 0 2.8 0"/></svg>'
+  };
+
+  /* ---------- 1. Time blocks ---------- */
+  let total = 60, count = 4;
+  const maxFor = t => Math.min(12, Math.floor(t / 5));
+  function split(t, n) { const base = Math.floor(t / n / 5) * 5 || 5; const out = Array(n).fill(base); let rest = t - base * n; for (let i = 0; rest > 0; i = (i + 1) % n) { const add = Math.min(5, rest); out[i] += add; rest -= add; } return out; }
+  function renderBlocks() {
+    count = Math.min(count, maxFor(total));
+    $('bk-lens').innerHTML = [30, 60, 90, 120, 180].map(t => `<button class="chip ${t === total ? 'on' : ''}" data-t="${t}">${dur(t)}</button>`).join('');
+    const quick = [2, 3, 4].map(n => `<button class="chip ${n === count ? 'on' : ''}" data-n="${n}">${n}</button>`).join('');
+    const mx = maxFor(total);
+    const more = count > 4
+      ? `<span class="stepper on"><button data-d="-1" aria-label="Fewer blocks">−</button><span>${count}</span><button data-d="1" aria-label="More blocks" ${count >= mx ? 'disabled' : ''}>+</button></span>`
+      : `<button class="plus" data-d="1" aria-label="More than 4 blocks" title="More blocks" ${mx <= 4 ? 'disabled style="opacity:.35"' : ''}>+</button>`;
+    $('bk-chips').innerHTML = quick + more;
+    const parts = split(total, count);
+    $('bk-title').textContent = `${count} time blocks`;
+    $('bk-bar').innerHTML = parts.map((m, i) => `<div class="seg" style="--f:${m};--k:${i % 2}"><b>${i + 1}</b><em>${m}m</em></div>`).join('');
+    let at = 14 * 60;
+    $('bk-list').innerHTML = parts.map((m, i) => { const s = at; at += m; return `<div><em>${fmt(s)}</em>Block ${i + 1}<span>${m}m</span></div>`; }).join('');
+    $('bk-note').textContent = count >= mx ? `That's the most for ${dur(total)}: blocks stay at least 5 minutes.` : '';
+  }
+  document.querySelector('#blocks .editor').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b || b.disabled) return;
+    if (b.dataset.t) total = +b.dataset.t;
+    if (b.dataset.n) count = +b.dataset.n;
+    if (b.dataset.d) count = Math.max(2, Math.min(maxFor(total), count + +b.dataset.d));
+    renderBlocks();
+  });
+  renderBlocks();
+
+  /* ---------- 2. Time's up ---------- */
+  let mode = 'new';
+  const tw = $('tw');
+  function idleTW(msg) { tw.className = 'widget'; tw.innerHTML = `<div class="idlemsg">${msg}</div>`; }
+  function fire() {
+    tw.className = 'widget ' + (mode === 'new' ? 'ring' : 'old');
+    tw.innerHTML = `<div class="tup"><div class="tup-in">
+      <div class="tup-h">${ICON.bell}Time's up<span class="at">2:30 PM</span></div>
+      <div class="tup-n">Reply to emails</div>
+      <div class="tup-s">25 minutes, done.</div>
+      <div class="tup-b"><button class="pri" data-a="done">Done</button><button data-a="more">+5 min</button><button data-a="again">Again</button></div>
+    </div></div>`;
+    tw.querySelector('.pri').focus({ preventScroll: true });
+  }
+  tw.addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b) return;
+    const t = $('tw-toast');
+    t.textContent = b.dataset.a === 'done' ? 'Done on the first click.' : b.dataset.a === 'more' ? '5 more minutes added.' : 'Started again: 25 minutes.';
+    t.hidden = false; setTimeout(() => t.hidden = true, 1800);
+    idleTW('Press "Finish the timer" again to compare.');
+  });
+  tw.addEventListener('keydown', e => { if (e.key === 'Enter' && tw.querySelector('.pri')) { e.preventDefault(); tw.querySelector('.pri').click(); } });
+  $('fire').addEventListener('click', fire);
+  document.querySelectorAll('#shake .toggle button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('#shake .toggle button').forEach(x => x.classList.toggle('on', x === b));
+    mode = b.dataset.mode;
+    if (tw.querySelector('.tup')) fire();
+  }));
+
+  /* ---------- 3. Planner ---------- */
+  const PX = 2.2;                 // pixels per minute
+  const DAY_START = 6 * 60, DAY_END = 24 * 60;
+  let start = 14 * 60, length = 60, step = 5, view = 12 * 60 + 30;   // view: minute at the left edge
+  const steps = [20, 25, 15];
+  const tl = $('tl'), track = $('track');
+  function buildTrack() {
+    let h = '';
+    for (let m = DAY_START; m <= DAY_END; m += 15) {
+      const x = (m - DAY_START) * PX;
+      h += m % 60 === 0 ? `<div class="tick" style="left:${x}px"><span>${fmt(m).replace(':00', '')} ${ap(m)}</span></div>` : `<div class="tick q" style="left:${x}px"></div>`;
+    }
+    h += `<div class="nowl" style="left:${(10 * 60 + 47 - DAY_START) * PX}px"></div>`;
+    h += `<div class="other" style="left:${(11 * 60 + 30 - DAY_START) * PX}px;width:${30 * PX}px">Client call</div>`;
+    h += `<div class="other" style="left:${(16 * 60 + 30 - DAY_START) * PX}px;width:${20 * PX}px">Inbox</div>`;
+    h += `<div class="ghost" id="ghost"></div><div class="blk" id="blk"><div class="edge l" data-e="l"></div>${'<div class="bseg"></div>'.repeat(3)}<div class="edge r" data-e="r"></div></div><div class="bubble" id="bubble"></div>`;
+    track.style.width = (DAY_END - DAY_START) * PX + 'px';
+    track.innerHTML = h;
+  }
+  const blk = () => $('blk');
+  function clampView() { const w = tl.clientWidth / PX; view = Math.max(DAY_START, Math.min(DAY_END - w, view)); }
+  function paint(liveStart = start, liveLen = length) {
+    clampView();
+    track.style.transform = `translateX(${-(view - DAY_START) * PX}px)`;
+    const b = blk();
+    b.style.left = (liveStart - DAY_START) * PX + 'px';
+    b.style.width = liveLen * PX + 'px';
+    const total = steps.reduce((a, c) => a + c, 0);
+    [...b.querySelectorAll('.bseg')].forEach((s, i) => { s.style.setProperty('--f', steps[i]); s.textContent = ['Writing', 'Editing', 'Reading'][i] + ' ' + Math.round(liveLen * steps[i] / total) + 'm'; });
+    $('bubble').style.left = (liveStart - DAY_START + liveLen / 2) * PX + 'px';
+    $('bubble').textContent = `${fmt(liveStart)} – ${fmt(liveStart + liveLen)} ${ap(liveStart + liveLen)}`;
+    $('pl-time').textContent = `${fmt(start)} – ${fmt(start + length)} ${ap(start + length)}`;
+    $('pl-len').textContent = `${dur(length)} · 3 blocks`;
+    $('pl-steps').innerHTML = [1, 5, 10].map(s => `<button class="chip ${s === step ? 'on' : ''}" data-s="${s}">${s} min</button>`).join('');
+  }
+  $('pl-steps').addEventListener('click', e => { const b = e.target.closest('[data-s]'); if (b) { step = +b.dataset.s; paint(); } });
+  let drag = null, raf = 0;
+  const snap = m => Math.round(m / step) * step;
+  tl.addEventListener('pointerdown', e => {
+    const b = e.target.closest('.blk');
+    const edge = e.target.closest('.edge');
+    tl.setPointerCapture(e.pointerId);
+    drag = { kind: edge ? edge.dataset.e : b ? 'move' : 'pan', x0: e.clientX, s0: start, l0: length, v0: view, x: e.clientX, liveS: start, liveL: length };
+    blk().classList.remove('settle');
+    if (drag.kind !== 'pan') { tl.classList.add('dragging'); const g = $('ghost'); g.style.left = (start - DAY_START) * PX + 'px'; g.style.width = length * PX + 'px'; }
+    tick();
+  });
+  function tick() {
+    if (!drag) return;
+    // Edge auto-scroll: the closer to the edge, the faster the day slides by.
+    if (drag.kind !== 'pan') {
+      const r = tl.getBoundingClientRect(), zone = 40;
+      const dl = drag.x - r.left, dr = r.right - drag.x;
+      const v = dl < zone ? -(zone - dl) / zone * 6 : dr < zone ? (zone - dr) / zone * 6 : 0;
+      if (v) { view += v / PX * 2.2; drag.v0Shift = (drag.v0Shift || 0) + v / PX * 2.2; }
+    }
+    const dx = (drag.x - drag.x0) / PX + (drag.kind !== 'pan' ? (drag.v0Shift || 0) : 0);
+    if (drag.kind === 'pan') { view = drag.v0 - (drag.x - drag.x0) / PX; paint(); }
+    else {
+      let s = drag.s0, l = drag.l0;
+      if (drag.kind === 'move') s = Math.max(DAY_START, Math.min(DAY_END - l, drag.s0 + dx));
+      if (drag.kind === 'r') l = Math.max(15, Math.min(DAY_END - s, drag.l0 + dx));
+      if (drag.kind === 'l') { const end = drag.s0 + drag.l0; s = Math.max(DAY_START, Math.min(end - 15, drag.s0 + dx)); l = end - s; }
+      drag.liveS = s; drag.liveL = l;
+      const ss = snap(s), sl = drag.kind === 'move' ? l : (drag.kind === 'l' ? (s + l) - ss : snap(s + l) - s);
+      paint(s, l);
+      $('bubble').textContent = `${fmt(ss)} – ${fmt(ss + (drag.kind === 'r' ? snap(s + l) - s : drag.kind === 'l' ? s + l - ss : l))} ${ap(ss + l)}`;
+    }
+    raf = requestAnimationFrame(tick);
+  }
+  tl.addEventListener('pointermove', e => { if (drag) drag.x = e.clientX; });
+  function end() {
+    if (!drag) return;
+    cancelAnimationFrame(raf);
+    if (drag.kind !== 'pan') {
+      const s = drag.liveS, l = drag.liveL;
+      if (drag.kind === 'move') start = snap(s);
+      if (drag.kind === 'r') { start = s; length = Math.max(15, snap(s + l) - s); }
+      if (drag.kind === 'l') { const endM = s + l; start = snap(s); length = endM - start; }
+      blk().classList.add('settle');
+    }
+    tl.classList.remove('dragging');
+    drag = null;
+    paint();
+  }
+  tl.addEventListener('pointerup', end);
+  tl.addEventListener('pointercancel', end);
+  tl.addEventListener('keydown', e => {
+    if (e.key !== 'ArrowLeft' && e.key !== 'ArrowRight') return;
+    e.preventDefault();
+    blk().classList.add('settle');
+    start = Math.max(DAY_START, Math.min(DAY_END - length, start + (e.key === 'ArrowLeft' ? -step : step)));
+    const w = tl.clientWidth / PX;
+    if (start < view + 10) view = start - 10; if (start + length > view + w - 10) view = start + length - w + 10;
+    paint();
+  });
+  tl.addEventListener('wheel', e => { e.preventDefault(); view += (e.deltaX || e.deltaY) / PX * 0.6; paint(); }, { passive: false });
+  buildTrack(); paint();
+  window.addEventListener('resize', () => paint());
+
+  /* ---------- 4. Name it ---------- */
+  const nw = $('nw');
+  let named = '', secs = 24 * 60 + 13;
+  function rowHTML(inner) {
+    return `<div class="row"><span class="dot"></span>${inner}<span class="sp"></span><span class="time">${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}</span><button class="ib" aria-label="Pause">${ICON.pause}</button><button class="ib" aria-label="Stop">${ICON.x}</button></div><div class="prog"><i></i></div>`;
+  }
+  function showName() {
+    nw.innerHTML = rowHTML(named ? `<button class="name" id="nm">${named}</button>` : `<button class="name empty" id="nm">${ICON.pencil}Name it</button>`);
+    $('nm').addEventListener('click', editName);
+  }
+  let listenTimer = null;
+  function editName() {
+    nw.innerHTML = rowHTML(`<div class="namefield" id="nf"><input id="ni" placeholder="What are you working on?" value="${named}" aria-label="Task name"><span class="bars"><i></i><i></i><i></i><i></i></span><button class="mic" id="mic" aria-label="Say it" title="Say it">${ICON.mic}</button></div>`).replace('<span class="sp"></span>', '');
+    nw.insertAdjacentHTML('beforeend', '<div class="hint"><kbd>Return</kbd> save · <kbd>Esc</kbd> cancel · or click the mic and say it</div>');
+    const nf = $('nf'), ni = $('ni');
+    requestAnimationFrame(() => nf.classList.add('ready'));
+    ni.focus();
+    ni.addEventListener('keydown', e => {
+      if (e.key === 'Enter') { named = ni.value.trim(); stopListen(); showName(); }
+      if (e.key === 'Escape') { stopListen(); showName(); }
+    });
+    ni.addEventListener('blur', () => setTimeout(() => { if (document.activeElement !== $('mic') && !nf.classList.contains('listening') && $('ni')) { named = $('ni').value.trim(); showName(); } }, 150));
+    $('mic').addEventListener('mousedown', e => e.preventDefault());
+    $('mic').addEventListener('click', () => nf.classList.contains('listening') ? finish() : listen());
+    function listen() {
+      nf.classList.add('listening'); ni.value = ''; ni.placeholder = 'Listening…';
+      const words = 'Reply to the Henderson email'.split(' ');
+      let i = 0;
+      listenTimer = setInterval(() => {
+        if (i < words.length) { ni.value = words.slice(0, ++i).join(' '); }
+        else finish();
+      }, 380);
+    }
+    function finish() { stopListen(); named = ni.value.trim(); showName(); }
+  }
+  function stopListen() { clearInterval(listenTimer); listenTimer = null; }
+  showName();
+  setInterval(() => { if (secs > 0) secs--; const t = nw.querySelector('.time'); if (t) t.textContent = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`; }, 1000);
+})();
+</script>
