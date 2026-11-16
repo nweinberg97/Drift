@@ -1864,7 +1864,7 @@ private struct BlockEditor: View {
     private func stepTitle(_ d: Int) -> String { d > 0 ? "+\(d)" : "−\(-d)" }
 
     private func hint(twoWay: Bool, block: ScheduledBlock?) -> String {
-        guard twoWay, let block else { return "Drag either end to change the time, the middle to move it. Hover the timeline and scroll to nudge; click a time to type it." }
+        guard twoWay, let block else { return "Drag the session to move it, either end to resize it. Drag empty space or scroll to see more of the day; click a time to type it." }
         let all = allLabel(block)
         return "Save this change for today only, or for " + all.prefix(1).lowercased() + all.dropFirst() + "."
     }
@@ -1946,12 +1946,16 @@ struct BlockTimeline: View {
 
     @ObservedObject var ui: WidgetUIState
     @ObservedObject var schedule: ScheduleStore
+    @StateObject private var dragState = TimelineDragState()
+    @State private var hoverSegment: Int?
+    /// Where the view started when you began dragging empty space.
+    @State private var panOrigin: Int?
+
+    enum Handle: Equatable { case move, start, end, divider(Int) }
+
     /// The draft as it was when the drag began. Every change is worked out from
     /// here and the pointer's total travel, so the block never jitters.
-    @State private var origin: BlockDraft?
-    @State private var hoverSegment: Int?
-
-    private enum Handle: Equatable { case move, start, end, divider(Int) }
+    private var origin: BlockDraft? { dragState.origin }
 
     private let width: CGFloat = 320
     private let height: CGFloat = 54
@@ -1967,21 +1971,35 @@ struct BlockTimeline: View {
             let nowMinute = cal.component(.hour, from: schedule.now) * 60 + cal.component(.minute, from: schedule.now)
             ZStack(alignment: .topLeading) {
                 RoundedRectangle(cornerRadius: 8, style: .continuous).fill(Theme.control)
+                    .contentShape(Rectangle())
+                    .gesture(pan(draft))
                 ForEach(Array(stride(from: (w0 + 29) / 30 * 30, through: w0 + span, by: span <= 180 ? 30 : 60)), id: \.self) { m in
                     Rectangle().fill(Theme.hairline).frame(width: 1, height: height).offset(x: x(m))
+                        .allowsHitTesting(false)
                     Text(Schedule.time(m).replacingOccurrences(of: ":00", with: "").replacingOccurrences(of: " ", with: ""))
                         .font(.system(size: 9))
                         .foregroundStyle(Theme.tertiaryText)
                         .offset(x: x(m) + 3, y: 3)
+                        .allowsHitTesting(false)
                 }
                 ForEach(others) { o in
                     RoundedRectangle(cornerRadius: 5, style: .continuous)
                         .fill(Theme.controlHover)
                         .frame(width: max(4, CGFloat(o.occurrence.duration / 60) / CGFloat(span) * width), height: barHeight - 6)
                         .offset(x: x(o.occurrence.startMinute), y: 19)
+                        .allowsHitTesting(false)
                 }
                 if nowMinute >= w0 && nowMinute <= w0 + span {
                     Rectangle().fill(Theme.accent.opacity(0.7)).frame(width: 1.5, height: height).offset(x: x(nowMinute))
+                        .allowsHitTesting(false)
+                }
+                // Where it was before this drag, as a faint outline.
+                if let o = origin {
+                    RoundedRectangle(cornerRadius: 6, style: .continuous)
+                        .strokeBorder(Theme.accent.opacity(0.55), style: StrokeStyle(lineWidth: 1.2, dash: [4, 3]))
+                        .frame(width: max(26, CGFloat(o.duration / 60) / CGFloat(span) * width), height: barHeight)
+                        .offset(x: x(o.startMinute), y: 18)
+                        .allowsHitTesting(false)
                 }
                 block(draft, x: x(draft.startMinute))
             }
@@ -2042,8 +2060,9 @@ struct BlockTimeline: View {
                 }
             }
             .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
-            .shadow(color: .black.opacity(0.2), radius: 2, y: 1)
-            .pointer(.openHand)
+            .shadow(color: .black.opacity(dragging ? 0.35 : 0.2), radius: dragging ? 6 : 2, y: dragging ? 3 : 1)
+            .offset(y: dragging ? -1 : 0)
+            .pointer(dragging ? .closedHand : .openHand)
             .gesture(drag(.move))
 
             // Between two time blocks: drag to move time from one to the other.
@@ -2081,23 +2100,78 @@ struct BlockTimeline: View {
         .pointer(.resizeLeftRight)
     }
 
+    /// While you drag, the session follows the pointer minute by minute with
+    /// no snapping; letting go settles it onto the nearest step. Near either
+    /// side the day scrolls by itself, so a session can cross the whole day.
     private func drag(_ handle: Handle) -> some Gesture {
         DragGesture(minimumDistance: 1, coordinateSpace: .named("timeline"))
             .onChanged { g in
                 guard let current = ui.blockDraft else { return }
-                if origin == nil { origin = current }
-                guard let o = origin else { return }
-                ui.blockDraft = Self.apply(handle, to: o, minutes: Double(g.translation.width / width) * Double(max(60, o.windowSpan)),
-                                           step: NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep)
-            }
-            .onEnded { _ in
-                origin = nil
-                // Keep the block in view after a long drag.
-                if var d = ui.blockDraft {
-                    BlockTimeline.frame(&d)
-                    ui.blockDraft = d
+                if dragState.origin == nil {
+                    dragState.begin(current, handle: handle) { tickScroll() }
                 }
+                dragState.translation = g.translation.width
+                let zone: CGFloat = 30
+                let x = g.location.x
+                dragState.edgeSpeed = x < zone ? -Double(min(1, (zone - x) / zone))
+                    : x > width - zone ? Double(min(1, (x - (width - zone)) / zone)) : 0
+                follow()
             }
+            .onEnded { _ in settle() }
+    }
+
+    /// The pointer's total travel in minutes, including any scrolling.
+    private func travel(_ o: BlockDraft) -> Double {
+        Double(dragState.translation / width) * Double(max(60, o.windowSpan)) + dragState.scrolled
+    }
+
+    private func follow() {
+        guard let o = dragState.origin, let h = dragState.handle else { return }
+        var d = Self.apply(h, to: o, minutes: travel(o), step: 1)
+        d.windowStart = ui.blockDraft?.windowStart ?? o.windowStart
+        ui.blockDraft = d
+    }
+
+    private func settle() {
+        guard let o = dragState.origin, let h = dragState.handle else { dragState.end(); return }
+        let step = NSEvent.modifierFlags.contains(.option) ? 1 : ui.nudgeStep
+        var d = Self.apply(h, to: o, minutes: travel(o), step: step)
+        d.windowStart = ui.blockDraft?.windowStart ?? o.windowStart
+        dragState.end()
+        BlockTimeline.frame(&d)
+        withAnimation(.spring(response: 0.28, dampingFraction: 0.86)) { ui.blockDraft = d }
+    }
+
+    /// 30 times a second while dragging: if the pointer is near a side,
+    /// slide the day under it (up to an hour a second).
+    private func tickScroll() {
+        guard dragState.edgeSpeed != 0, var d = ui.blockDraft else { return }
+        dragState.carry += dragState.edgeSpeed * 2
+        let whole = Int(dragState.carry.rounded(.towardZero))
+        guard whole != 0 else { return }
+        dragState.carry -= Double(whole)
+        let span = max(60, d.windowSpan)
+        let newStart = max(0, min(1_440 - span, d.windowStart + whole))
+        let moved = newStart - d.windowStart
+        guard moved != 0 else { return }
+        d.windowStart = newStart
+        ui.blockDraft = d
+        dragState.scrolled += Double(moved)
+        follow()
+    }
+
+    /// Dragging empty space slides the day left or right.
+    private func pan(_ draft: BlockDraft) -> some Gesture {
+        DragGesture(minimumDistance: 2, coordinateSpace: .named("timeline"))
+            .onChanged { g in
+                guard var d = ui.blockDraft else { return }
+                if panOrigin == nil { panOrigin = d.windowStart }
+                let span = max(60, d.windowSpan)
+                let minutes = Int((Double(g.translation.width / width) * Double(span)).rounded())
+                d.windowStart = max(0, min(1_440 - span, (panOrigin ?? d.windowStart) - minutes))
+                ui.blockDraft = d
+            }
+            .onEnded { _ in panOrigin = nil }
     }
 
     /// The draft after dragging `handle` by `minutes`, snapped to `step`.
@@ -2152,6 +2226,42 @@ struct BlockTimeline: View {
         d.duration += 900
         BlockTimeline.frame(&d)
         ui.blockDraft = d
+    }
+}
+
+/// What a drag on the planner timeline needs between pointer events: where
+/// it started, how far the day has scrolled under it, and the scroll timer.
+@MainActor
+final class TimelineDragState: ObservableObject {
+    @Published var origin: BlockDraft?
+    var handle: BlockTimeline.Handle?
+    var translation: CGFloat = 0
+    var scrolled: Double = 0
+    var edgeSpeed: Double = 0
+    var carry: Double = 0
+    private var timer: Timer?
+
+    func begin(_ draft: BlockDraft, handle: BlockTimeline.Handle, tick: @escaping () -> Void) {
+        origin = draft
+        self.handle = handle
+        translation = 0
+        scrolled = 0
+        edgeSpeed = 0
+        carry = 0
+        timer?.invalidate()
+        let t = Timer(timeInterval: 1.0 / 30, repeats: true) { _ in
+            Task { @MainActor in tick() }
+        }
+        RunLoop.main.add(t, forMode: .common)
+        timer = t
+    }
+
+    func end() {
+        timer?.invalidate()
+        timer = nil
+        origin = nil
+        handle = nil
+        edgeSpeed = 0
     }
 }
 
