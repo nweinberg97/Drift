@@ -4,6 +4,11 @@ import SwiftUI
 
 @MainActor
 final class WidgetUIState: ObservableObject {
+    /// Dictation for "Name it": its own listener, so it never collides with
+    /// the launcher's voice command.
+    let nameVoice = VoiceController()
+    /// Off when voice is switched off in Settings.
+    @Published var voiceEnabled = true
     @Published var expanded = false
     /// The timer whose label is being edited in place.
     @Published var renamingID: UUID?
@@ -262,6 +267,7 @@ struct WidgetView: View {
         .frame(width: width, alignment: .leading)
         .driftSurface(cornerRadius: Theme.cornerRadius * min(scale, 1.15), opacity: settings.widgetOpacity)
         .overlay(AlertPulse(active: ui.alerting || ui.shaking, cornerRadius: Theme.cornerRadius * min(scale, 1.15)))
+        .onReceive(settings.$featureVoice) { ui.voiceEnabled = $0 }
         .contextMenu { contextMenu }
         .animation(reduceMotion ? nil : Theme.quick, value: ui.expanded)
         .animation(reduceMotion ? nil : Theme.quick, value: ui.hideHint)
@@ -920,22 +926,33 @@ private struct TaskLabel: View {
 
     var body: some View {
         if ui.renamingID == timer.id {
-            TextField("What is it for?", text: $ui.draft)
-                .textFieldStyle(.plain)
-                .font(.system(size: size + 0.5, weight: .medium))
-                .foregroundStyle(Theme.primaryText)
-                .focused($focused)
-                .onSubmit(commit)
-                .onExitCommand(perform: cancel)
-                .padding(.horizontal, 6)
-                .frame(width: fieldWidth, height: size + 10)
-                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.surface))
-                .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent, lineWidth: 1))
-                .onAppear { DispatchQueue.main.async { focused = true } }
-                .onChange(of: focused) { isFocused in
-                    if !isFocused && ui.renamingID == timer.id { commit() }
+            HStack(spacing: 2) {
+                TextField(listening ? "Listening…" : "What is it for?", text: $ui.draft)
+                    .textFieldStyle(.plain)
+                    .font(.system(size: size + 0.5, weight: .medium))
+                    .foregroundStyle(Theme.primaryText)
+                    .focused($focused)
+                    .onSubmit(commit)
+                    .onExitCommand(perform: cancel)
+                    .accessibilityLabel("Task name")
+                if ui.voiceEnabled {
+                    NameMic(voice: ui.nameVoice, size: size, start: startDictation)
                 }
-                .accessibilityLabel("Task name")
+            }
+            .padding(.leading, 6)
+            .padding(.trailing, ui.voiceEnabled ? 2 : 6)
+            .frame(width: fieldWidth + (ui.voiceEnabled ? size + 8 : 0), height: size + 10)
+            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.surface))
+            .overlay(RoundedRectangle(cornerRadius: 6, style: .continuous).strokeBorder(Theme.accent, lineWidth: listening ? 1.5 : 1))
+            .onAppear { DispatchQueue.main.async { focused = true } }
+            .onChange(of: focused) { isFocused in
+                // Clicking the mic shouldn't close the field.
+                if !isFocused && ui.renamingID == timer.id && !dictating { commit() }
+            }
+            .onReceive(ui.nameVoice.$transcript) { text in
+                if listening && !text.isEmpty { ui.draft = text }
+            }
+            .onDisappear { if dictating { ui.nameVoice.cancel() } }
         } else if timer.pomodoro != nil {
             Text(timer.displayName ?? "")
                 .font(.system(size: size, weight: .medium))
@@ -955,11 +972,9 @@ private struct TaskLabel: View {
                         .foregroundStyle(Theme.secondaryText)
                         .lineLimit(1)
                 } else {
-                    HStack(spacing: 4) {
-                        Image(systemName: "pencil").font(.system(size: size - 1, weight: .semibold))
-                        Text("Name it")
-                    }
-                    .font(.system(size: size, weight: .medium))
+                    // One Text, so it sits on the same baseline as the time.
+                    (Text(Image(systemName: "pencil")).font(.system(size: size - 1, weight: .semibold))
+                        + Text(" Name it").font(.system(size: size, weight: .medium)))
                     .foregroundStyle(Theme.tertiaryText)
                 }
             }
@@ -971,7 +986,25 @@ private struct TaskLabel: View {
         }
     }
 
+    private var listening: Bool { ui.nameVoice.phase == .listening }
+    private var dictating: Bool { ui.nameVoice.phase == .listening || ui.nameVoice.phase == .requesting }
+
+    /// Click the mic, say it: the words fill the box as you speak, and the name
+    /// is saved when you pause.
+    private func startDictation() {
+        actions.acknowledge()
+        if dictating { ui.nameVoice.finish(); return }
+        let state = ui
+        ui.nameVoice.onFinish = { [weak state] text in
+            guard let ui = state, ui.renamingID == timer.id else { return }
+            ui.draft = text
+            commit()
+        }
+        ui.nameVoice.start()
+    }
+
     private func commit() {
+        if dictating { ui.nameVoice.cancel() }
         guard ui.renamingID == timer.id else { return }
         store.rename(timer.id, to: ui.draft)
         ui.renamingID = nil
@@ -980,6 +1013,7 @@ private struct TaskLabel: View {
     }
 
     private func cancel() {
+        if dictating { ui.nameVoice.cancel() }
         ui.renamingID = nil
         ui.draft = ""
         actions.releaseFocus()
@@ -2226,6 +2260,35 @@ struct BlockTimeline: View {
         d.duration += 900
         BlockTimeline.frame(&d)
         ui.blockDraft = d
+    }
+}
+
+/// The mic at the right of the "Name it" box.
+private struct NameMic: View {
+    @ObservedObject var voice: VoiceController
+    let size: CGFloat
+    let start: () -> Void
+
+    private var failed: String? {
+        if case let .failed(message) = voice.phase { return message }
+        return nil
+    }
+
+    var body: some View {
+        let on = voice.phase == .listening || voice.phase == .requesting
+        Button(action: start) {
+            Image(systemName: failed != nil ? "mic.slash" : (on ? "waveform" : "mic"))
+                .font(.system(size: size - 1, weight: .semibold))
+                .foregroundStyle(on ? Color.white : Theme.secondaryText)
+                .frame(width: size + 6, height: size + 6)
+                .background(RoundedRectangle(cornerRadius: 5, style: .continuous).fill(on ? Theme.accent : Color.clear))
+                .scaleEffect(on ? 1 + CGFloat(voice.level) * 0.15 : 1)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .pointer(.pointingHand)
+        .help(failed ?? (on ? "Stop listening" : "Say it"))
+        .accessibilityLabel(on ? "Stop listening" : "Dictate the task name")
     }
 }
 
