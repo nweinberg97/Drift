@@ -13,7 +13,7 @@
   --accent: #B0522A; --accent-soft: rgba(176,82,42,0.13); --on-accent: #fff;
   --shadow: 0 14px 34px -12px rgba(40,30,20,0.38), 0 2px 6px rgba(40,30,20,0.10);
   /* one calm hue per break type */
-  --move: #B0522A; --walk: #3F7D4E; --hydrate: #2F6F9E; --snack: #A86B12; --breathe: #6A5BA8;
+  --move: #B0522A; --walk: #3F7D4E; --hydrate: #2F6F9E; --snack: #C23A4B; --breathe: #6A5BA8;
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
   --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
 }
@@ -27,7 +27,7 @@
     --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
     --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
     --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
-    --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #EBC170; --breathe: #B7A9EC;
+    --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #F2848F; --breathe: #B7A9EC;
     color-scheme: dark;
   }
 }
@@ -40,7 +40,7 @@
   --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
   --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
   --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
-  --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #EBC170; --breathe: #B7A9EC;
+  --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #F2848F; --breathe: #B7A9EC;
   color-scheme: dark;
 }
 * { box-sizing: border-box; }
@@ -105,8 +105,8 @@ button { font: inherit; color: inherit; }
 .after .s { margin-top: 2px; font-size: 12px; color: var(--ink2); }
 
 /* type chips used everywhere */
-.chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: var(--t); background: color-mix(in srgb, var(--t) 14%, transparent); white-space: nowrap; }
-.chip svg { width: 10px; height: 10px; }
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 24px; padding: 0 9px; border-radius: 7px; font-size: 11.5px; font-weight: 600; line-height: 1; color: var(--t); background: color-mix(in srgb, var(--t) 14%, transparent); white-space: nowrap; vertical-align: middle; }
+.chip svg { width: 11px; height: 11px; flex: none; }
 .t-move { --t: var(--move); } .t-walk { --t: var(--walk); } .t-hydrate { --t: var(--hydrate); } .t-snack { --t: var(--snack); } .t-breathe { --t: var(--breathe); }
 
 /* launcher */
@@ -126,20 +126,44 @@ button { font: inherit; color: inherit; }
 .examples button:hover { border-color: var(--ember); }
 
 /* plan */
-.plan { width: 360px; max-width: 100%; padding: 14px; }
+.plan { width: 380px; max-width: 100%; padding: 14px; }
 .plan h3 { margin: 0 0 2px; font: 650 13px var(--display); }
 .plan .sub { font-size: 11.5px; color: var(--ink2); margin-bottom: 10px; }
 .cycle { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-.cycle .f { height: 22px; padding: 0 7px; border-radius: 6px; background: var(--ctl); font-size: 11px; font-weight: 600; color: var(--ink2); display: inline-flex; align-items: center; }
-.cycle button.chip { cursor: pointer; }
-.cycle button.chip:hover { filter: brightness(1.08); box-shadow: 0 0 0 1.5px var(--t); }
+.cycle .f { height: 24px; padding: 0 9px; border-radius: 7px; background: var(--ctl); font-size: 11.5px; font-weight: 600; line-height: 1; color: var(--ink2); display: inline-flex; align-items: center; }
 .plan .opt { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; align-items: center; font-size: 11.5px; color: var(--ink2); }
 .seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--ctl); }
 .seg button { height: 22px; padding: 0 9px; border-radius: 5px; font-size: 11.5px; font-weight: 600; color: var(--ink2); }
 .seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
-.pick { margin-top: 10px; padding: 8px; border-radius: 9px; background: var(--ctl); display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 11.5px; color: var(--ink2); }
-.pick button.chip { cursor: pointer; opacity: .55; }
-.pick button.chip.on { opacity: 1; box-shadow: 0 0 0 1.5px var(--t); }
+.types { margin-top: 12px; border-radius: 10px; background: var(--ctl); overflow: hidden; }
+.types .cap { padding: 8px 10px 4px; font-size: 11px; font-weight: 600; color: var(--ink3); }
+.trow { border-top: 0.5px solid var(--hair); }
+.trow:first-of-type { border-top: 0; }
+.trow .head { display: flex; align-items: center; gap: 9px; height: 36px; padding: 0 10px; }
+.types .chk, .acts .chk { width: 16px; height: 16px; border-radius: 5px; flex: none; display: grid; place-items: center; border: 1.5px solid var(--ink2); color: #fff; cursor: pointer; }
+.chk svg { width: 10px; height: 10px; opacity: 0; }
+.trow.in .chk { background: var(--t); border-color: var(--t); }
+.trow.in .chk svg { opacity: 1; }
+.trow .ico { width: 22px; height: 22px; border-radius: 7px; flex: none; display: grid; place-items: center; color: var(--t); background: color-mix(in srgb, var(--t) 15%, transparent); }
+.trow .ico svg { width: 12px; height: 12px; }
+.trow .nm { font-size: 12.5px; font-weight: 600; color: var(--ink); }
+.trow:not(.in) .nm, .trow:not(.in) .ico { opacity: .45; }
+.trow .open { margin-left: auto; display: inline-flex; align-items: center; gap: 5px; height: 26px; padding: 0 6px 0 8px; border-radius: 7px; font-size: 11.5px; color: var(--ink2); font-variant-numeric: tabular-nums; }
+.trow .open:hover { background: var(--ctl2); color: var(--ink); }
+.trow .open svg { width: 9px; height: 9px; transition: transform .18s; }
+.trow.expanded .open svg { transform: rotate(90deg); }
+.acts { display: grid; gap: 2px; padding: 0 10px 10px 41px; }
+.acts label { display: flex; align-items: center; gap: 8px; height: 26px; font-size: 12px; color: var(--ink); cursor: pointer; }
+.acts label .chk { width: 14px; height: 14px; border-radius: 4px; }
+.acts label .chk svg { width: 9px; height: 9px; }
+.acts label.on .chk { background: var(--t); border-color: var(--t); }
+.acts label.on .chk svg { opacity: 1; }
+.acts label:not(.on) { color: var(--ink3); }
+.acts input { position: absolute; opacity: 0; pointer-events: none; }
+.acts .add { display: flex; gap: 6px; margin-top: 4px; }
+.acts .add input { position: static; opacity: 1; pointer-events: auto; flex: 1; min-width: 0; height: 26px; border-radius: 7px; border: 1px solid var(--hair); background: var(--surface); color: var(--ink); font: 12px var(--sans); padding: 0 8px; outline: none; }
+.acts .add input:focus { border-color: var(--t); }
+.acts .add button { height: 26px; padding: 0 10px; border-radius: 7px; background: var(--t); color: #fff; font-size: 11.5px; font-weight: 600; }
 
 /* library */
 .lib { width: 520px; max-width: 100%; display: grid; grid-template-columns: 150px minmax(0, 1fr); min-height: 300px; }
@@ -232,7 +256,8 @@ button { font: inherit; color: inherit; }
       <h2>Choose which breaks come up</h2>
       <p>Short breaks rotate through the types you pick. The long break after round four gets its own type: a walk works well.</p>
       <ul>
-        <li>Click a type below the cycle to include or leave it out.</li>
+        <li>Tick a type to include it in short breaks.</li>
+        <li>Click the arrow on a type to choose exactly which activities it can pick, or add your own.</li>
         <li><b>Rotate</b> goes in order; <b>Mix</b> shuffles without repeating the last one.</li>
       </ul>
     </div>
@@ -419,21 +444,44 @@ button { font: inherit; color: inherit; }
   renderLauncher();
 
   /* ---------- 3. Plan ---------- */
+  const CHECK = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M2 5.2l2 2 4-4.4"/></svg>';
+  const CHEV = '<svg viewBox="0 0 10 10" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M3.5 2l3 3-3 3"/></svg>';
+  let openType = 'move';
   function renderPlan() {
     const seq = [];
     for (let i = 0; i < 3; i++) seq.push(plan.short.length ? plan.short[i % plan.short.length] : null);
+    const rows = TYPES.map(t => {
+      const inc = plan.short.includes(t.id), list = LIB[t.id], on = list.filter(a => a.on).length;
+      const acts = openType === t.id ? `<div class="acts">${list.map((a, i) => `<label class="${a.on ? 'on' : ''}"><input type="checkbox" data-act="${t.id}:${i}" ${a.on ? 'checked' : ''}><span class="chk">${CHECK}</span>${a.n}</label>`).join('')}
+        <form class="add" data-add="${t.id}"><input placeholder="Add your own…" aria-label="Add a ${t.name.toLowerCase()} activity"><button type="submit">Add</button></form></div>` : '';
+      return `<div class="trow t-${t.id} ${inc ? 'in' : ''} ${openType === t.id ? 'expanded' : ''}">
+        <div class="head"><button class="chk" data-short="${t.id}" role="checkbox" aria-checked="${inc}" aria-label="Include ${t.name}">${CHECK}</button>
+        <span class="ico">${ICON[t.id]}</span><span class="nm">${t.name}</span>
+        <button class="open" data-open="${t.id}" aria-expanded="${openType === t.id}">${on} of ${list.length}${CHEV}</button></div>${acts}</div>`;
+    }).join('');
     $('plan').innerHTML = `<h3>Pomodoro breaks</h3><div class="sub">Short ${plan.shortLen} min after rounds 1–3 · long ${plan.longLen} min after round 4</div>
-      <div class="cycle">${seq.map((t, i) => `<span class="f">Focus</span>${t ? `<span class="chip t-${t}">${ICON[t]}${typeName(t)}</span>` : '<span class="f">Break</span>'}`).join('')}<span class="f">Focus</span><span class="chip t-${plan.long}" style="height:24px">${ICON[plan.long]}${typeName(plan.long)} · long</span></div>
-      <div class="pick" aria-label="Short break types">Short breaks:${TYPES.map(t => `<button class="chip t-${t.id} ${plan.short.includes(t.id) ? 'on' : ''}" data-short="${t.id}">${ICON[t.id]}${t.name}</button>`).join('')}</div>
+      <div class="cycle">${seq.map(t => `<span class="f">Focus</span>${t ? `<span class="chip t-${t}">${ICON[t]}${typeName(t)}</span>` : '<span class="f">Break</span>'}`).join('')}<span class="f">Focus</span><span class="chip t-${plan.long}">${ICON[plan.long]}${typeName(plan.long)} · long</span></div>
+      <div class="types"><div class="cap">Short breaks</div>${rows}</div>
       <div class="opt">Order <span class="seg"><button class="${plan.mode === 'rotate' ? 'on' : ''}" data-mode="rotate">Rotate</button><button class="${plan.mode === 'mix' ? 'on' : ''}" data-mode="mix">Mix</button></span></div>
       <div class="opt">Long break <span class="seg">${TYPES.map(t => `<button class="${plan.long === t.id ? 'on' : ''}" data-long="${t.id}">${t.name}</button>`).join('')}</span></div>`;
   }
+  function refreshAll() { renderPlan(); if (phase === 'focus') renderFocus(); renderLauncher(); renderLib(); }
   $('plan').addEventListener('click', e => {
-    const b = e.target.closest('button'); if (!b) return;
+    const b = e.target.closest('button'); if (!b || b.type === 'submit') return;
     if (b.dataset.short) { const id = b.dataset.short; plan.short = plan.short.includes(id) ? plan.short.filter(x => x !== id) : TYPES.map(t => t.id).filter(x => x === id || plan.short.includes(x)); if (!plan.short.length) plan.short = [id]; rot = 0; upcoming = null; }
+    if (b.dataset.open) openType = openType === b.dataset.open ? null : b.dataset.open;
     if (b.dataset.mode) plan.mode = b.dataset.mode;
     if (b.dataset.long) plan.long = b.dataset.long;
-    renderPlan(); if (phase === 'focus') renderFocus(); renderLauncher();
+    refreshAll();
+  });
+  $('plan').addEventListener('change', e => {
+    const k = e.target.dataset.act; if (!k) return;
+    const [t, i] = k.split(':'); LIB[t][+i].on = e.target.checked; refreshAll();
+  });
+  $('plan').addEventListener('submit', e => {
+    e.preventDefault(); const f = e.target.closest('[data-add]'); const inp = f.querySelector('input'); const v = inp.value.trim(); if (!v) return;
+    LIB[f.dataset.add].push({ n: v, d: 'Your own.', on: true, mine: true }); refreshAll();
+    const again = $('plan').querySelector(`[data-add="${f.dataset.add}"] input`); if (again) again.focus();
   });
   renderPlan();
 
@@ -449,11 +497,11 @@ button { font: inherit; color: inherit; }
   $('lib').addEventListener('click', e => {
     const b = e.target.closest('button'); if (!b) return;
     if (b.dataset.t) { libType = b.dataset.t; renderLib(); }
-    if (b.dataset.i) { const a = LIB[libType][+b.dataset.i]; a.on = !a.on; renderLib(); }
+    if (b.dataset.i) { const a = LIB[libType][+b.dataset.i]; a.on = !a.on; renderLib(); renderPlan(); }
   });
   $('lib').addEventListener('submit', e => {
     e.preventDefault(); const v = $('addn').value.trim(); if (!v) return;
-    LIB[libType].push({ n: v, d: 'Your own.', on: true, mine: true }); renderLib(); $('addn').focus();
+    LIB[libType].push({ n: v, d: 'Your own.', on: true, mine: true }); renderLib(); renderPlan(); $('addn').focus();
   });
   renderLib();
 })();
