@@ -1,0 +1,460 @@
+<title>Guided Breaks Preview</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<style>
+/* Layout: four stations, each a short explanation beside a live piece of the widget on a desktop backdrop:
+   a Pomodoro going into a break, a session typed with breaks, the Pomodoro break plan, and the break library. */
+:root {
+  --page: #EEEBE7; --page-ink: #1F1C19; --page-muted: #6B645D; --page-line: rgba(31,28,25,0.12);
+  --ember: #B95A2B; --ember-soft: rgba(185,90,43,0.12);
+  --desk-a: #E9D9C9; --desk-b: #D7B79C; --desk-c: #B9805C;
+  --surface: rgba(251,249,246,0.95); --hair: rgba(31,28,25,0.12);
+  --ink: #1C1A17; --ink2: rgba(28,26,23,0.62); --ink3: rgba(28,26,23,0.40);
+  --ctl: rgba(0,0,0,0.07); --ctl2: rgba(0,0,0,0.12);
+  --accent: #B0522A; --accent-soft: rgba(176,82,42,0.13); --on-accent: #fff;
+  --shadow: 0 14px 34px -12px rgba(40,30,20,0.38), 0 2px 6px rgba(40,30,20,0.10);
+  /* one calm hue per break type */
+  --move: #B0522A; --walk: #3F7D4E; --hydrate: #2F6F9E; --snack: #A86B12; --breathe: #6A5BA8;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", "Inter", "Segoe UI", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", "Inter", "Segoe UI", system-ui, sans-serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --page: #141210; --page-ink: #F2EDE6; --page-muted: #A39A91; --page-line: rgba(242,237,230,0.10);
+    --ember: #F2A36E; --ember-soft: rgba(242,163,110,0.14);
+    --desk-a: #1B1816; --desk-b: #2A201A; --desk-c: #8A4C2A;
+    --surface: rgba(38,35,32,0.95); --hair: rgba(255,255,255,0.12);
+    --ink: #F4EFE8; --ink2: rgba(244,239,232,0.62); --ink3: rgba(244,239,232,0.40);
+    --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
+    --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
+    --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
+    --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #EBC170; --breathe: #B7A9EC;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --page: #141210; --page-ink: #F2EDE6; --page-muted: #A39A91; --page-line: rgba(242,237,230,0.10);
+  --ember: #F2A36E; --ember-soft: rgba(242,163,110,0.14);
+  --desk-a: #1B1816; --desk-b: #2A201A; --desk-c: #8A4C2A;
+  --surface: rgba(38,35,32,0.95); --hair: rgba(255,255,255,0.12);
+  --ink: #F4EFE8; --ink2: rgba(244,239,232,0.62); --ink3: rgba(244,239,232,0.40);
+  --ctl: rgba(255,255,255,0.08); --ctl2: rgba(255,255,255,0.14);
+  --accent: #F2A36E; --accent-soft: rgba(242,163,110,0.15); --on-accent: #1B1714;
+  --shadow: 0 16px 40px -12px rgba(0,0,0,0.7), 0 2px 6px rgba(0,0,0,0.3);
+  --move: #F2A36E; --walk: #8CCB98; --hydrate: #8EC3EA; --snack: #EBC170; --breathe: #B7A9EC;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--page); color: var(--page-ink); font: 15px/1.55 var(--sans); -webkit-font-smoothing: antialiased; }
+.page { max-width: 1120px; margin: 0 auto; padding-block: 28px 64px; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); display: grid; gap: 28px; }
+header h1 { font: 650 clamp(26px, 4vw, 34px)/1.1 var(--display); letter-spacing: -0.02em; margin: 0 0 8px; text-wrap: balance; }
+header p { margin: 0; color: var(--page-muted); max-width: 68ch; }
+.station { display: grid; grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr); gap: 28px; padding-top: 28px; border-top: 1px solid var(--page-line); align-items: start; }
+.n { font: 650 12px var(--sans); letter-spacing: .08em; text-transform: uppercase; color: var(--ember); }
+.station h2 { font: 650 22px/1.2 var(--display); margin: 6px 0 10px; letter-spacing: -0.01em; text-wrap: balance; }
+.copy p { margin: 0 0 10px; color: var(--page-muted); }
+.copy ul { margin: 0; padding-left: 18px; color: var(--page-muted); display: grid; gap: 4px; }
+.copy b { color: var(--page-ink); font-weight: 600; }
+.try { margin-top: 12px; font-size: 13.5px; background: var(--ember-soft); border-radius: 10px; padding: 9px 12px; }
+.desk { position: relative; border-radius: 14px; padding: 28px; min-height: 280px; display: grid; place-items: center; overflow: hidden;
+  background: radial-gradient(80% 70% at 85% 110%, var(--desk-c), transparent 70%), radial-gradient(70% 60% at 0% 100%, var(--desk-b), transparent 70%), linear-gradient(160deg, var(--desk-a), var(--desk-b));
+  box-shadow: 0 0 0 1px var(--page-line); color: var(--ink); font: 13px/1.35 var(--sans); }
+button { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--ember); outline-offset: 2px; }
+.desk button { border: 0; background: none; cursor: pointer; padding: 0; }
+.pagebtn { margin-top: 12px; border: 1px solid var(--page-line); background: none; color: var(--page-ink); border-radius: 9px; padding: 7px 14px; font: 600 13.5px var(--sans); cursor: pointer; }
+.pagebtn:hover { border-color: var(--ember); }
+
+.widget { position: relative; width: 320px; max-width: 100%; background: var(--surface); backdrop-filter: blur(24px); border: 0.5px solid var(--hair); border-radius: 12px; box-shadow: var(--shadow); overflow: hidden; }
+.row { display: flex; align-items: baseline; gap: 8px; padding: 9px 10px 9px 13px; }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); flex: none; align-self: center; }
+.lbl { font: 500 12.5px var(--sans); color: var(--ink2); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.time { margin-left: auto; font: 500 24px/1 var(--display); letter-spacing: -0.3px; font-variant-numeric: tabular-nums; }
+.prog { height: 2px; margin: 0 13px 9px; background: var(--ctl); border-radius: 2px; overflow: hidden; }
+.prog i { display: block; height: 100%; background: var(--accent); transition: width .25s linear; }
+.pomodots { display: flex; gap: 4px; padding: 0 13px 10px; }
+.pomodots i { height: 5px; width: 5px; border-radius: 3px; background: var(--ctl2); }
+.pomodots i.past { background: var(--accent); opacity: .5; }
+.pomodots i.now { width: 14px; background: var(--accent); }
+.next { padding: 0 13px 10px; font-size: 11.5px; color: var(--ink2); display: flex; gap: 6px; align-items: center; }
+.next b { color: var(--ink); font-weight: 600; }
+
+/* the break card */
+.brk { padding: 12px 12px 12px 14px; --t: var(--move); }
+.brk-h { display: flex; align-items: center; gap: 7px; font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--t); }
+.brk-h .ico { width: 18px; height: 18px; border-radius: 6px; display: grid; place-items: center; background: color-mix(in srgb, var(--t) 16%, transparent); }
+.brk-h .ico svg { width: 11px; height: 11px; }
+.brk-h .left { margin-left: auto; font: 500 20px/1 var(--display); letter-spacing: -0.3px; color: var(--ink); text-transform: none; font-variant-numeric: tabular-nums; }
+.brk-n { margin-top: 8px; font: 600 18px/1.25 var(--display); animation: fadein .3s both; }
+.brk-d { margin-top: 3px; font-size: 12.5px; color: var(--ink2); animation: fadein .3s both; }
+.steps { margin: 8px 0 0; padding: 0; list-style: none; display: grid; gap: 3px; counter-reset: s; animation: fadein .3s both; }
+.steps li { counter-increment: s; display: flex; gap: 8px; font-size: 12px; color: var(--ink); }
+.steps li::before { content: counter(s); width: 16px; height: 16px; flex: none; border-radius: 50%; display: grid; place-items: center; font-size: 9.5px; font-weight: 700; background: color-mix(in srgb, var(--t) 16%, transparent); color: var(--t); }
+@keyframes fadein { from { opacity: 0; transform: translateY(3px); } }
+.brk-bar { height: 3px; margin-top: 12px; border-radius: 2px; background: var(--ctl); overflow: hidden; }
+.brk-bar i { display: block; height: 100%; background: var(--t); transition: width .25s linear; }
+.brk-b { display: flex; gap: 6px; margin-top: 12px; }
+.brk-b button { height: 28px; padding: 0 11px; border-radius: 8px; background: var(--ctl); font-size: 12px; font-weight: 600; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px; }
+.brk-b button:hover { background: var(--ctl2); }
+.brk-b button.pri { flex: 1; justify-content: center; background: var(--t); color: #fff; }
+:root[data-theme="dark"] .brk-b button.pri { color: #1B1714; }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .brk-b button.pri { color: #1B1714; } }
+.brk-b svg { width: 11px; height: 11px; }
+.after { padding: 12px 14px; }
+.after .h { font-size: 11px; font-weight: 700; letter-spacing: .04em; text-transform: uppercase; color: var(--accent); }
+.after .t { margin-top: 4px; font: 600 16px var(--display); }
+.after .s { margin-top: 2px; font-size: 12px; color: var(--ink2); }
+
+/* type chips used everywhere */
+.chip { display: inline-flex; align-items: center; gap: 5px; height: 22px; padding: 0 8px; border-radius: 6px; font-size: 11.5px; font-weight: 600; color: var(--t); background: color-mix(in srgb, var(--t) 14%, transparent); white-space: nowrap; }
+.chip svg { width: 10px; height: 10px; }
+.t-move { --t: var(--move); } .t-walk { --t: var(--walk); } .t-hydrate { --t: var(--hydrate); } .t-snack { --t: var(--snack); } .t-breathe { --t: var(--breathe); }
+
+/* launcher */
+.launcher { width: 520px; max-width: 100%; background: var(--surface); border: 0.5px solid var(--hair); border-radius: 16px; box-shadow: var(--shadow); }
+.l-in { display: flex; gap: 12px; padding: 15px 16px; align-items: flex-start; }
+.l-in .d { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); margin-top: 10px; flex: none; }
+.l-in input { flex: 1; min-width: 0; border: 0; outline: none; background: none; color: var(--ink); font: 400 18px/28px var(--display); }
+.l-sum { display: flex; align-items: center; gap: 8px; padding: 8px 16px; border-top: 0.5px solid var(--hair); font-size: 12px; color: var(--ink2); }
+.l-sum b { color: var(--ink); }
+.l-steps { display: flex; flex-wrap: wrap; gap: 5px; padding: 4px 16px 14px; }
+.l-steps .w { display: inline-flex; align-items: center; gap: 6px; height: 22px; padding: 0 8px; border-radius: 6px; background: var(--ctl); font-size: 11.5px; color: var(--ink); }
+.l-steps em { font-style: normal; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.l-hint { padding: 0 16px 12px; font-size: 11px; color: var(--ink3); }
+.l-hint code { font: 11px ui-monospace, "SF Mono", Menlo, monospace; background: var(--ctl); border-radius: 4px; padding: 1px 4px; color: var(--ink2); }
+.examples { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.examples button { border: 1px solid var(--page-line); background: none; color: var(--page-ink); border-radius: 8px; padding: 5px 10px; font: 13px var(--sans); cursor: pointer; text-align: left; }
+.examples button:hover { border-color: var(--ember); }
+
+/* plan */
+.plan { width: 360px; max-width: 100%; padding: 14px; }
+.plan h3 { margin: 0 0 2px; font: 650 13px var(--display); }
+.plan .sub { font-size: 11.5px; color: var(--ink2); margin-bottom: 10px; }
+.cycle { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+.cycle .f { height: 22px; padding: 0 7px; border-radius: 6px; background: var(--ctl); font-size: 11px; font-weight: 600; color: var(--ink2); display: inline-flex; align-items: center; }
+.cycle button.chip { cursor: pointer; }
+.cycle button.chip:hover { filter: brightness(1.08); box-shadow: 0 0 0 1.5px var(--t); }
+.plan .opt { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 12px; align-items: center; font-size: 11.5px; color: var(--ink2); }
+.seg { display: inline-flex; padding: 2px; border-radius: 7px; background: var(--ctl); }
+.seg button { height: 22px; padding: 0 9px; border-radius: 5px; font-size: 11.5px; font-weight: 600; color: var(--ink2); }
+.seg button.on { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.15); }
+.pick { margin-top: 10px; padding: 8px; border-radius: 9px; background: var(--ctl); display: flex; flex-wrap: wrap; gap: 5px; align-items: center; font-size: 11.5px; color: var(--ink2); }
+.pick button.chip { cursor: pointer; opacity: .55; }
+.pick button.chip.on { opacity: 1; box-shadow: 0 0 0 1.5px var(--t); }
+
+/* library */
+.lib { width: 520px; max-width: 100%; display: grid; grid-template-columns: 150px minmax(0, 1fr); min-height: 300px; }
+.lib nav { border-right: 0.5px solid var(--hair); padding: 10px 6px; display: grid; gap: 2px; align-content: start; }
+.lib nav button { display: flex; align-items: center; gap: 8px; height: 30px; padding: 0 8px; border-radius: 7px; font-size: 12.5px; font-weight: 500; color: var(--ink); text-align: left; }
+.lib nav button .ico { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; color: var(--t); background: color-mix(in srgb, var(--t) 15%, transparent); }
+.lib nav button .ico svg { width: 11px; height: 11px; }
+.lib nav button span.c { margin-left: auto; font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; }
+.lib nav button.on { background: var(--ctl2); }
+.lib nav button:hover:not(.on) { background: var(--ctl); }
+.lib .pane { padding: 12px 14px; min-width: 0; }
+.lib .pane h3 { margin: 0; font: 650 14px var(--display); color: var(--t); }
+.lib .pane .sub { font-size: 11.5px; color: var(--ink2); margin: 2px 0 10px; }
+.act { display: flex; align-items: flex-start; gap: 8px; padding: 7px 0; border-top: 0.5px solid var(--hair); }
+.act:first-of-type { border-top: 0; }
+.act .tx { flex: 1; min-width: 0; }
+.act .tx b { display: block; font-size: 12.5px; font-weight: 600; }
+.act .tx span { display: block; font-size: 11.5px; color: var(--ink2); }
+.act .len { font-size: 11.5px; color: var(--ink3); font-variant-numeric: tabular-nums; white-space: nowrap; padding-top: 1px; }
+.tog { width: 26px; height: 15px; border-radius: 8px; background: var(--ctl2); position: relative; flex: none; margin-top: 1px; }
+.tog::after { content: ""; position: absolute; top: 2px; left: 2px; width: 11px; height: 11px; border-radius: 50%; background: #fff; box-shadow: 0 1px 2px rgba(0,0,0,.3); transition: transform .15s; }
+.tog.on { background: var(--t); }
+.tog.on::after { transform: translateX(11px); }
+.act.mine .tx b::after { content: "Yours"; margin-left: 6px; font-size: 9.5px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; color: var(--ink3); }
+.addrow { display: flex; gap: 6px; margin-top: 10px; }
+.addrow input { flex: 1; min-width: 0; height: 28px; border-radius: 7px; border: 1px solid var(--hair); background: var(--ctl); color: var(--ink); font: 12.5px var(--sans); padding: 0 9px; outline: none; }
+.addrow input:focus { border-color: var(--t); }
+.addrow select { height: 28px; border-radius: 7px; border: 1px solid var(--hair); background: var(--ctl); color: var(--ink); font: 12px var(--sans); }
+.addrow button { height: 28px; padding: 0 11px; border-radius: 7px; background: var(--t); color: #fff; font-size: 12px; font-weight: 600; }
+
+.speed { display: inline-flex; gap: 2px; padding: 2px; border-radius: 9px; border: 1px solid var(--page-line); margin-top: 12px; }
+.speed button { border: 0; background: none; color: var(--page-muted); font: 600 13px var(--sans); padding: 5px 11px; border-radius: 7px; cursor: pointer; font-variant-numeric: tabular-nums; }
+.speed button.on { background: var(--ember); color: #fff; }
+.qs { padding: 20px 22px; border-radius: 14px; border: 1px solid var(--page-line); }
+.qs h2 { font: 650 20px/1.2 var(--display); margin: 6px 0 8px; }
+.qs ul { margin: 0; padding-left: 18px; color: var(--page-muted); display: grid; gap: 6px; }
+.qs b { color: var(--page-ink); }
+@media (max-width: 820px) { .station { grid-template-columns: minmax(0, 1fr); } .desk { padding: 18px 12px; } .lib { grid-template-columns: minmax(0, 1fr); } .lib nav { border-right: 0; border-bottom: 0.5px solid var(--hair); grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
+</style>
+
+<div class="page">
+  <header>
+    <h1>Guided breaks</h1>
+    <p>Breaks that tell you what to do: move, walk, hydrate, snack or breathe. Temro picks one for you each time and rotates, so there's nothing to decide. Everything below is clickable; time runs fast so you can watch a whole round.</p>
+  </header>
+
+  <section class="station" id="s1">
+    <div class="copy">
+      <div class="n">1 · During a Pomodoro</div>
+      <h2>Time's up, here's your break</h2>
+      <p>When a focus round ends, the widget turns into a break card: the type, what to do, and a countdown.</p>
+      <ul>
+        <li><b>Swap</b> picks a different activity of the same type.</li>
+        <li><b>Done</b> ends the break early and goes back to work; <b>Skip</b> goes straight on.</li>
+        <li>Movements come with two or three short steps. Everything else is one line.</li>
+        <li>The line under the timer tells you which break is coming next.</li>
+      </ul>
+      <div class="speed" role="group" aria-label="Demo speed"><button data-x="1">1×</button><button data-x="20" class="on">20×</button><button data-x="120">120×</button></div>
+      <div><button class="pagebtn" id="skip-focus">Jump to the end of this round</button></div>
+    </div>
+    <div class="desk"><div class="widget" id="pw"></div></div>
+  </section>
+
+  <section class="station" id="s2">
+    <div class="copy">
+      <div class="n">2 · In a session</div>
+      <h2>Type breaks right into your plan</h2>
+      <p>Add a break type and a length between your blocks. Temro recognises <b>move</b>, <b>walk</b>, <b>water</b> or <b>hydrate</b>, <b>snack</b> and <b>breathe</b>, plus plain <b>break</b> for "pick for me".</p>
+      <p>The same works in the planner: any time block can be switched to a break.</p>
+      <div class="examples" id="ex">
+        <button>Writing 25m, move 3m, editing 25m, water 2m</button>
+        <button>Deep work 50m, walk 10m, deep work 50m</button>
+        <button>Inbox 15m, break 5m, calls 30m, snack 5m</button>
+      </div>
+    </div>
+    <div class="desk">
+      <div class="launcher">
+        <div class="l-in"><span class="d"></span><input id="lin" aria-label="What are you working on?" value="Writing 25m, move 3m, editing 25m, water 2m"></div>
+        <div class="l-sum" id="lsum"></div>
+        <div class="l-steps" id="lsteps"></div>
+        <div class="l-hint">Breaks: <code>move</code> <code>walk</code> <code>water</code> <code>snack</code> <code>breathe</code> <code>break</code></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="station" id="s3">
+    <div class="copy">
+      <div class="n">3 · Your Pomodoro break plan</div>
+      <h2>Choose which breaks come up</h2>
+      <p>Short breaks rotate through the types you pick. The long break after round four gets its own type: a walk works well.</p>
+      <ul>
+        <li>Click a type below the cycle to include or leave it out.</li>
+        <li><b>Rotate</b> goes in order; <b>Mix</b> shuffles without repeating the last one.</li>
+      </ul>
+    </div>
+    <div class="desk"><div class="widget plan" id="plan"></div></div>
+  </section>
+
+  <section class="station" id="s4">
+    <div class="copy">
+      <div class="n">4 · Settings › Breaks</div>
+      <h2>The break library</h2>
+      <p>Five types, each with a starter set. Switch off the ones you don't like, or add your own; Temro only picks from what's switched on.</p>
+      <div class="try">Try it: open Snack and add "Handful of almonds".</div>
+    </div>
+    <div class="desk"><div class="widget lib" id="lib"></div></div>
+  </section>
+
+  <section class="qs">
+    <div class="n">Still to decide</div>
+    <h2>Two small calls before I build it</h2>
+    <ul>
+      <li><b>Breaks in a running session:</b> should Temro add a short break between work blocks on its own (using your plan), or only when you type or plan one? My suggestion: only when you ask, so sessions stay predictable.</li>
+      <li><b>Sound:</b> a soft different chime for "break starts" and "back to work", so you can tell them apart without looking?</li>
+    </ul>
+  </section>
+</div>
+
+<script>
+(() => {
+  const $ = id => document.getElementById(id);
+  const ICON = {
+    move: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="2" r="1.2" fill="currentColor" stroke="none"/><path d="M4 5.5l2-1.5 2 1.5M6 4v3.5l-2 3M6 7.5l2 3"/></svg>',
+    walk: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="6.5" cy="1.8" r="1.2" fill="currentColor" stroke="none"/><path d="M6 4l-1.5 3 2 1.2-.5 3M6 4l1.6 1.6 1.4.4M4.5 7l-1.5 3.5"/></svg>',
+    hydrate: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="M6 1.2C4.2 3.6 3 5.2 3 7a3 3 0 0 0 6 0c0-1.8-1.2-3.4-3-5.8z"/></svg>',
+    snack: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5c-1.4-1-4-.6-4 2.2C2 8.5 4 11 5 11c.5 0 .6-.3 1-.3s.5.3 1 .3c1 0 3-2.5 3-5.3 0-2.8-2.6-3.2-4-2.2zM6 3.5c0-1 .5-2 1.5-2.4"/></svg>',
+    breathe: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1.5 4.5h6a1.5 1.5 0 1 0-1.5-1.5M1.5 7.5h8a1.5 1.5 0 1 1-1.5 1.5"/></svg>',
+    swap: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M2 4h7.5L8 2.5M10 8H2.5L4 9.5"/></svg>'
+  };
+  const TYPES = [
+    { id: 'move', name: 'Move', sub: 'Loosen up at your desk' },
+    { id: 'walk', name: 'Walk', sub: 'Get away from the screen' },
+    { id: 'hydrate', name: 'Hydrate', sub: 'Water first' },
+    { id: 'snack', name: 'Snack', sub: 'Something small and real' },
+    { id: 'breathe', name: 'Breathe', sub: 'Slow down for a minute' },
+  ];
+  const typeName = id => TYPES.find(t => t.id === id).name;
+  let LIB = {
+    move: [
+      { n: 'Torso twists', d: 'Stand tall, feet planted, twist slowly.', steps: ['Hands on hips, feet hip-width', 'Twist left, then right, from the waist', '10 slow twists each side'], on: true },
+      { n: 'Leg swings', d: 'Hold the desk, swing each leg.', steps: ['One hand on your desk', '10 forward-and-back swings', 'Switch legs'], on: true },
+      { n: 'Shoulder rolls', d: 'Roll back slowly, then forward.', steps: ['Drop your shoulders', '10 rolls backwards', '10 rolls forwards'], on: true },
+      { n: 'Stand and reach', d: 'Reach up tall, then fold forward.', steps: ['Reach both arms overhead', 'Hold for a slow breath', 'Fold forward and let your arms hang'], on: true },
+      { n: 'Desk squats', d: 'Ten slow squats, chair behind you.', steps: ['Feet shoulder-width', 'Lower until you touch the chair', 'Stand up, 10 times'], on: true },
+    ],
+    walk: [
+      { n: 'Walk around the block', d: 'Leave your phone on the desk.', on: true },
+      { n: 'Take the stairs', d: 'Up and down one flight, twice.', on: true },
+      { n: 'Walk to the window', d: 'Look at something far away for a minute.', on: true },
+      { n: 'Lap of the house', d: 'Every room, no stopping to tidy.', on: true },
+    ],
+    hydrate: [
+      { n: 'Glass of water', d: 'A full glass, slowly.', on: true },
+      { n: 'Refill your bottle', d: 'Fill it to the top and bring it back.', on: true },
+      { n: 'Make a tea', d: 'Herbal if it\'s late in the day.', on: true },
+    ],
+    snack: [
+      { n: 'Piece of fruit', d: 'Away from the screen.', on: true },
+      { n: 'Handful of nuts', d: 'A small handful, not the bag.', on: true },
+      { n: 'Yogurt or cheese', d: 'Something with a bit of protein.', on: true },
+    ],
+    breathe: [
+      { n: 'Box breathing', d: 'In 4, hold 4, out 4, hold 4.', steps: ['Breathe in for 4', 'Hold for 4', 'Out for 4, hold for 4, repeat'], on: true },
+      { n: 'Long exhales', d: 'Breathe out twice as long as in.', on: true },
+      { n: 'Eyes closed, one minute', d: 'Just notice your breathing.', on: true },
+    ],
+  };
+  const pickState = {};
+  function pick(type, avoid) {
+    const list = LIB[type].filter(a => a.on);
+    if (!list.length) return { n: 'Short break', d: 'Step away for a moment.' };
+    pickState[type] = ((pickState[type] ?? -1) + 1) % list.length;
+    let a = list[pickState[type]];
+    if (avoid && a.n === avoid && list.length > 1) { pickState[type] = (pickState[type] + 1) % list.length; a = list[pickState[type]]; }
+    return a;
+  }
+  const mmss = s => `${Math.floor(s / 60)}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
+
+  /* ---------- Plan state (shared by 1 and 3) ---------- */
+  const plan = { short: ['move', 'hydrate', 'breathe'], long: 'walk', mode: 'rotate', shortLen: 5, longLen: 15 };
+  let rot = 0;
+  function nextShortType() {
+    if (plan.mode === 'rotate') return plan.short[rot++ % plan.short.length];
+    const choices = plan.short.filter(t => t !== nextShortType.last);
+    const t = (choices.length ? choices : plan.short)[Math.floor(Math.random() * (choices.length || plan.short.length))];
+    nextShortType.last = t; return t;
+  }
+
+  /* ---------- 1. Pomodoro ---------- */
+  let speed = 20, round = 2, phase = 'focus', left = 6 * 60, total = 25 * 60, breakType = 'move', act = null, upcoming = null;
+  const pw = $('pw');
+  function upcomingType() { return round === 4 ? plan.long : (upcoming ||= nextShortType()); }
+  function renderFocus() {
+    const t = upcomingType();
+    pw.innerHTML = `<div class="row"><span class="dot"></span><span class="lbl">Focus · round ${round} of 4</span><span class="time">${mmss(left)}</span></div>
+      <div class="prog"><i style="width:${(1 - left / total) * 100}%"></i></div>
+      <div class="pomodots">${[1, 2, 3, 4].map(i => `<i class="${i < round ? 'past' : i === round ? 'now' : ''}"></i>`).join('')}</div>
+      <div class="next">Next: <span class="chip t-${t}">${ICON[t]}${typeName(t)}</span> ${round === 4 ? plan.longLen : plan.shortLen} min break</div>`;
+  }
+  function renderBreak() {
+    const steps = act.steps ? `<ol class="steps">${act.steps.map(s => `<li>${s}</li>`).join('')}</ol>` : '';
+    pw.innerHTML = `<div class="brk t-${breakType}">
+      <div class="brk-h"><span class="ico">${ICON[breakType]}</span>${typeName(breakType)} break<span class="left">${mmss(left)}</span></div>
+      <div class="brk-n">${act.n}</div><div class="brk-d">${act.d}</div>${steps}
+      <div class="brk-bar"><i style="width:${(1 - left / total) * 100}%"></i></div>
+      <div class="brk-b"><button class="pri" data-a="done">Done</button><button data-a="swap" title="Something else">${ICON.swap}Swap</button><button data-a="skip">Skip</button></div></div>`;
+  }
+  function tickTime() {
+    const t = pw.querySelector('.time, .left'); if (t) t.textContent = mmss(left);
+    const bar = pw.querySelector('.prog i, .brk-bar i'); if (bar) bar.style.width = (1 - left / total) * 100 + '%';
+  }
+  function startBreak() {
+    breakType = upcomingType(); upcoming = null;
+    phase = 'break'; total = left = (round === 4 ? plan.longLen : plan.shortLen) * 60;
+    act = pick(breakType); renderBreak();
+  }
+  function backToWork(msg) {
+    phase = 'after';
+    round = round === 4 ? 1 : round + 1;
+    pw.innerHTML = `<div class="after"><div class="h">Back to work</div><div class="t">Focus · round ${round} of 4</div><div class="s">${msg}</div></div>`;
+    setTimeout(() => { phase = 'focus'; total = left = 25 * 60; renderFocus(); }, 1600);
+  }
+  pw.addEventListener('click', e => {
+    const b = e.target.closest('button[data-a]'); if (!b || phase !== 'break') return;
+    if (b.dataset.a === 'swap') { act = pick(breakType, act.n); renderBreak(); }
+    if (b.dataset.a === 'done') backToWork('Nice. Next round starts now.');
+    if (b.dataset.a === 'skip') backToWork('Break skipped.');
+  });
+  $('skip-focus').addEventListener('click', () => { if (phase === 'focus') left = 3; });
+  document.querySelectorAll('.speed button').forEach(b => b.addEventListener('click', () => {
+    document.querySelectorAll('.speed button').forEach(x => x.classList.toggle('on', x === b)); speed = +b.dataset.x;
+  }));
+  let last = performance.now();
+  function loop(now) {
+    const dt = Math.min(1, (now - last) / 1000) * speed; last = now;
+    if (phase === 'focus' || phase === 'break') {
+      left = Math.max(0, left - dt);
+      if (left <= 0) { phase === 'focus' ? startBreak() : backToWork('Break done.'); }
+      else tickTime();
+    }
+    requestAnimationFrame(loop);
+  }
+  renderFocus(); requestAnimationFrame(loop);
+
+  /* ---------- 2. Session parsing ---------- */
+  const WORDS = { move: 'move', moving: 'move', stretch: 'move', walk: 'walk', water: 'hydrate', hydrate: 'hydrate', drink: 'hydrate', snack: 'snack', food: 'snack', breathe: 'breathe', breathing: 'breathe', break: 'any' };
+  function parse(text) {
+    return text.split(',').map(s => s.trim()).filter(Boolean).map(part => {
+      const m = part.match(/^(.*?)\s*(\d+)\s*(m|min|mins|minutes|h)?$/i);
+      if (!m) return null;
+      const name = m[1].trim(), mins = (/h/i.test(m[3] || '') ? 60 : 1) * +m[2];
+      const key = name.toLowerCase().replace(/\s*break$/, '').trim() || 'break';
+      const type = WORDS[key] ?? (name.toLowerCase() === 'break' ? 'any' : null);
+      return { name, mins, type };
+    }).filter(Boolean);
+  }
+  let anyRot = 0;
+  function renderLauncher() {
+    const steps = parse($('lin').value);
+    let html = '', work = 0, brk = 0;
+    for (const s of steps) {
+      if (s.type) {
+        const t = s.type === 'any' ? plan.short[anyRot++ % plan.short.length] : s.type;
+        const a = LIB[t].find(x => x.on);
+        html += `<span class="chip t-${t}" title="${a ? a.n : ''}">${ICON[t]}${typeName(t)} <em style="font-style:normal;opacity:.75">${s.mins}m</em></span>`;
+        brk += s.mins;
+      } else { html += `<span class="w">${s.name}<em>${s.mins}m</em></span>`; work += s.mins; }
+    }
+    anyRot = 0;
+    $('lsteps').innerHTML = html || '<span class="w">Type a session</span>';
+    const total = work + brk;
+    $('lsum').innerHTML = steps.length ? `<b>${steps.length} blocks</b> · ${total} min · <span>${brk} min of breaks</span>` : '';
+  }
+  $('lin').addEventListener('input', renderLauncher);
+  $('ex').addEventListener('click', e => { const b = e.target.closest('button'); if (b) { $('lin').value = b.textContent; renderLauncher(); } });
+  renderLauncher();
+
+  /* ---------- 3. Plan ---------- */
+  function renderPlan() {
+    const seq = [];
+    for (let i = 0; i < 3; i++) seq.push(plan.short.length ? plan.short[i % plan.short.length] : null);
+    $('plan').innerHTML = `<h3>Pomodoro breaks</h3><div class="sub">Short ${plan.shortLen} min after rounds 1–3 · long ${plan.longLen} min after round 4</div>
+      <div class="cycle">${seq.map((t, i) => `<span class="f">Focus</span>${t ? `<span class="chip t-${t}">${ICON[t]}${typeName(t)}</span>` : '<span class="f">Break</span>'}`).join('')}<span class="f">Focus</span><span class="chip t-${plan.long}" style="height:24px">${ICON[plan.long]}${typeName(plan.long)} · long</span></div>
+      <div class="pick" aria-label="Short break types">Short breaks:${TYPES.map(t => `<button class="chip t-${t.id} ${plan.short.includes(t.id) ? 'on' : ''}" data-short="${t.id}">${ICON[t.id]}${t.name}</button>`).join('')}</div>
+      <div class="opt">Order <span class="seg"><button class="${plan.mode === 'rotate' ? 'on' : ''}" data-mode="rotate">Rotate</button><button class="${plan.mode === 'mix' ? 'on' : ''}" data-mode="mix">Mix</button></span></div>
+      <div class="opt">Long break <span class="seg">${TYPES.map(t => `<button class="${plan.long === t.id ? 'on' : ''}" data-long="${t.id}">${t.name}</button>`).join('')}</span></div>`;
+  }
+  $('plan').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.short) { const id = b.dataset.short; plan.short = plan.short.includes(id) ? plan.short.filter(x => x !== id) : TYPES.map(t => t.id).filter(x => x === id || plan.short.includes(x)); if (!plan.short.length) plan.short = [id]; rot = 0; upcoming = null; }
+    if (b.dataset.mode) plan.mode = b.dataset.mode;
+    if (b.dataset.long) plan.long = b.dataset.long;
+    renderPlan(); if (phase === 'focus') renderFocus(); renderLauncher();
+  });
+  renderPlan();
+
+  /* ---------- 4. Library ---------- */
+  let libType = 'move';
+  function renderLib() {
+    const t = TYPES.find(x => x.id === libType);
+    $('lib').innerHTML = `<nav aria-label="Break types">${TYPES.map(x => `<button class="t-${x.id} ${x.id === libType ? 'on' : ''}" data-t="${x.id}"><span class="ico">${ICON[x.id]}</span>${x.name}<span class="c">${LIB[x.id].filter(a => a.on).length}</span></button>`).join('')}</nav>
+      <div class="pane t-${libType}"><h3>${t.name}</h3><div class="sub">${t.sub}. Temro picks from the ones switched on.</div>
+      ${LIB[libType].map((a, i) => `<div class="act ${a.mine ? 'mine' : ''}"><button class="tog ${a.on ? 'on' : ''}" data-i="${i}" role="switch" aria-checked="${a.on}" aria-label="${a.n}"></button><div class="tx"><b>${a.n}</b><span>${a.d}</span></div></div>`).join('')}
+      <form class="addrow" id="addf"><input id="addn" placeholder="Add your own ${t.name.toLowerCase()} break…" aria-label="New ${t.name} break"><button type="submit">Add</button></form></div>`;
+  }
+  $('lib').addEventListener('click', e => {
+    const b = e.target.closest('button'); if (!b) return;
+    if (b.dataset.t) { libType = b.dataset.t; renderLib(); }
+    if (b.dataset.i) { const a = LIB[libType][+b.dataset.i]; a.on = !a.on; renderLib(); }
+  });
+  $('lib').addEventListener('submit', e => {
+    e.preventDefault(); const v = $('addn').value.trim(); if (!v) return;
+    LIB[libType].push({ n: v, d: 'Your own.', on: true, mine: true }); renderLib(); $('addn').focus();
+  });
+  renderLib();
+})();
+</script>
