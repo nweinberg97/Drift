@@ -156,6 +156,11 @@ struct BreakCard: View {
 
 /// The wide Done button, in the break's colour.
 struct BreakButtonStyle: ButtonStyle {
+    /// White on the deep light-mode colours; near-black on the pale dark-mode ones.
+    static let ink = Color(nsColor: NSColor(name: nil) { a in
+        a.bestMatch(from: [.darkAqua, .aqua]) == .darkAqua ? NSColor(srgbRed: 0.11, green: 0.09, blue: 0.08, alpha: 1) : .white
+    })
+
     let scale: CGFloat
     let tint: Color
     @State private var hovering = false
@@ -163,7 +168,7 @@ struct BreakButtonStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
             .font(.system(size: 12.5 * min(scale, 1.15), weight: .semibold))
-            .foregroundStyle(Color.white)
+            .foregroundStyle(Self.ink)
             .lineLimit(1)
             .padding(.horizontal, 12)
             .frame(height: 30 * min(scale, 1.15))
@@ -279,7 +284,8 @@ struct BreakSettingsSection: View {
                         }
                     }
                     HStack {
-                        TextField("Add your own…", text: $newName)
+                        TextField("", text: $newName, prompt: Text("Add your own…"))
+                            .labelsHidden()
                             .textFieldStyle(.roundedBorder)
                             .onSubmit { add(kind) }
                         Button("Add") { add(kind) }.disabled(newName.trimmingCharacters(in: .whitespaces).isEmpty)

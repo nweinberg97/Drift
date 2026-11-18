@@ -1761,14 +1761,21 @@ private struct BlockEditor: View {
                     if let kind = step.breakKind {
                         BreakChip(kind: kind, suffix: "break")
                     } else {
-                        Text("Break · picked for you")
-                            .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Theme.secondaryText)
+                        HStack(spacing: 4) {
+                            Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))
+                            Text("Break · picked for you").font(.system(size: 11, weight: .semibold))
+                        }
+                        .foregroundStyle(Theme.secondaryText)
+                        .padding(.horizontal, 7)
+                        .frame(height: 20)
+                        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
                     }
                 }
-                .menuStyle(.borderlessButton)
+                .menuStyle(.button)
+                .buttonStyle(.plain)
                 .menuIndicator(.hidden)
                 .fixedSize()
+                .pointer(.pointingHand)
                 .help("Change the kind of break")
                 Spacer(minLength: 0)
             } else {
@@ -1863,9 +1870,11 @@ private struct BlockEditor: View {
             .font(.system(size: 12, weight: .medium))
             .foregroundStyle(Theme.accent)
         }
-        .menuStyle(.borderlessButton)
+        .menuStyle(.button)
+        .buttonStyle(.plain)
         .menuIndicator(.hidden)
         .fixedSize()
+        .pointer(.pointingHand)
         .help("A guided break at the end: move, walk, hydrate, snack or breathe")
     }
 
