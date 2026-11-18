@@ -151,7 +151,8 @@ final class WidgetController: NSObject, NSWindowDelegate {
         ui.shaking = true
         shakeTimer?.invalidate()
         let t = Timer(timeInterval: 60, repeats: false) { [weak self] _ in
-            Task { @MainActor in self?.stopShake() }
+            guard let self else { return }
+            Task { @MainActor in self.stopShake() }
         }
         RunLoop.main.add(t, forMode: .common)
         shakeTimer = t

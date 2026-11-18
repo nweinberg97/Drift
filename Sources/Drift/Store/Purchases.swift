@@ -124,7 +124,8 @@ final class Purchases: ObservableObject {
             // Check again just after it's due to renew, so a lapse is noticed.
             if let due = subscription.1 {
                 let timer = Timer(fire: due.addingTimeInterval(60), interval: 0, repeats: false) { [weak self] _ in
-                    Task { @MainActor in await self?.refresh() }
+                    guard let self else { return }
+                    Task { @MainActor in await self.refresh() }
                 }
                 RunLoop.main.add(timer, forMode: .common)
                 expiry = timer
