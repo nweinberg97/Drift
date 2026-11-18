@@ -434,6 +434,14 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
                 .background(Color(nsColor: .windowBackgroundColor))
             await render(view, name: name, dark: dark)
         }
+
+        // Settings › Breaks, with Move opened.
+        let breaks = Form { BreakSettingsSection(settings: settings) }
+            .formStyle(.grouped)
+            .frame(width: 460)
+            .fixedSize(horizontal: false, vertical: true)
+            .background(Color(nsColor: .windowBackgroundColor))
+        await render(breaks, name: "85-settings-breaks", dark: false)
     }
 
     private func renderShot<Content: View>(name: String, headline: String, sub: String, layout: ShotLayout,
