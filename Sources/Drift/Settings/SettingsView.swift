@@ -122,6 +122,8 @@ struct SettingsView: View {
                 }
             }
 
+            BreakSettingsSection(settings: settings)
+
             Section {
                 Picker("Next time block starts", selection: $settings.betweenBlocks) {
                     ForEach(AppSettings.BetweenBlocks.allCases) { Text($0.title).tag($0) }

@@ -122,6 +122,28 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         let pomoBreak = running(nil, total: 300, left: 244.4, pomodoro: rest)
         let done = finished("Reply to emails", total: 1_500)
 
+        // Guided breaks
+        var moveRest = PomodoroCycle()
+        moveRest.round = 2
+        moveRest.phase = .rest
+        moveRest.breakKind = .move
+        moveRest.activity = "Torso twists"
+        let moveBreak = running(nil, total: 300, left: 214.4, pomodoro: moveRest)
+        var waterRest = moveRest
+        waterRest.breakKind = .hydrate
+        waterRest.activity = "Glass of water"
+        let waterBreak = running(nil, total: 300, left: 132.4, pomodoro: waterRest)
+        var focusNext = PomodoroCycle()
+        focusNext.round = 2
+        focusNext.breakKind = .walk
+        let pomoNext = running(nil, total: 1_500, left: 931.4, pomodoro: focusNext)
+        var withBreaks = running("Writing sprint", total: 180, left: 121.4)
+        withBreaks.steps = [TimeBlock(name: "Writing", seconds: 1_500),
+                            TimeBlock(name: "Move break", seconds: 180, isBreak: true, breakKind: .move, activity: "Leg swings"),
+                            TimeBlock(name: "Editing", seconds: 1_500),
+                            TimeBlock(name: "Hydrate break", seconds: 120, isBreak: true, breakKind: .hydrate)]
+        withBreaks.stepIndex = 1
+
         return [
             Scenario(name: "01-idle", timers: []),
             Scenario(name: "01b-idle-pomodoro", timers: [], idleMode: 1),
@@ -158,6 +180,17 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "35-plan-dark-expanded", timers: [], expanded: true, blocks: plan(), dark: true),
             Scenario(name: "33b-plan-editor-routine", timers: [], blocks: plan(), editBlock: -1, routine: true),
             Scenario(name: "33c-plan-editor-blocks", timers: [], blocks: plan(), editBlock: 3),
+            Scenario(name: "80-break-move", timers: [moveBreak], primary: moveBreak.id),
+            Scenario(name: "81-break-hydrate-dark", timers: [waterBreak], primary: waterBreak.id, dark: true),
+            Scenario(name: "82-break-in-session", timers: [withBreaks], primary: withBreaks.id),
+            Scenario(name: "83-pomodoro-next-break", timers: [pomoNext], primary: pomoNext.id),
+            Scenario(name: "84-planner-with-breaks", timers: [], blocks: plan(), editBlock: 3, editChange: { d in
+                d.steps = [TimeBlock(name: "Writing", seconds: 1_200),
+                           TimeBlock(name: "Move break", seconds: 300, isBreak: true, breakKind: .move),
+                           TimeBlock(name: "Editing", seconds: 1_200),
+                           TimeBlock(name: "Break", seconds: 300, isBreak: true)]
+                d.duration = 3_000
+            }),
             Scenario(name: "36-plan-scheduled-card", timers: [], blocks: plan(), confirmFor: 0),
             Scenario(name: "39-plan-undo-delete", timers: [], expanded: true, blocks: plan(), deletedFor: 1),
             Scenario(name: "37-plan-scheduled-session", timers: [writing], primary: writing.id, blocks: plan(), confirmFor: 3),

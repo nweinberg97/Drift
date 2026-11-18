@@ -155,6 +155,15 @@ final class AppSettings: ObservableObject {
     @Published private(set) var recents: [RecentTask] { didSet { saveRecents() } }
     @Published private(set) var savedSessions: [SavedSession] { didSet { saveSessions() } }
 
+    // Guided breaks (see Breaks.swift)
+    @Published var guidedBreaks: Bool { didSet { set(guidedBreaks, "guidedBreaks") } }
+    @Published var breakActivities: [BreakActivity] { didSet { saveBreakActivities() } }
+    /// The kinds short Pomodoro breaks (and plain "break" blocks) rotate through.
+    @Published var breakShortKinds: [BreakKind] { didSet { set(breakShortKinds.map(\.rawValue), "breakShortKinds") } }
+    @Published var breakLongKind: BreakKind { didSet { set(breakLongKind.rawValue, "breakLongKind") } }
+    /// Mix the kinds up instead of going in order.
+    @Published var breakMix: Bool { didSet { set(breakMix, "breakMix") } }
+
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
         defaultDuration = defaults.object(forKey: "defaultDuration") as? Double ?? 1_500.0
@@ -196,6 +205,22 @@ final class AppSettings: ObservableObject {
         } else {
             savedSessions = []
         }
+
+        guidedBreaks = defaults.object(forKey: "guidedBreaks") as? Bool ?? true
+        if let data = defaults.data(forKey: "breakActivities"),
+           var stored = try? JSONDecoder().decode([BreakActivity].self, from: data) {
+            // Starters added in later versions show up too.
+            for starter in BreakActivity.starters where !stored.contains(where: { $0.id == starter.id }) {
+                stored.append(starter)
+            }
+            breakActivities = stored
+        } else {
+            breakActivities = BreakActivity.starters
+        }
+        let kinds = (defaults.array(forKey: "breakShortKinds") as? [String] ?? []).compactMap(BreakKind.init(rawValue:))
+        breakShortKinds = kinds.isEmpty ? [.move, .hydrate, .breathe] : kinds
+        breakLongKind = BreakKind(rawValue: defaults.string(forKey: "breakLongKind") ?? "") ?? .walk
+        breakMix = defaults.object(forKey: "breakMix") as? Bool ?? false
 
         var loaded = ShortcutAction.defaults
         if let data = defaults.data(forKey: "shortcuts"),
@@ -270,6 +295,12 @@ final class AppSettings: ObservableObject {
 
     func resetShortcuts() {
         shortcuts = ShortcutAction.defaults
+    }
+
+    private func saveBreakActivities() {
+        if let data = try? JSONEncoder().encode(breakActivities) {
+            defaults.set(data, forKey: "breakActivities")
+        }
     }
 
     private func set(_ value: Any, _ key: String) {

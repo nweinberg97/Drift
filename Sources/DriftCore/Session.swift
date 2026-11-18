@@ -6,11 +6,85 @@ public struct TimeBlock: Codable, Equatable, Sendable {
     public var seconds: TimeInterval
     /// Extra time added to this block so far (for the grace period).
     public var extra: TimeInterval
+    /// A break rather than work ("move 3m", "break 5m").
+    public var isBreak: Bool
+    /// The kind of break, when you said one; nil lets Temro pick from your plan.
+    public var breakKind: BreakKind?
+    /// The activity chosen for this break once it starts ("Torso twists").
+    public var activity: String?
 
-    public init(name: String, seconds: TimeInterval, extra: TimeInterval = 0) {
+    public init(name: String, seconds: TimeInterval, extra: TimeInterval = 0,
+                isBreak: Bool = false, breakKind: BreakKind? = nil, activity: String? = nil) {
         self.name = name
         self.seconds = seconds
         self.extra = extra
+        self.isBreak = isBreak || breakKind != nil
+        self.breakKind = breakKind
+        self.activity = activity
+    }
+
+    /// Sessions saved before breaks existed have none of the break fields.
+    public init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        name = try c.decode(String.self, forKey: .name)
+        seconds = try c.decode(TimeInterval.self, forKey: .seconds)
+        extra = try c.decodeIfPresent(TimeInterval.self, forKey: .extra) ?? 0
+        breakKind = try c.decodeIfPresent(BreakKind.self, forKey: .breakKind)
+        isBreak = try c.decodeIfPresent(Bool.self, forKey: .isBreak) ?? (breakKind != nil)
+        activity = try c.decodeIfPresent(String.self, forKey: .activity)
+    }
+
+    /// A break of `kind` (or one Temro picks, when nil).
+    public static func rest(_ kind: BreakKind?, seconds: TimeInterval) -> TimeBlock {
+        TimeBlock(name: kind.map { "\($0.title) break" } ?? "Break", seconds: seconds, isBreak: true, breakKind: kind)
+    }
+}
+
+/// The five kinds of guided break.
+public enum BreakKind: String, Codable, CaseIterable, Sendable, Identifiable {
+    case move, walk, hydrate, snack, breathe
+
+    public var id: String { rawValue }
+
+    public var title: String {
+        switch self {
+        case .move: return "Move"
+        case .walk: return "Walk"
+        case .hydrate: return "Hydrate"
+        case .snack: return "Snack"
+        case .breathe: return "Breathe"
+        }
+    }
+
+    /// Words that name this kind in typed text.
+    static let words: [String: BreakKind] = [
+        "move": .move, "movement": .move, "stretch": .move, "stretching": .move, "stretches": .move, "exercise": .move,
+        "walk": .walk, "walking": .walk, "stroll": .walk,
+        "water": .hydrate, "hydrate": .hydrate, "hydration": .hydrate, "drink": .hydrate,
+        "snack": .snack, "food": .snack, "eat": .snack,
+        "breathe": .breathe, "breathing": .breathe, "breath": .breathe, "breathwork": .breathe,
+    ]
+
+    /// Reads a block's name: "move", "water break", "breathing" are breaks of
+    /// a kind; "break", "rest", "coffee break" are breaks Temro fills in.
+    /// Returns nil for ordinary work.
+    public static func read(_ name: String) -> (kind: BreakKind?, name: String)? {
+        var words = name.lowercased().split(whereSeparator: { !$0.isLetter }).map(String.init)
+        guard !words.isEmpty else { return nil }
+        let endsInBreak = ["break", "rest", "pause"].contains(words.last!)
+        if endsInBreak { words.removeLast() }
+        let filler: Set<String> = ["a", "an", "the", "short", "quick", "little", "of", "some", "glass", "get", "go", "for", "take", "grab", "have"]
+        let meaningful = words.filter { !filler.contains($0) }
+        let kinds = Set(meaningful.compactMap { Self.words[$0] })
+        let allKnown = !meaningful.isEmpty && meaningful.allSatisfy { Self.words[$0] != nil }
+        if allKnown && kinds.count == 1 {
+            let kind = kinds.first!
+            return (kind, "\(kind.title) break")
+        }
+        if endsInBreak {
+            return (kinds.count == 1 ? kinds.first : nil, meaningful.isEmpty ? "Break" : name)
+        }
+        return nil
     }
 }
 
@@ -200,7 +274,11 @@ public enum SessionParser {
         let body = strip(preamble, from: text)
         guard let d = DurationParser.parse(body) else { return nil }
         let words = DurationParser.tokenize(d.label ?? "").filter { !["minute", "minutes", "min", "mins", "block", "blocks"].contains($0) }
-        return TimeBlock(name: DurationParser.cleanLabel(words) ?? "", seconds: d.seconds)
+        let name = DurationParser.cleanLabel(words) ?? ""
+        if let rest = BreakKind.read(name) {
+            return TimeBlock(name: rest.name, seconds: d.seconds, isBreak: true, breakKind: rest.kind)
+        }
+        return TimeBlock(name: name, seconds: d.seconds)
     }
 
     private static func strip(_ re: NSRegularExpression, from text: String) -> String {

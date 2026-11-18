@@ -72,8 +72,9 @@ final class NotificationService: NSObject, UNUserNotificationCenterDelegate {
             let next = cycle.upNext
             switch cycle.phase {
             case .focus:
+                let what = cycle.breakKind.map { "\($0.title) break" } ?? next.name
                 return ("Focus \(cycle.roundInSet) of \(cycle.roundsPerSet) done",
-                        "\(next.name) for \(TimeFormatter.spoken(next.duration)). It's started; step away.")
+                        "\(what) for \(TimeFormatter.spoken(next.duration)). It's started; step away.")
             case .rest, .longRest:
                 return ("Break's over", "Back to focus for \(TimeFormatter.spoken(next.duration)).")
             }

@@ -229,16 +229,29 @@ final class AppDelegate: NSObject, NSApplicationDelegate, TimerStoreDelegate {
 
     func timerStore(_ store: TimerStore, didFinishBlock finished: String, in timer: DriftTimer, late: Bool) {
         guard !late else { return }
-        // Block to block: a soft cue, and the widget in view for the hand-off card.
-        if settings.completionSound { chimes.playPhase(volume: settings.soundVolume) }
+        // Block to block: a soft cue (a different one when a break starts), and
+        // the widget in view for the hand-off card.
+        if settings.completionSound {
+            if timer.currentBlock?.isBreak == true {
+                chimes.playBreak(volume: settings.soundVolume)
+            } else {
+                chimes.playPhase(volume: settings.soundVolume)
+            }
+        }
         if settings.widgetHidden || timer.isWaiting { widget.show() }
     }
 
     func timerStore(_ store: TimerStore, didFinish timer: DriftTimer, late: Bool) {
         guard !late else { return }
         if timer.pomodoro != nil {
-            // Focus ↔ break: a softer cue, and the widget comes back into view.
-            if settings.completionSound { chimes.playPhase(volume: settings.soundVolume) }
+            // Focus → break: a soft falling cue. Break → focus: the rising "back to work" one.
+            if settings.completionSound {
+                if timer.pomodoro?.phase == .focus {
+                    chimes.playBreak(volume: settings.soundVolume)
+                } else {
+                    chimes.playPhase(volume: settings.soundVolume)
+                }
+            }
             if settings.widgetHidden { widget.show() }
             return
         }

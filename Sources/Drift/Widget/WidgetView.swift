@@ -205,6 +205,7 @@ struct WidgetView: View {
         if ui.hideHint { return nil }
         if ui.blockDraft != nil { return max(editorWidth, cardWidth) }
         // The idle row, cards and sessions need room; a single timer hugs its content.
+        if let p = store.primary, settings.breakNow(p) != nil { return cardWidth }
         if store.primary == nil || store.primary?.isFinished == true || store.primary?.isWaiting == true
             || store.primary?.isSession == true || ui.confirmation != nil || ui.deleted != nil { return cardWidth }
         if ui.expanded || ui.dialID != nil || schedule.prompt != nil { return cardWidth }
@@ -234,8 +235,17 @@ struct WidgetView: View {
                     HandoffCard(timer: primary, store: store)
                         .transition(.opacity)
                 }
-                PrimaryRow(timer: primary, store: store, ui: ui, scale: scale,
-                           othersCount: store.others.count, actions: actions)
+                if let now = settings.breakNow(primary), ui.dialID == nil, ui.renamingID != primary.id {
+                    BreakCard(timer: primary, now: now, store: store, scale: scale)
+                        .transition(.opacity)
+                } else {
+                    PrimaryRow(timer: primary, store: store, ui: ui, scale: scale,
+                               othersCount: store.others.count, actions: actions)
+                }
+                if settings.guidedBreaks, !ui.expanded, ui.dialID == nil, let cycle = primary.pomodoro,
+                   !cycle.isBreak, let kind = cycle.breakKind, !primary.isFinished {
+                    NextBreakLine(kind: kind, duration: cycle.upNext.duration, scale: scale)
+                }
                 if primary.isSession, !ui.expanded, ui.dialID == nil, let steps = primary.steps {
                     SessionBar(timer: primary, steps: steps, now: store.now, width: cardWidth - 46 * scale)
                         .padding(.leading, 33 * scale)
@@ -754,7 +764,7 @@ private struct PomodoroStrip: View {
                 Text(cycle.isBreak ? "\(cycle.phaseName) — step away" : "Focus \(cycle.roundInSet) of \(cycle.roundsPerSet)")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(cycle.isBreak ? Theme.accent : Theme.primaryText)
-                Text("\(cycle.upNext.name) next, \(TimeFormatter.compact(cycle.upNext.duration)). Runs on its own.")
+                Text("\(!cycle.isBreak && cycle.breakKind != nil ? "\(cycle.breakKind!.title) break" : cycle.upNext.name) next, \(TimeFormatter.compact(cycle.upNext.duration)). Runs on its own.")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.secondaryText)
             }
@@ -1702,16 +1712,19 @@ private struct BlockEditor: View {
                     }
                 }
             }
-            Button {
-                addStep(draft)
-            } label: {
-                HStack(spacing: 5) {
-                    Image(systemName: "plus").font(.system(size: 9, weight: .bold))
-                    Text(draft.steps == nil ? "Add a time block" : "Add another")
+            HStack(spacing: 14) {
+                Button {
+                    addStep(draft)
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                        Text(draft.steps == nil ? "Add a time block" : "Add another")
+                    }
                 }
+                .buttonStyle(QuietButtonStyle(prominent: true))
+                .help("Adds 15 minutes at the end. Or hover the timeline and click +.")
+                addBreakMenu(draft)
             }
-            .buttonStyle(QuietButtonStyle(prominent: true))
-            .help("Adds 15 minutes at the end. Or hover the timeline and click +.")
             TextField("Or type them: inbox 10m, plan 20m, review 10m", text: $splitText)
                 .noWindowDrag("planner-split", ui)
                 .textFieldStyle(.plain)
@@ -1736,15 +1749,39 @@ private struct BlockEditor: View {
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(Theme.tertiaryText)
                 .frame(width: 34, alignment: .leading)
-            TextField("Name", text: Binding(
-                get: { ui.blockDraft?.steps.flatMap { $0.indices.contains(i) ? $0[i].name : nil } ?? "" },
-                set: { v in if ui.blockDraft?.steps?.indices.contains(i) == true { ui.blockDraft?.steps?[i].name = v } }
-            ))
-            .textFieldStyle(.plain)
-            .font(.system(size: 12))
-            .padding(.horizontal, 6)
-            .frame(height: 22)
-            .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+            if step.isBreak {
+                Menu {
+                    ForEach(BreakKind.allCases) { kind in
+                        Button { setBreak(i, kind) } label: { Label(kind.title, systemImage: kind.symbol) }
+                    }
+                    Button("Pick one for me") { setBreak(i, nil) }
+                    Divider()
+                    Button("Make it a work block") { makeWork(i) }
+                } label: {
+                    if let kind = step.breakKind {
+                        BreakChip(kind: kind, suffix: "break")
+                    } else {
+                        Text("Break · picked for you")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(Theme.secondaryText)
+                    }
+                }
+                .menuStyle(.borderlessButton)
+                .menuIndicator(.hidden)
+                .fixedSize()
+                .help("Change the kind of break")
+                Spacer(minLength: 0)
+            } else {
+                TextField("Name", text: Binding(
+                    get: { ui.blockDraft?.steps.flatMap { $0.indices.contains(i) ? $0[i].name : nil } ?? "" },
+                    set: { v in if ui.blockDraft?.steps?.indices.contains(i) == true { ui.blockDraft?.steps?[i].name = v } }
+                ))
+                .textFieldStyle(.plain)
+                .font(.system(size: 12))
+                .padding(.horizontal, 6)
+                .frame(height: 22)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+            }
             Button("−") { resizeStep(i, by: -ui.nudgeStep) }
                 .buttonStyle(PillButtonStyle(square: true))
                 .help("\(ui.nudgeStep) min shorter")
@@ -1759,6 +1796,18 @@ private struct BlockEditor: View {
                 .buttonStyle(IconButtonStyle(size: 18))
                 .help("Remove this time block")
         }
+    }
+
+    private func setBreak(_ i: Int, _ kind: BreakKind?) {
+        guard var steps = ui.blockDraft?.steps, steps.indices.contains(i) else { return }
+        steps[i] = .rest(kind, seconds: steps[i].seconds)
+        ui.blockDraft?.steps = steps
+    }
+
+    private func makeWork(_ i: Int) {
+        guard var steps = ui.blockDraft?.steps, steps.indices.contains(i) else { return }
+        steps[i] = TimeBlock(name: "Block \(i + 1)", seconds: steps[i].seconds)
+        ui.blockDraft?.steps = steps
     }
 
     /// A time block's length changes; the session grows or shrinks with it.
@@ -1796,6 +1845,37 @@ private struct BlockEditor: View {
 
     private func reframe() {
         if var d = ui.blockDraft { BlockTimeline.frame(&d); ui.blockDraft = d }
+    }
+
+    /// "+ Add a break": pick a kind, or let Temro choose from your plan.
+    private func addBreakMenu(_ draft: BlockDraft) -> some View {
+        Menu {
+            ForEach(BreakKind.allCases) { kind in
+                Button { addBreak(kind, draft) } label: { Label(kind.title, systemImage: kind.symbol) }
+            }
+            Divider()
+            Button("Pick one for me") { addBreak(nil, draft) }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                Text("Add a break")
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Theme.accent)
+        }
+        .menuStyle(.borderlessButton)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .help("A guided break at the end: move, walk, hydrate, snack or breathe")
+    }
+
+    private func addBreak(_ kind: BreakKind?, _ draft: BlockDraft) {
+        var steps = draft.steps ?? [TimeBlock(name: draft.name.isEmpty ? "Part 1" : draft.name, seconds: draft.duration)]
+        let length: TimeInterval = kind == .walk ? 600 : 300
+        steps.append(.rest(kind, seconds: length))
+        ui.blockDraft?.steps = steps
+        ui.blockDraft?.duration = draft.duration + length
+        reframe()
     }
 
     private func addStep(_ draft: BlockDraft) {
@@ -2062,7 +2142,9 @@ struct BlockTimeline: View {
                 ForEach(Array(steps.enumerated()), id: \.offset) { item in
                     let sw = w * CGFloat(item.element.seconds / total)
                     ZStack(alignment: .trailing) {
-                        Rectangle().fill(Theme.accent.opacity(item.offset % 2 == 0 ? 1 : 0.8))
+                        Rectangle().fill(item.element.isBreak
+                                         ? (item.element.breakKind?.color ?? Theme.secondaryText)
+                                         : Theme.accent.opacity(item.offset % 2 == 0 ? 1 : 0.8))
                         Text(item.element.name)
                             .font(.system(size: 10.5, weight: .semibold))
                             .foregroundStyle(.white)

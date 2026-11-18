@@ -458,10 +458,13 @@ struct SessionBar: View {
         HStack(spacing: 2) {
             ForEach(Array(steps.enumerated()), id: \.offset) { item in
                 let w = max(3, (width - gaps) * CGFloat(item.element.seconds / total))
+                // Breaks show in their kind's colour.
+                let tint = item.element.isBreak ? (item.element.breakKind?.color ?? Theme.secondaryText) : Theme.accent
                 ZStack(alignment: .leading) {
-                    Capsule().fill(item.offset < timer.step ? Theme.accent.opacity(0.45) : Theme.control)
+                    Capsule().fill(item.offset < timer.step ? tint.opacity(0.45)
+                                   : item.element.isBreak ? tint.opacity(0.22) : Theme.control)
                     if item.offset == timer.step {
-                        Capsule().fill(Theme.accent).frame(width: max(2, w * CGFloat(timer.progress(at: now))))
+                        Capsule().fill(tint).frame(width: max(2, w * CGFloat(timer.progress(at: now))))
                     }
                 }
                 .frame(width: w, height: 3)

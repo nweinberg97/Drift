@@ -843,16 +843,23 @@ struct SessionSteps: View {
         FlowLayout(spacing: 4) {
             ForEach(Array(spec.steps.enumerated()), id: \.offset) { item in
                 let at = start + spec.steps.prefix(item.offset).reduce(0) { $0 + $1.seconds } / 60
+                let kind = item.element.isBreak ? item.element.breakKind : nil
                 HStack(spacing: 5) {
                     Text(item.offset == 0 && spec.schedule == nil ? "now" : Schedule.time(Int(at.rounded()), suffix: false))
                         .foregroundStyle(Theme.tertiaryText)
-                    Text(item.element.name).foregroundStyle(Theme.primaryText).lineLimit(1)
+                    if let kind {
+                        Image(systemName: kind.symbol).font(.system(size: 9.5, weight: .semibold)).foregroundStyle(kind.color)
+                        Text(kind.title).fontWeight(.semibold).foregroundStyle(kind.color).lineLimit(1)
+                    } else {
+                        Text(item.element.name).foregroundStyle(item.element.isBreak ? Theme.secondaryText : Theme.primaryText).lineLimit(1)
+                    }
                     Text(TimeFormatter.compact(item.element.seconds)).foregroundStyle(Theme.tertiaryText)
                 }
                 .font(.system(size: 11.5).monospacedDigit())
                 .padding(.horizontal, 8)
                 .frame(height: 22)
-                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous)
+                    .fill(kind.map { $0.color.opacity(0.14) } ?? Theme.control))
             }
         }
         .accessibilityElement(children: .combine)

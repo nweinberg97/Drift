@@ -154,6 +154,25 @@ final class TimerStore: ObservableObject {
     /// Pomodoro: end the current phase now and start the next one.
     func skipPhase(_ id: UUID) { mutate(id) { $0.advancePomodoro(from: Date()) } }
 
+    /// Guided breaks: a different activity of the same kind.
+    func swapBreak(_ id: UUID) {
+        mutate(id) { t in
+            if var c = t.pomodoro, c.isBreak, let kind = c.breakKind {
+                c.activity = settings.pickActivity(kind, avoiding: c.activity).name
+                t.pomodoro = c
+            } else if var steps = t.steps, let i = t.stepIndex, steps.indices.contains(i), steps[i].isBreak, let kind = steps[i].breakKind {
+                steps[i].activity = settings.pickActivity(kind, avoiding: steps[i].activity).name
+                t.steps = steps
+            }
+        }
+    }
+
+    /// Guided breaks: end the break now and go back to work.
+    func endBreak(_ id: UUID) {
+        guard let t = timer(id) else { return }
+        if t.pomodoro?.isBreak == true { skipPhase(id) } else if t.currentBlock?.isBreak == true { nextBlock(id) }
+    }
+
     var hasFinished: Bool { timers.contains(where: \.isFinished) }
 
     func toggle(_ id: UUID) { mutate(id) { $0.toggle(at: Date()) } }
@@ -351,6 +370,8 @@ final class TimerStore: ObservableObject {
     }
 
     private func commit(scheduleOnly: Bool = false) {
+        // Guided breaks: fill in the break kind and activity where one's due.
+        for index in timers.indices { settings.guide(&timers[index]) }
         now = Date()
         save()
         delegate?.timerStoreScheduleDidChange(self)

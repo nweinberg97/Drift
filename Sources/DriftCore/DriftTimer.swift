@@ -20,6 +20,11 @@ public struct PomodoroCycle: Codable, Equatable, Sendable {
     public var phase: Phase
     /// 1-based focus session number, counting up forever.
     public var round: Int
+    /// Guided breaks: during focus, the kind of the break coming up; during a
+    /// break, its kind. Filled in by the app from your break plan.
+    public var breakKind: BreakKind?
+    /// The activity for the current break ("Leg swings").
+    public var activity: String?
 
     public init(
         focus: TimeInterval = 25 * 60,
@@ -46,6 +51,8 @@ public struct PomodoroCycle: Codable, Equatable, Sendable {
         roundsPerSet = try c.decodeIfPresent(Int.self, forKey: .roundsPerSet) ?? 4
         phase = try c.decodeIfPresent(Phase.self, forKey: .phase) ?? .focus
         round = try c.decodeIfPresent(Int.self, forKey: .round) ?? 1
+        breakKind = try c.decodeIfPresent(BreakKind.self, forKey: .breakKind)
+        activity = try c.decodeIfPresent(String.self, forKey: .activity)
     }
 
     public var isBreak: Bool { phase != .focus }
@@ -85,7 +92,9 @@ public struct PomodoroCycle: Codable, Equatable, Sendable {
         case .rest, .longRest:
             next.phase = .focus
             next.round += 1
+            next.breakKind = nil
         }
+        next.activity = nil
         return next
     }
 

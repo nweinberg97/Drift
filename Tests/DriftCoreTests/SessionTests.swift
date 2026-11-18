@@ -107,4 +107,46 @@ final class SessionTests: XCTestCase {
         XCTAssertNil(timers[0].steps)
         XCTAssertEqual(timers[0].extraSoFar, 0)
     }
+
+    // MARK: Guided breaks
+
+    func testTypedBreaks() throws {
+        let s = try XCTUnwrap(parse("Writing 25m, move 3m, editing 25m, water break 2m, breathe 1m"))
+        XCTAssertEqual(s.steps.map(\.isBreak), [false, true, false, true, true])
+        XCTAssertEqual(s.steps.map(\.breakKind), [nil, .move, nil, .hydrate, .breathe])
+        XCTAssertEqual(s.steps[1].name, "Move break")
+        XCTAssertEqual(s.steps[1].seconds, 180)
+    }
+
+    func testPlainBreakIsLeftToThePlan() throws {
+        let s = try XCTUnwrap(parse("Inbox 15m, break 5m, calls 30m, coffee break 10m"))
+        XCTAssertEqual(s.steps.map(\.isBreak), [false, true, false, true])
+        XCTAssertNil(s.steps[1].breakKind)
+        XCTAssertEqual(s.steps[1].name, "Break")
+        XCTAssertEqual(s.steps[3].name, "Coffee break")
+    }
+
+    func testWorkThatMentionsBreakWordsStaysWork() throws {
+        let s = try XCTUnwrap(parse("Walk the dog 20m, eat lunch 30m, write 25m"))
+        XCTAssertEqual(s.steps.map(\.isBreak), [false, false, false])
+    }
+
+    func testOldSavedBlocksDecode() throws {
+        let old = #"[{"name":"Inbox","seconds":600,"extra":0}]"#
+        let blocks = try JSONDecoder().decode([TimeBlock].self, from: Data(old.utf8))
+        XCTAssertFalse(blocks[0].isBreak)
+        XCTAssertNil(blocks[0].breakKind)
+    }
+
+    func testPomodoroForgetsTheBreakWhenFocusStarts() {
+        var c = PomodoroCycle()
+        c.breakKind = .move
+        let rest = c.advanced()
+        XCTAssertEqual(rest.breakKind, .move)
+        var withActivity = rest
+        withActivity.activity = "Leg swings"
+        let focus = withActivity.advanced()
+        XCTAssertNil(focus.breakKind)
+        XCTAssertNil(focus.activity)
+    }
 }

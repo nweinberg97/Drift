@@ -5,12 +5,14 @@ import AppKit
 /// - Start: a single soft wooden "tok", barely there.
 /// - Complete: a bright three-note bell (G5 · C6 · E6) that's easy to notice
 ///   across a room but never harsh. Repeats until dismissed by default.
-/// - Phase: two gentle notes for Pomodoro focus ↔ break changes.
+/// - Phase: two gentle rising notes: back to work.
+/// - Break: two slow falling notes: a break starts, ease off.
 @MainActor
 final class Chimes {
     private lazy var startSound: NSSound? = NSSound(data: Chimes.wav(Chimes.renderStart()))
     private lazy var completeSound: NSSound? = NSSound(data: Chimes.wav(Chimes.renderComplete()))
     private lazy var phaseSound: NSSound? = NSSound(data: Chimes.wav(Chimes.renderPhase()))
+    private lazy var breakSound: NSSound? = NSSound(data: Chimes.wav(Chimes.renderBreak()))
 
     private var ringTimer: Timer?
     private var ringStarted: Date?
@@ -29,6 +31,11 @@ final class Chimes {
 
     func playPhase(volume: Double) {
         play(phaseSound, volume: volume * 0.8)
+    }
+
+    /// A break starts: softer and falling, so it sounds different from "back to work".
+    func playBreak(volume: Double) {
+        play(breakSound, volume: volume * 0.75)
     }
 
     /// Chimes now, then every `interval` seconds until `stopRinging()` or
@@ -98,6 +105,14 @@ final class Chimes {
         bell(into: &out, frequency: 659.25, start: 0.0, gain: 0.5, decay: 0.8)   // E5
         bell(into: &out, frequency: 987.77, start: 0.2, gain: 0.45, decay: 1.0)   // B5
         normalize(&out, to: 0.7)
+        return out
+    }
+
+    private static func renderBreak() -> [Float] {
+        var out = [Float](repeating: 0, count: Int(sampleRate * 2.4))
+        bell(into: &out, frequency: 783.99, start: 0.0, gain: 0.45, decay: 1.0)   // G5
+        bell(into: &out, frequency: 523.25, start: 0.32, gain: 0.5, decay: 1.6)   // C5
+        normalize(&out, to: 0.6)
         return out
     }
 
