@@ -114,6 +114,12 @@ CHANGE IT WITHOUT STOPPING
 • Click the name to rename it. Click the time to turn the dial, or double-click to type it.
 • Add or take off five minutes, or run several timers at once.
 
+GUIDED BREAKS
+• Breaks that tell you what to do: move, walk, hydrate, snack or breathe.
+• A break card with the activity, a one-line how-to and the time left. Swap it, or get back to work.
+• Type "move 3m" or "water break 2m" into a session, or add breaks in the planner.
+• Pick your own activities, or add your own.
+
 HARD TO MISS WHEN TIME'S UP
 • The widget shakes until you touch it, so you notice even with the sound off.
 • A soft chime, a notification, and a big Done button.
