@@ -1901,11 +1901,14 @@ private struct BlockEditor: View {
     private func splitEvenlyRow(_ draft: BlockDraft) -> some View {
         let count = draft.steps?.count ?? 0
         let most = Self.mostBlocks(draft.duration)
+        // A number lights up only when the blocks really are even.
+        let lengths = (draft.steps ?? []).map(\.seconds)
+        let even = (lengths.max() ?? 0) - (lengths.min() ?? 0) <= 60
         HStack(spacing: 4) {
             Text("Split evenly").font(.system(size: 11)).foregroundStyle(Theme.tertiaryText)
             ForEach([2, 3, 4], id: \.self) { n in
                 Button("\(n)") { splitEvenly(n, draft) }
-                    .buttonStyle(PillButtonStyle(selected: count == n, square: true))
+                    .buttonStyle(PillButtonStyle(selected: count == n && even, square: true))
                     .disabled(n > most)
                     .help("Split into \(n) equal parts")
             }
