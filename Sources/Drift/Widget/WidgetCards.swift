@@ -501,7 +501,7 @@ struct SessionList: View {
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.tertiaryText)
                 Spacer(minLength: 6)
-                Button(editing ? "Done editing" : "Edit") {
+                Button(editing ? "Done" : "Edit") {
                     if editing { store.finishEditing(timer.id) }
                     withAnimation(Theme.quick) { ui.editingSession = editing ? nil : timer.id }
                 }

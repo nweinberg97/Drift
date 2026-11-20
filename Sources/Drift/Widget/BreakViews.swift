@@ -80,7 +80,7 @@ struct BreakKindMenu: View {
             } else {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))
-                    Text("Break · picked for you").font(.system(size: 11, weight: .semibold))
+                    Text("Any break").font(.system(size: 11, weight: .semibold))
                 }
                 .foregroundStyle(Theme.secondaryText)
                 .padding(.horizontal, 7)
@@ -93,7 +93,7 @@ struct BreakKindMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .pointer(.pointingHand)
-        .help("Change the kind of break")
+        .help(kind == nil ? "Temro picks the kind when it starts. Click to choose one." : "Change the kind of break")
     }
 }
 
