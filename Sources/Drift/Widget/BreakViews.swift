@@ -63,6 +63,8 @@ struct BreakChip: View {
 /// A break row's chip: click it to change the kind.
 struct BreakKindMenu: View {
     let kind: BreakKind?
+    /// "Hydrate" rather than "Hydrate break", for tight rows.
+    var compact = false
     let pick: (BreakKind?) -> Void
     let makeWork: () -> Void
 
@@ -76,7 +78,7 @@ struct BreakKindMenu: View {
             Button("Make it a work block", action: makeWork)
         } label: {
             if let kind {
-                BreakChip(kind: kind, suffix: "break")
+                BreakChip(kind: kind, suffix: compact ? nil : "break")
             } else {
                 HStack(spacing: 4) {
                     Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))

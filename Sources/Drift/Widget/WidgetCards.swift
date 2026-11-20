@@ -583,9 +583,9 @@ struct SessionList: View {
                     .frame(width: 36, alignment: .leading)
                 if block.isBreak {
                     if current {
-                        if let kind = block.breakKind { BreakChip(kind: kind, suffix: "break") }
+                        if let kind = block.breakKind { BreakChip(kind: kind) }
                     } else {
-                        BreakKindMenu(kind: block.breakKind,
+                        BreakKindMenu(kind: block.breakKind, compact: true,
                                       pick: { kind in store.editBlock(timer.id, at: i) { up, k in
                                           up[k] = .rest(kind, seconds: up[k].seconds) } },
                                       makeWork: { store.applyEdit(timer.id, .makeWork, at: i) })
