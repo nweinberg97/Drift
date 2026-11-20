@@ -80,6 +80,12 @@ button { font: inherit; color: inherit; }
 .r { position: relative; display: flex; align-items: center; gap: 6px; height: 32px; padding: 0 6px; border-radius: 7px; }
 @keyframes rin { from { opacity: 0; transform: translateY(-3px); } }
 .r:hover { background: var(--ctl); }
+.grip { width: 14px; flex: none; align-self: stretch; display: grid; place-items: center; color: var(--ink3); cursor: grab; touch-action: none; }
+.grip svg { width: 10px; height: 10px; }
+.grip:hover { color: var(--ink); }
+.r.lift { z-index: 5; background: var(--surface); box-shadow: 0 6px 16px -4px rgba(0,0,0,.3); cursor: grabbing; }
+.r.lift .grip { color: var(--accent); cursor: grabbing; }
+.r .gap { width: 14px; flex: none; }
 .r .at { width: 38px; flex: none; font-size: 11px; color: var(--ink3); font-variant-numeric: tabular-nums; }
 .r input.nm { flex: 1; min-width: 0; height: 24px; border: 0; border-radius: 6px; padding: 0 7px; background: var(--ctl); color: var(--ink); font: 12px var(--sans); outline: none; }
 .r input.nm:focus { box-shadow: 0 0 0 1.5px var(--accent); }
@@ -151,11 +157,12 @@ button { font: inherit; color: inherit; }
       <h2>Put a break exactly where you want it</h2>
       <p>The bug: <b>+ Add a break</b> always put the break at the end of the session, after your last block, so there was no way to get one in between.</p>
       <ul>
-        <li><b>⋯ on any block</b> adds a break or a block right after it, moves it up or down, or deletes it.</li>
-        <li><b>+ Add a break › Between every block</b> drops a break of one kind between each pair of work blocks in one go (it skips gaps that already have one).</li>
+        <li><b>+ Add a break</b> now puts a break <b>between every block</b> by default (skipping gaps that already have one). Once every gap has one, it adds one at the end. "Just one, at the end" is still there.</li>
+        <li><b>Drag the ⠿ handle</b> to move any block or break. The others slide out of the way as you go.</li>
+        <li><b>⋯ on any block</b> adds a break or a block right after it, or deletes it.</li>
         <li>The bar at the top shows breaks in their colour, so you can see where they landed.</li>
       </ul>
-      <div class="try">Try it: open ⋯ on "Writing" and add a Move break, then use Add a break › Between every block › Hydrate.</div>
+      <div class="try">Try it: click + Add a break › Hydrate, then drag "Reading" to the top.</div>
     </div>
     <div class="desk"><div class="widget" id="plan"></div></div>
   </section>
@@ -167,7 +174,7 @@ button { font: inherit; color: inherit; }
       <p>Expand the widget during a session and click <b>Edit</b>. The timer keeps running while you change things.</p>
       <ul>
         <li><b>Current block:</b> give it more or less time with − / +, or rename it.</li>
-        <li><b>Coming up:</b> rename, change lengths, reorder, delete, or add blocks and breaks anywhere with ⋯.</li>
+        <li><b>Coming up:</b> drag ⠿ to reorder, rename, change lengths, delete, or add blocks and breaks with ⋯. + Add a break fills the gaps between what's left.</li>
         <li><b>Finished blocks</b> are locked. End times update as you go.</li>
         <li>Click <b>Done</b> to close the editor. Changes save as you make them, so there's nothing to lose.</li>
       </ul>
@@ -187,6 +194,7 @@ button { font: inherit; color: inherit; }
     snack: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3.5c-1.4-1-4-.6-4 2.2C2 8.5 4 11 5 11c.5 0 .6-.3 1-.3s.5.3 1 .3c1 0 3-2.5 3-5.3 0-2.8-2.6-3.2-4-2.2zM6 3.5c0-1 .5-2 1.5-2.4"/></svg>',
     breathe: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"><path d="M1.5 4.5h6a1.5 1.5 0 1 0-1.5-1.5M1.5 7.5h8a1.5 1.5 0 1 1-1.5 1.5"/></svg>',
     any: '<svg viewBox="0 0 12 12" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><path d="M6 1.5v2M6 8.5v2M1.5 6h2M8.5 6h2M3 3l1.2 1.2M7.8 7.8L9 9M9 3L7.8 4.2M4.2 7.8L3 9"/></svg>',
+    grip: '<svg viewBox="0 0 10 10" fill="currentColor"><circle cx="3" cy="2" r="1"/><circle cx="7" cy="2" r="1"/><circle cx="3" cy="5" r="1"/><circle cx="7" cy="5" r="1"/><circle cx="3" cy="8" r="1"/><circle cx="7" cy="8" r="1"/></svg>',
     dots: '<svg viewBox="0 0 12 12" fill="currentColor"><circle cx="2.5" cy="6" r="1.1"/><circle cx="6" cy="6" r="1.1"/><circle cx="9.5" cy="6" r="1.1"/></svg>',
   };
   const KINDS = ['move', 'walk', 'hydrate', 'snack', 'breathe'];
@@ -231,12 +239,48 @@ button { font: inherit; color: inherit; }
     if (d.act === 'work') list[i] = { name: 'New block', mins: list[i].mins };
     if (d.act === 'del') list.splice(i, 1);
   }
+  function addBreaks(list, kind, from = 0) {
+    const before = list.length; betweenEvery(list, kind, from);
+    if (list.length === before) list.push(brk(kind, kind === 'walk' ? 10 : 5));
+  }
+  const breakMenu = () => `<div class="h">Between every block</div>${kindGrid('every')}<button data-act="every" data-kind="any"><span class="k t-any">${ICON.any}</span>Pick for me each time</button>
+    <div class="sep"></div><div class="h">Just one, at the end</div>${kindGrid('end')}`;
   function betweenEvery(list, kind, from = 0) {
     for (let i = list.length - 2; i >= from; i--) {
       if (!list[i].brk && !list[i + 1].brk) list.splice(i + 1, 0, brk(kind, kind === 'walk' ? 10 : 5));
     }
   }
   const lenCtl = (mins, i) => `<span class="len"><button data-len="-5" data-i="${i}" aria-label="5 minutes less">−</button><span>${mins}m</span><button data-len="5" data-i="${i}" aria-label="5 minutes more">+</button></span>`;
+
+  /* drag to reorder: each time the row passes half its height it swaps with its neighbour */
+  let drag = null;
+  document.addEventListener('pointerdown', e => {
+    const g = e.target.closest('[data-grip]'); if (!g) return;
+    e.preventDefault(); closeMenu();
+    const row = g.closest('.r');
+    drag = { list: g.dataset.grip, i: +g.dataset.gi, y0: e.clientY, spent: 0, pitch: row.offsetHeight };
+    redraw();
+  });
+  document.addEventListener('pointermove', e => {
+    if (!drag) return;
+    const list = drag.list === 'plan' ? plan : live;
+    const lo = drag.list === 'plan' ? 0 : cur + 1, hi = list.length - 1;
+    let off = e.clientY - drag.y0 - drag.spent, moved = false;
+    while (off > drag.pitch / 2 && drag.i < hi) { [list[drag.i], list[drag.i + 1]] = [list[drag.i + 1], list[drag.i]]; drag.i++; drag.spent += drag.pitch; off -= drag.pitch; moved = true; }
+    while (off < -drag.pitch / 2 && drag.i > lo) { [list[drag.i], list[drag.i - 1]] = [list[drag.i - 1], list[drag.i]]; drag.i--; drag.spent -= drag.pitch; off += drag.pitch; moved = true; }
+    if (drag.i === hi && off > 0) off = Math.min(off, drag.pitch * .4);
+    if (drag.i === lo && off < 0) off = Math.max(off, -drag.pitch * .4);
+    if (moved) redraw();
+    const el = document.querySelector(`#${drag.list === 'plan' ? 'plan' : 'live'} .r[data-row="${drag.i}"]`);
+    if (el) el.style.transform = `translateY(${off}px)`;
+  });
+  document.addEventListener('pointerup', () => {
+    if (!drag) return;
+    const el = document.querySelector(`#${drag.list === 'plan' ? 'plan' : 'live'} .r[data-row="${drag.i}"]`);
+    const l = drag.list; drag = null;
+    if (el) { el.style.transition = 'transform .2s cubic-bezier(.2,.8,.3,1)'; el.style.transform = ''; setTimeout(() => (l === 'plan' ? renderPlan : renderLive)(), 200); }
+  });
+  function redraw() { if (!drag) return; drag.list === 'plan' ? renderPlan() : renderLive(); }
 
   /* ---------- 7. Planner ---------- */
   const plan = [{ name: 'Writing', mins: 25 }, { name: 'Editing', mins: 25 }, { name: 'Reading', mins: 20 }];
@@ -246,8 +290,8 @@ button { font: inherit; color: inherit; }
     const total = plan.reduce((a, b) => a + b.mins, 0);
     $('plan').innerHTML = `<div class="sec-h"><b>${plan.length} time blocks</b><span>· ${clock(START)} – ${clock(START + total)} PM</span><span class="sp"></span></div>
       <div class="bar">${plan.map(b => `<i class="${b.brk ? 'b t-' + b.kind : ''}" style="--f:${b.mins}"></i>`).join('')}</div>
-      <div class="rows">${plan.map((b, i) => { const s = at; at += b.mins; return `<div class="r">
-        <span class="at">${clock(s)}</span>
+      <div class="rows">${plan.map((b, i) => { const s = at; at += b.mins; return `<div class="r${drag && drag.list === 'plan' && drag.i === i ? ' lift' : ''}" data-row="${i}">
+        <span class="grip" data-grip="plan" data-gi="${i}" aria-hidden="true">${ICON.grip}</span><span class="at">${clock(s)}</span>
         ${b.brk ? `<span class="grow">${chip(b)}</span>` : `<input class="nm" value="${b.name}" data-i="${i}" aria-label="Block name">`}
         ${lenCtl(b.mins, i)}
         <button class="more" data-more="${i}" aria-label="More for ${b.name}" aria-expanded="false">${ICON.dots}</button></div>`; }).join('')}</div>
@@ -258,10 +302,9 @@ button { font: inherit; color: inherit; }
     if (b.dataset.len) { const i = +b.dataset.i; plan[i].mins = Math.max(5, plan[i].mins + +b.dataset.len); renderPlan(); }
     if (b.dataset.more) { const i = +b.dataset.more; openMenu(b, rowMenu(i, plan, -1), d => { apply(plan, i, d); renderPlan(); }); }
     if (b.dataset.add === 'block') { plan.push({ name: 'New block', mins: 15 }); renderPlan(); }
-    if (b.dataset.add === 'break') openMenu(b, `<div class="h">At the end</div>${kindGrid('end')}<button data-act="end" data-kind="any"><span class="k t-any">${ICON.any}</span>Break, picked for you</button>
-      <div class="sep"></div><div class="h">Between every block</div>${kindGrid('every')}`, d => {
+    if (b.dataset.add === 'break') openMenu(b, breakMenu(), d => {
         if (d.act === 'end') plan.push(brk(d.kind, d.kind === 'walk' ? 10 : 5));
-        if (d.act === 'every') betweenEvery(plan, d.kind);
+        if (d.act === 'every') addBreaks(plan, d.kind);
         renderPlan();
       });
   });
@@ -286,12 +329,12 @@ button { font: inherit; color: inherit; }
       if (i < cur) return `<div class="r done"><span class="ck">✓</span><span class="nmtx">${b.name}</span><span class="ln">${b.mins}m</span></div>`;
       if (i === cur) {
         const startAt = at - b.mins;
-        return `<div class="r now"><span class="at">${clock(clockMin)}</span>${editing && !b.brk ? `<input class="nm" value="${b.name}" data-li="${i}" aria-label="Block name">` : `<span class="nmtx">${b.brk ? chip(b) : b.name}</span>`}
+        return `<div class="r now">${editing ? '<span class="gap"></span>' : ''}<span class="at">${clock(clockMin)}</span>${editing && !b.brk ? `<input class="nm" value="${b.name}" data-li="${i}" aria-label="Block name">` : `<span class="nmtx">${b.brk ? chip(b) : b.name}</span>`}
           ${editing ? `<span class="len"><button data-cur="-5" aria-label="5 minutes less">−</button><span>${Math.ceil(left / 60)}m</span><button data-cur="5" aria-label="5 minutes more">+</button></span><span class="more" aria-hidden="true"></span>` : `<span class="left">${Math.floor(left / 60)}:${String(Math.floor(left % 60)).padStart(2, '0')}</span>`}</div>`;
       }
       const s = at; at += b.mins;
       if (!editing) return `<div class="r"><span class="at">${clock(s)}</span><span class="nmtx">${b.brk ? chip(b) : b.name}</span><span class="ln">${b.mins}m</span></div>`;
-      return `<div class="r"><span class="at">${clock(s)}</span>
+      return `<div class="r${drag && drag.list === 'live' && drag.i === i ? ' lift' : ''}" data-row="${i}"><span class="grip" data-grip="live" data-gi="${i}" aria-hidden="true">${ICON.grip}</span><span class="at">${clock(s)}</span>
         ${b.brk ? `<span class="grow">${chip(b)}</span>` : `<input class="nm" value="${b.name}" data-li="${i}" aria-label="Block name">`}
         ${lenCtl(b.mins, i)}<button class="more" data-lmore="${i}" aria-label="More for ${b.name}" aria-expanded="false">${ICON.dots}</button></div>`;
     }).join('');
@@ -300,7 +343,7 @@ button { font: inherit; color: inherit; }
       <div class="sec-h"><b>Morning startup</b><span>· block ${cur + 1} of ${live.length} · ends ${clock(at)}</span><span class="sp"></span>
         ${editing ? '<button class="pill pri" data-edit="0">Done</button>' : '<button class="pill" data-edit="1">Edit</button>'}</div>
       <div class="rows">${rows}</div>
-      ${editing ? `<div class="foot"><button class="lnk" data-ladd="block">+ Add a block</button><button class="lnk" data-ladd="break" aria-expanded="false">+ Add a break</button></div><div class="lock">The timer keeps running while you edit. Finished blocks are locked.</div>` : ''}`;
+      ${editing ? `<div class="foot"><button class="lnk" data-ladd="block">+ Add a block</button><button class="lnk" data-ladd="break" aria-expanded="false">+ Add a break</button></div><div class="lock">Drag ⠿ to reorder. The timer keeps running; finished blocks are locked.</div>` : ''}`;
   }
   function liveTick() {
     const segs = $('live').querySelectorAll('.segs i');
@@ -319,9 +362,9 @@ button { font: inherit; color: inherit; }
     if (b.dataset.len) { const i = +b.dataset.i; live[i].mins = Math.max(5, live[i].mins + +b.dataset.len); renderLive(); }
     if (b.dataset.lmore) { const i = +b.dataset.lmore; openMenu(b, rowMenu(i, live, cur), d => { apply(live, i, d, cur); renderLive(); }); }
     if (b.dataset.ladd === 'block') { live.push({ name: 'New block', mins: 15 }); renderLive(); }
-    if (b.dataset.ladd === 'break') openMenu(b, `<div class="h">At the end</div>${kindGrid('end')}<div class="sep"></div><div class="h">Between every coming block</div>${kindGrid('every')}`, d => {
+    if (b.dataset.ladd === 'break') openMenu(b, breakMenu(), d => {
       if (d.act === 'end') live.push(brk(d.kind, d.kind === 'walk' ? 10 : 5));
-      if (d.act === 'every') betweenEvery(live, d.kind, cur);
+      if (d.act === 'every') addBreaks(live, d.kind, cur);
       renderLive();
     });
   });
