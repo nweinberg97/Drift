@@ -67,6 +67,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
         var typing = false
         /// Show the Undo bar for this block.
         var deletedFor: Int?
+        /// Open the running session's block editor.
+        var editingSession = false
     }
 
     private func running(_ name: String?, total: TimeInterval, left: TimeInterval, pomodoro: PomodoroCycle? = nil) -> DriftTimer {
@@ -183,6 +185,8 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             Scenario(name: "80-break-move", timers: [moveBreak], primary: moveBreak.id),
             Scenario(name: "81-break-hydrate-dark", timers: [waterBreak], primary: waterBreak.id, dark: true),
             Scenario(name: "82-break-in-session", timers: [withBreaks], primary: withBreaks.id),
+            Scenario(name: "86-session-editing", timers: [morning], primary: morning.id, expanded: true, editingSession: true),
+            Scenario(name: "87-session-editing-breaks-dark", timers: [withBreaks], primary: withBreaks.id, expanded: true, dark: true, editingSession: true),
             Scenario(name: "83-pomodoro-next-break", timers: [pomoNext], primary: pomoNext.id),
             Scenario(name: "84-planner-with-breaks", timers: [], blocks: plan(), editBlock: 3, editChange: { d in
                 d.steps = [TimeBlock(name: "Writing", seconds: 1_200),
@@ -232,6 +236,7 @@ final class SnapshotRunner: NSObject, NSApplicationDelegate {
             ui.alerting = s.alerting
             ui.shaking = s.shaking
             ui.idleMode = s.idleMode
+            if s.editingSession { ui.editingSession = s.primary }
             if s.idleDial { ui.openIdleDial(1_800) }
             if s.typing { ui.typingID = s.primary }
             if s.renaming, let id = s.primary {

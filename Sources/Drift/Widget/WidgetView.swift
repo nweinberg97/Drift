@@ -10,6 +10,8 @@ final class WidgetUIState: ObservableObject {
     /// Off when voice is switched off in Settings.
     @Published var voiceEnabled = true
     @Published var expanded = false
+    /// The running session whose blocks are being edited in the expanded widget.
+    @Published var editingSession: UUID?
     /// The timer whose label is being edited in place.
     @Published var renamingID: UUID?
     @Published var draft = ""
@@ -611,7 +613,7 @@ private struct ExpandedSection: View {
                     PomodoroStrip(cycle: cycle, scale: scale)
                 }
                 if t.isSession, let steps = t.steps {
-                    SessionList(timer: t, steps: steps, store: store, scale: scale)
+                    SessionList(timer: t, steps: steps, store: store, ui: ui, scale: scale)
                 }
                 controls(for: t)
                 if let note = graceNote(t) {
@@ -1510,6 +1512,7 @@ private struct BlockEditor: View {
     let actions: WidgetActions
     @FocusState private var nameFocused: Bool
     @State private var splitText = ""
+    @State private var rowDrag: RowDrag?
 
     private static let lengths: [TimeInterval] = [900, 1_500, 1_800, 2_700, 3_600, 5_400, 7_200]
 
@@ -1741,42 +1744,20 @@ private struct BlockEditor: View {
         .padding(.top, 12)
     }
 
-    /// One time block: when it starts, a name you can type over, − / + length, ×.
+    /// One time block: when it starts, a name you can type over, − / + length, and a ⋯ menu.
     private func stepRow(_ i: Int, _ step: TimeBlock, draft: BlockDraft, steps: [TimeBlock]) -> some View {
         let start = draft.startMinute + Int(steps.prefix(i).reduce(0) { $0 + $1.seconds } / 60)
         return HStack(spacing: 5) {
+            ReorderGrip(index: i, pitch: 25, range: 0...(steps.count - 1), drag: $rowDrag, ui: ui,
+                        zone: "planner-grip-\(i)") { from, to in
+                editSteps { $0.moveBlock(from: from, to: to) }
+            }
             Text(Schedule.time(start, suffix: false))
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(Theme.tertiaryText)
                 .frame(width: 34, alignment: .leading)
             if step.isBreak {
-                Menu {
-                    ForEach(BreakKind.allCases) { kind in
-                        Button { setBreak(i, kind) } label: { Label(kind.title, systemImage: kind.symbol) }
-                    }
-                    Button("Pick one for me") { setBreak(i, nil) }
-                    Divider()
-                    Button("Make it a work block") { makeWork(i) }
-                } label: {
-                    if let kind = step.breakKind {
-                        BreakChip(kind: kind, suffix: "break")
-                    } else {
-                        HStack(spacing: 4) {
-                            Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))
-                            Text("Break · picked for you").font(.system(size: 11, weight: .semibold))
-                        }
-                        .foregroundStyle(Theme.secondaryText)
-                        .padding(.horizontal, 7)
-                        .frame(height: 20)
-                        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
-                    }
-                }
-                .menuStyle(.button)
-                .buttonStyle(.plain)
-                .menuIndicator(.hidden)
-                .fixedSize()
-                .pointer(.pointingHand)
-                .help("Change the kind of break")
+                BreakKindMenu(kind: step.breakKind, pick: { setBreak(i, $0) }, makeWork: { makeWork(i) })
                 Spacer(minLength: 0)
             } else {
                 TextField("Name", text: Binding(
@@ -1799,10 +1780,12 @@ private struct BlockEditor: View {
             Button("+") { resizeStep(i, by: ui.nudgeStep) }
                 .buttonStyle(PillButtonStyle(square: true))
                 .help("\(ui.nudgeStep) min longer")
-            Button { removeStep(i) } label: { Image(systemName: "xmark") }
-                .buttonStyle(IconButtonStyle(size: 18))
-                .help("Remove this time block")
+            BlockRowMenu(canMoveUp: i > 0, canMoveDown: i < steps.count - 1, isBreak: step.isBreak) { edit in
+                if edit == .delete { removeStep(i) } else { editSteps { $0.apply(edit, at: i) } }
+            }
         }
+        .frame(height: 22)
+        .dragLift(i, rowDrag)
     }
 
     private func setBreak(_ i: Int, _ kind: BreakKind?) {
@@ -1854,33 +1837,27 @@ private struct BlockEditor: View {
         if var d = ui.blockDraft { BlockTimeline.frame(&d); ui.blockDraft = d }
     }
 
-    /// "+ Add a break": pick a kind, or let Temro choose from your plan.
+    /// "+ Add a break": between every block, or one at the end.
     private func addBreakMenu(_ draft: BlockDraft) -> some View {
-        Menu {
-            ForEach(BreakKind.allCases) { kind in
-                Button { addBreak(kind, draft) } label: { Label(kind.title, systemImage: kind.symbol) }
-            }
-            Divider()
-            Button("Pick one for me") { addBreak(nil, draft) }
-        } label: {
-            HStack(spacing: 5) {
-                Image(systemName: "plus").font(.system(size: 9, weight: .bold))
-                Text("Add a break")
-            }
-            .font(.system(size: 12, weight: .medium))
-            .foregroundStyle(Theme.accent)
-        }
-        .menuStyle(.button)
-        .buttonStyle(.plain)
-        .menuIndicator(.hidden)
-        .fixedSize()
-        .pointer(.pointingHand)
-        .help("A guided break at the end: move, walk, hydrate, snack or breathe")
+        AddBreakMenu(add: { kind in
+            withAnimation(Theme.quick) { editSteps(draft) { $0.addBreaks(kind) } }
+        }, atEnd: { addBreak($0, draft) })
+    }
+
+    /// Changes the planner's time blocks; the session's length follows.
+    private func editSteps(_ draft: BlockDraft? = nil, _ body: (inout [TimeBlock]) -> Void) {
+        guard let d = draft ?? ui.blockDraft else { return }
+        var steps = d.steps ?? [TimeBlock(name: d.name.isEmpty ? "Part 1" : d.name, seconds: d.duration)]
+        body(&steps)
+        guard !steps.isEmpty else { return }
+        ui.blockDraft?.steps = steps.count < 2 ? nil : steps
+        ui.blockDraft?.duration = steps.reduce(0) { $0 + $1.seconds }
+        reframe()
     }
 
     private func addBreak(_ kind: BreakKind?, _ draft: BlockDraft) {
         var steps = draft.steps ?? [TimeBlock(name: draft.name.isEmpty ? "Part 1" : draft.name, seconds: draft.duration)]
-        let length: TimeInterval = kind == .walk ? 600 : 300
+        let length = TimeBlock.breakLength(kind)
         steps.append(.rest(kind, seconds: length))
         ui.blockDraft?.steps = steps
         ui.blockDraft?.duration = draft.duration + length

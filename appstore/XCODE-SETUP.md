@@ -118,12 +118,12 @@ Needs your paid developer account. Open **appstoreconnect.apple.com**.
 ### C2. Create the app record
 
 1. **Apps → + → New App**.
-2. **Platforms:** macOS. **Name:** your cleared name, e.g. "Driftwell – Focus Timer" (see `listing.md`). **Primary language:** English (U.S.). **Bundle ID:** com.forthventures.temro. **SKU:** forth-drift-mac-1. **User access:** Full.
+2. **Platforms:** macOS. **Name:** your cleared name, e.g. "Temro – Focus Timer" (see `listing.md`). **Primary language:** English (U.S.). **Bundle ID:** com.forthventures.temro. **SKU:** forth-drift-mac-1. **User access:** Full.
 3. Click **Create**. The name is now reserved for you.
 
 > **Say to Clicky:** "I'm creating a new macOS app in App Store Connect; help me fill the form."
 
-### C3. Create the four in-app purchases
+### C3. Create the three in-app purchases
 
 Use the table in `appstore/listing.md` → Pricing. The **Product IDs must match exactly**.
 
@@ -132,7 +132,7 @@ Use the table in `appstore/listing.md` → Pricing. The **Product IDs must match
 3. For each one: display name, description, **Review Screenshot** (from B4), review notes from `listing.md`.
 4. Turn on **Family Sharing** for Lifetime and both subscriptions.
 
-> **It worked when:** all four show **Ready to Submit**. (They're submitted together with the first app version.)
+> **It worked when:** all three show **Ready to Submit**. (They're submitted together with the first app version.)
 
 ### C4. Fill in the listing
 

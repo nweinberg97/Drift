@@ -134,6 +134,69 @@ final class TimerStore: ObservableObject {
         mutate(id) { $0.advanceStep(at: Date(), fromEnd: false) }
     }
 
+    // MARK: Editing a running session
+
+    /// Changes the time blocks still to come. The timer keeps running.
+    func editUpcoming(_ id: UUID, _ transform: (inout [TimeBlock]) -> Void) {
+        mutate(id) { $0.editUpcoming(transform) }
+    }
+
+    /// Edit mode's − / + on the current block: a change to the plan, so the
+    /// extra-time limit doesn't apply. Returns false when it would leave
+    /// less than a minute.
+    @discardableResult
+    func resizeCurrentBlock(_ id: UUID, by delta: TimeInterval) -> Bool {
+        var ok = false
+        mutate(id) { ok = $0.resizeCurrentBlock(by: delta, at: Date()) }
+        return ok
+    }
+
+    func renameCurrentBlock(_ id: UUID, to name: String) {
+        mutate(id) { $0.renameCurrentBlock(name) }
+    }
+
+    /// Edits the block at session index `i`, if it's still to come. The index
+    /// is checked against the session as it is now, so a hand-off mid-edit
+    /// can't change the wrong block.
+    func editBlock(_ id: UUID, at i: Int, _ body: (inout [TimeBlock], Int) -> Void) {
+        guard let t = timer(id), i > t.step else { return }
+        let k = i - t.step - 1
+        editUpcoming(id) { up in
+            guard up.indices.contains(k) else { return }
+            body(&up, k)
+        }
+    }
+
+    func applyEdit(_ id: UUID, _ edit: BlockEdit, at i: Int) {
+        editBlock(id, at: i) { up, k in up.apply(edit, at: k) }
+    }
+
+    /// "+ Add a break" while running: one in every gap from the current block
+    /// on (including right after it), or one at the end when there's no gap.
+    func addBreaks(_ id: UUID, _ kind: BreakKind?) {
+        mutate(id) { t in
+            guard var s = t.steps else { return }
+            s.addBreaks(kind, after: t.step)
+            t.steps = s
+        }
+    }
+
+    /// Dragging an upcoming block to a new place. Both indices are session
+    /// indices and must be after the current block.
+    func moveBlock(_ id: UUID, from: Int, to: Int) {
+        guard let t = timer(id), from > t.step, to > t.step else { return }
+        mutate(id) { t in
+            guard var s = t.steps else { return }
+            s.moveBlock(from: from, to: to)
+            t.steps = s
+        }
+    }
+
+    /// Edit mode's Done: blocks you cleared get a name back.
+    func finishEditing(_ id: UUID) {
+        mutate(id) { $0.nameEmptyBlocks() }
+    }
+
     /// The hand-off card's Start now.
     func startWaiting(_ id: UUID) { mutate(id) { $0.startWaiting(at: Date()) } }
 

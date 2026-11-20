@@ -9,7 +9,7 @@ Where it says **Temro**, use the final name once it clears (`scripts/rename.py` 
 
 | Field | Value |
 |---|---|
-| **Name** (30) | Temro – Focus Timer *(placeholder until the name clears; e.g. "Driftwell – Focus Timer")* |
+| **Name** (30) | Temro – Focus Timer * *(placeholder until the name clears)* |
 | **Subtitle** (30) | Calm timeboxing for your Mac |
 | **Primary category** | Productivity |
 | **Secondary category** | Utilities |

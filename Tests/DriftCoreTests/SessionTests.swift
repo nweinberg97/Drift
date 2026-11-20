@@ -149,4 +149,83 @@ final class SessionTests: XCTestCase {
         XCTAssertNil(focus.breakKind)
         XCTAssertNil(focus.activity)
     }
+
+    // MARK: - Breaks between blocks, editing a running session
+
+    private func blocks(_ names: String...) -> [TimeBlock] {
+        names.map { $0 == "~" ? .rest(.move, seconds: 300) : TimeBlock(name: $0, seconds: 600) }
+    }
+
+    func testBreaksBetweenEveryBlock() {
+        var b = blocks("A", "B", "~", "C", "D")
+        XCTAssertEqual(b.insertBreaksBetween(.hydrate), 2)
+        XCTAssertEqual(b.map(\.isBreak), [false, true, false, true, false, true, false])
+        XCTAssertEqual(b[1].breakKind, .hydrate)
+        XCTAssertEqual(b[3].breakKind, .move, "an existing break stays")
+        XCTAssertEqual(b[1].seconds, 300)
+    }
+
+    func testBreaksBetweenOnlyAfterStart() {
+        var b = blocks("A", "B", "C")
+        XCTAssertEqual(b.insertBreaksBetween(.walk, after: 1), 1)
+        XCTAssertEqual(b.map(\.name), ["A", "B", "Walk break", "C"])
+        XCTAssertEqual(b[2].seconds, 600)
+    }
+
+    func testMoveBlock() {
+        var b = blocks("A", "B", "C")
+        XCTAssertTrue(b.moveBlock(at: 2, by: -1))
+        XCTAssertEqual(b.map(\.name), ["A", "C", "B"])
+        XCTAssertFalse(b.moveBlock(at: 0, by: -1))
+    }
+
+    private func runningSession(_ now: Date) -> DriftTimer {
+        var t = DriftTimer(name: "Morning", duration: 600)
+        t.steps = blocks("A", "B", "C", "D")
+        t.stepIndex = 1
+        t.start(at: now)
+        return t
+    }
+
+    func testEditUpcomingLeavesDoneAndCurrentAlone() {
+        let now = Date()
+        var t = runningSession(now)
+        let end = t.endDate
+        t.editUpcoming { up in
+            up.insert(.rest(.breathe, seconds: 300), at: 0)
+            up.removeLast()
+        }
+        XCTAssertEqual(t.steps?.map(\.name), ["A", "B", "Breathe break", "C"])
+        XCTAssertEqual(t.step, 1)
+        XCTAssertEqual(t.endDate, end, "the clock keeps going")
+    }
+
+    func testResizeCurrentBlock() {
+        let now = Date()
+        var t = runningSession(now)
+        XCTAssertTrue(t.resizeCurrentBlock(by: 300, at: now))
+        XCTAssertEqual(t.remaining(at: now), 900, accuracy: 0.5)
+        XCTAssertEqual(t.steps?[1].seconds, 900)
+        XCTAssertFalse(t.resizeCurrentBlock(by: -880, at: now), "keeps a minute on the clock")
+        XCTAssertEqual(t.remaining(at: now), 900, accuracy: 0.5)
+        XCTAssertTrue(t.resizeCurrentBlock(by: -300, at: now))
+        XCTAssertEqual(t.steps?[1].seconds, 600)
+    }
+
+    func testAddBreaksFillsGapsThenTheEnd() {
+        var b = blocks("A", "B", "C")
+        XCTAssertEqual(b.addBreaks(.move), 2)
+        XCTAssertEqual(b.map(\.isBreak), [false, true, false, true, false])
+        XCTAssertEqual(b.addBreaks(.walk), 1, "no gaps left: one at the end")
+        XCTAssertEqual(b.last?.breakKind, .walk)
+        var one = blocks("A")
+        XCTAssertEqual(one.addBreaks(nil), 1)
+        XCTAssertEqual(one.map(\.isBreak), [false, true])
+    }
+
+    func testMoveBlockFromTo() {
+        var b = blocks("A", "B", "C", "D")
+        b.moveBlock(from: 0, to: 2)
+        XCTAssertEqual(b.map(\.name), ["B", "C", "A", "D"])
+    }
 }

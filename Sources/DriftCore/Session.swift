@@ -38,6 +38,85 @@ public struct TimeBlock: Codable, Equatable, Sendable {
     public static func rest(_ kind: BreakKind?, seconds: TimeInterval) -> TimeBlock {
         TimeBlock(name: kind.map { "\($0.title) break" } ?? "Break", seconds: seconds, isBreak: true, breakKind: kind)
     }
+
+    /// How long a break added with one click lasts: 10 minutes for a walk, 5 otherwise.
+    public static func breakLength(_ kind: BreakKind?) -> TimeInterval { kind == .walk ? 600 : 300 }
+}
+
+/// What a time block's ⋯ menu can do, in the planner and in a running session.
+public enum BlockEdit: Equatable, Sendable {
+    case breakAfter(BreakKind?)
+    case blockAfter
+    case moveUp
+    case moveDown
+    case makeWork
+    case delete
+}
+
+extension Array where Element == TimeBlock {
+    /// Applies a ⋯ menu choice to the block at `i`.
+    public mutating func apply(_ edit: BlockEdit, at i: Int) {
+        guard indices.contains(i) else { return }
+        switch edit {
+        case let .breakAfter(kind):
+            insert(.rest(kind, seconds: TimeBlock.breakLength(kind)), at: i + 1)
+        case .blockAfter:
+            insert(TimeBlock(name: "New block", seconds: 900), at: i + 1)
+        case .moveUp:
+            moveBlock(at: i, by: -1)
+        case .moveDown:
+            moveBlock(at: i, by: 1)
+        case .makeWork:
+            self[i] = TimeBlock(name: "New block", seconds: self[i].seconds)
+        case .delete:
+            remove(at: i)
+        }
+    }
+
+    /// Puts a break of `kind` in every gap between two work blocks, from the
+    /// gap after index `start` on. Gaps that already hold a break are left alone.
+    /// Returns how many breaks went in.
+    @discardableResult
+    public mutating func insertBreaksBetween(_ kind: BreakKind?, after start: Int = 0) -> Int {
+        guard count > 1 else { return 0 }
+        var added = 0
+        var i = count - 2
+        while i >= Swift.max(0, start) {
+            if !self[i].isBreak, !self[i + 1].isBreak {
+                insert(.rest(kind, seconds: TimeBlock.breakLength(kind)), at: i + 1)
+                added += 1
+            }
+            i -= 1
+        }
+        return added
+    }
+
+    /// "+ Add a break": one in every gap between work blocks from `start` on;
+    /// when there are no gaps left, one at the end. Returns how many went in.
+    @discardableResult
+    public mutating func addBreaks(_ kind: BreakKind?, after start: Int = 0) -> Int {
+        let added = insertBreaksBetween(kind, after: start)
+        if added > 0 { return added }
+        append(.rest(kind, seconds: TimeBlock.breakLength(kind)))
+        return 1
+    }
+
+    /// Moves the block at `from` to `to`, shifting the ones in between.
+    public mutating func moveBlock(from: Int, to: Int) {
+        guard indices.contains(from), indices.contains(to), from != to else { return }
+        let block = remove(at: from)
+        insert(block, at: to)
+    }
+
+    /// Swaps a block with its neighbour (`offset` -1 is up, +1 is down).
+    /// Returns false when there's nowhere to go.
+    @discardableResult
+    public mutating func moveBlock(at i: Int, by offset: Int) -> Bool {
+        let j = i + offset
+        guard indices.contains(i), indices.contains(j), i != j else { return false }
+        swapAt(i, j)
+        return true
+    }
 }
 
 /// The five kinds of guided break.

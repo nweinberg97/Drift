@@ -58,6 +58,198 @@ struct BreakChip: View {
     }
 }
 
+// MARK: - Block rows (planner and running session)
+
+/// A break row's chip: click it to change the kind.
+struct BreakKindMenu: View {
+    let kind: BreakKind?
+    /// "Hydrate" rather than "Hydrate break", for tight rows.
+    var compact = false
+    let pick: (BreakKind?) -> Void
+    let makeWork: () -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(BreakKind.allCases) { k in
+                Button { pick(k) } label: { Label(k.title, systemImage: k.symbol) }
+            }
+            Button("Pick one for me") { pick(nil) }
+            Divider()
+            Button("Make it a work block", action: makeWork)
+        } label: {
+            if let kind {
+                BreakChip(kind: kind, suffix: compact ? nil : "break")
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))
+                    Text("Any break").font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundStyle(Theme.secondaryText)
+                .padding(.horizontal, 7)
+                .frame(height: 20)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+            }
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help(kind == nil ? "Temro picks the kind when it starts. Click to choose one." : "Change the kind of break")
+    }
+}
+
+/// A time block's ⋯ menu: add a break or block after it, move it, delete it.
+struct BlockRowMenu: View {
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let isBreak: Bool
+    let edit: (BlockEdit) -> Void
+
+    var body: some View {
+        Menu {
+            Menu("Add a break after") {
+                ForEach(BreakKind.allCases) { k in
+                    Button { edit(.breakAfter(k)) } label: { Label(k.title, systemImage: k.symbol) }
+                }
+                Divider()
+                Button("Pick one for me") { edit(.breakAfter(nil)) }
+            }
+            Button("Add a block after") { edit(.blockAfter) }
+            Divider()
+            Button("Move up") { edit(.moveUp) }.disabled(!canMoveUp)
+            Button("Move down") { edit(.moveDown) }.disabled(!canMoveDown)
+            if isBreak { Button("Make it a work block") { edit(.makeWork) } }
+            Divider()
+            Button("Delete") { edit(.delete) }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.secondaryText)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help("Add a break after this, move it, or delete it")
+        .accessibilityLabel("More")
+    }
+}
+
+/// "+ Add a break": pick a kind and a break goes in every gap between work
+/// blocks (or at the end, once every gap has one). One at the end is a
+/// submenu away.
+struct AddBreakMenu: View {
+    let add: (BreakKind?) -> Void
+    let atEnd: (BreakKind?) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(BreakKind.allCases) { k in
+                Button { add(k) } label: { Label(k.title, systemImage: k.symbol) }
+            }
+            Button("Pick for me each time") { add(nil) }
+            Divider()
+            Menu("Just one, at the end") {
+                ForEach(BreakKind.allCases) { k in
+                    Button { atEnd(k) } label: { Label(k.title, systemImage: k.symbol) }
+                }
+                Divider()
+                Button("Pick one for me") { atEnd(nil) }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                Text("Add a break")
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Theme.accent)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help("Puts a break between your blocks. Drag the ⠿ handles to reorder.")
+    }
+}
+
+// MARK: - Drag to reorder
+
+/// A row being dragged by its grip: where it is now, and how far it's drawn
+/// from that slot.
+struct RowDrag: Equatable {
+    var index: Int
+    var offset: CGFloat = 0
+    /// Drag distance already turned into moves.
+    var spent: CGFloat = 0
+}
+
+/// The ⠿ handle on a time block row. Dragging it moves the block live: each
+/// time it passes half a row, it swaps with its neighbour.
+struct ReorderGrip: View {
+    let index: Int
+    /// Row height plus spacing.
+    let pitch: CGFloat
+    /// Where the block may go.
+    let range: ClosedRange<Int>
+    @Binding var drag: RowDrag?
+    @ObservedObject var ui: WidgetUIState
+    var zone: String
+    let move: (_ from: Int, _ to: Int) -> Void
+
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 9.5, weight: .semibold))
+            .foregroundStyle(drag?.index == index ? Theme.accent : Theme.tertiaryText)
+            .frame(width: 14, height: 22)
+            .contentShape(Rectangle())
+            .pointer(.openHand)
+            .noWindowDrag(zone, ui)
+            .help("Drag to reorder")
+            .accessibilityHidden(true)
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { v in
+                        var d = drag ?? RowDrag(index: index)
+                        var off = v.translation.height - d.spent
+                        while off > pitch / 2, d.index < range.upperBound {
+                            move(d.index, d.index + 1)
+                            d.index += 1; d.spent += pitch; off -= pitch
+                        }
+                        while off < -pitch / 2, d.index > range.lowerBound {
+                            move(d.index, d.index - 1)
+                            d.index -= 1; d.spent -= pitch; off += pitch
+                        }
+                        // Past the ends it only stretches a little.
+                        if d.index == range.upperBound, off > 0 { off = min(off, pitch * 0.4) }
+                        if d.index == range.lowerBound, off < 0 { off = max(off, -pitch * 0.4) }
+                        d.offset = off
+                        drag = d
+                    }
+                    .onEnded { _ in
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) { drag = nil }
+                    }
+            )
+    }
+}
+
+extension View {
+    /// Lifts the row being dragged and draws it where the pointer is.
+    func dragLift(_ i: Int, _ drag: RowDrag?) -> some View {
+        let lifted = drag?.index == i
+        return self
+            .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(lifted ? Theme.control : Color.clear))
+            .shadow(color: .black.opacity(lifted ? 0.18 : 0), radius: 6, y: 2)
+            .offset(y: lifted ? (drag?.offset ?? 0) : 0)
+            .zIndex(lifted ? 1 : 0)
+    }
+}
+
 // MARK: - The break card
 
 /// Shown in place of the timer row while a guided break runs: what to do,
