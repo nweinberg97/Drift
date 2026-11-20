@@ -245,6 +245,48 @@ public struct DriftTimer: Codable, Identifiable, Equatable, Sendable {
         return true
     }
 
+    /// Edits the time blocks still to come, while the session runs. Finished
+    /// blocks and the current one are out of reach; the timer keeps counting.
+    public mutating func editUpcoming(_ transform: (inout [TimeBlock]) -> Void) {
+        guard var s = steps, s.indices.contains(step) else { return }
+        var upcoming = Array(s[(step + 1)...])
+        transform(&upcoming)
+        s.replaceSubrange((step + 1)..., with: upcoming)
+        steps = s
+    }
+
+    /// Gives the running time block more or less time, as a change to the plan
+    /// (not extra time). Keeps at least a minute on the clock; returns false
+    /// and changes nothing otherwise.
+    @discardableResult
+    public mutating func resizeCurrentBlock(by delta: TimeInterval, at now: Date) -> Bool {
+        guard var s = steps, s.indices.contains(step), !isFinished else { return false }
+        if delta < 0, remaining(at: now) + delta < 60 { return false }
+        guard adjust(by: delta, at: now) else { return false }
+        s[step].seconds = Swift.max(60, s[step].seconds + delta)
+        steps = s
+        return true
+    }
+
+    /// Renames the running time block. Empty is allowed while typing;
+    /// `nameEmptyBlocks()` tidies up afterwards.
+    public mutating func renameCurrentBlock(_ name: String) {
+        guard var s = steps, s.indices.contains(step) else { return }
+        s[step].name = name
+        steps = s
+    }
+
+    /// Gives any block left without a name one ("Block 3", or the break's kind).
+    public mutating func nameEmptyBlocks() {
+        guard var s = steps else { return }
+        var changed = false
+        for i in s.indices where s[i].name.trimmingCharacters(in: .whitespaces).isEmpty {
+            s[i].name = s[i].isBreak ? TimeBlock.rest(s[i].breakKind, seconds: 0).name : "Block \(i + 1)"
+            changed = true
+        }
+        if changed { steps = s }
+    }
+
     /// Starts the waiting time block now.
     public mutating func startWaiting(at now: Date) {
         guard waitUntil != nil else { return }

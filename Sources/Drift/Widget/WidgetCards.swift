@@ -474,12 +474,19 @@ struct SessionBar: View {
     }
 }
 
-/// Every time block in the session with its clock time.
+/// Every time block in the session with its clock time. Edit turns it into
+/// an editor while the timer keeps running: the current block can get more
+/// or less time, and anything still to come can be renamed, resized,
+/// reordered, deleted, or joined by new blocks and breaks.
 struct SessionList: View {
     let timer: DriftTimer
     let steps: [TimeBlock]
     @ObservedObject var store: TimerStore
+    @ObservedObject var ui: WidgetUIState
     let scale: CGFloat
+    private var editing: Bool { ui.editingSession == timer.id }
+
+    private static let nudge: TimeInterval = 300
 
     var body: some View {
         let times = starts()
@@ -492,16 +499,34 @@ struct SessionList: View {
                 Text("· block \(timer.step + 1) of \(steps.count) · ends \(clock(end))")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.tertiaryText)
+                Spacer(minLength: 6)
+                Button(editing ? "Done" : "Edit") {
+                    if editing { store.finishEditing(timer.id) }
+                    withAnimation(Theme.quick) { ui.editingSession = editing ? nil : timer.id }
+                }
+                .buttonStyle(PillButtonStyle(prominent: editing))
+                .help(editing ? "Close the editor (changes are already saved)" : "Change the blocks without stopping the timer")
             }
             .lineLimit(1)
             .padding(.horizontal, 13 * scale)
             .padding(.bottom, 4)
             ForEach(Array(steps.enumerated()), id: \.offset) { item in
-                row(item.offset, item.element, start: times[item.offset])
+                if editing {
+                    editRow(item.offset, item.element, start: times[item.offset])
+                } else {
+                    row(item.offset, item.element, start: times[item.offset])
+                }
             }
+            if editing { editFooter }
         }
         .padding(.vertical, 4)
-        .accessibilityElement(children: .combine)
+        .accessibilityElement(children: editing ? .contain : .combine)
+        .onDisappear {
+            if editing {
+                store.finishEditing(timer.id)
+                ui.editingSession = nil
+            }
+        }
     }
 
     private func row(_ i: Int, _ block: TimeBlock, start: Date) -> some View {
@@ -515,11 +540,15 @@ struct SessionList: View {
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(Theme.tertiaryText)
                 .frame(width: 36, alignment: .leading)
-            Text(block.name)
-                .font(.system(size: 12, weight: current ? .semibold : .regular))
-                .foregroundStyle(done ? Theme.tertiaryText : (current ? Theme.primaryText : Theme.secondaryText))
-                .strikethrough(done)
-                .lineLimit(1)
+            if block.isBreak, let kind = block.breakKind, !done {
+                BreakChip(kind: kind, suffix: "break", scale: min(scale, 1.1))
+            } else {
+                Text(block.name)
+                    .font(.system(size: 12, weight: current ? .semibold : .regular))
+                    .foregroundStyle(done ? Theme.tertiaryText : (current ? Theme.primaryText : Theme.secondaryText))
+                    .strikethrough(done)
+                    .lineLimit(1)
+            }
             Spacer(minLength: 4)
             Text(current ? TimeFormatter.clock(timer.remaining(at: store.now)) : TimeFormatter.compact(block.seconds))
                 .font(.system(size: 11.5, weight: current ? .semibold : .regular).monospacedDigit())
@@ -528,6 +557,113 @@ struct SessionList: View {
         .padding(.horizontal, 13 * scale)
         .frame(height: 24)
         .background(current ? Theme.accent.opacity(0.12) : Color.clear)
+    }
+
+    // MARK: Editing
+
+    @ViewBuilder
+    private func editRow(_ i: Int, _ block: TimeBlock, start: Date) -> some View {
+        let done = i < timer.step, current = i == timer.step
+        if done {
+            row(i, block, start: start).opacity(0.6)
+        } else {
+            HStack(spacing: 5) {
+                Text(clock(start, suffix: false))
+                    .font(.system(size: 11).monospacedDigit())
+                    .foregroundStyle(Theme.tertiaryText)
+                    .frame(width: 36, alignment: .leading)
+                if block.isBreak {
+                    if current {
+                        if let kind = block.breakKind { BreakChip(kind: kind, suffix: "break") }
+                    } else {
+                        BreakKindMenu(kind: block.breakKind,
+                                      pick: { kind in store.editBlock(timer.id, at: i) { up, k in
+                                          up[k] = .rest(kind, seconds: up[k].seconds) } },
+                                      makeWork: { store.applyEdit(timer.id, .makeWork, at: i) })
+                    }
+                    Spacer(minLength: 0)
+                } else {
+                    nameField(i, current: current)
+                }
+                Button("−") { change(i, current: current, by: -Self.nudge) }
+                    .buttonStyle(PillButtonStyle(square: true))
+                    .help("5 min shorter")
+                Text(current ? "\(Int((timer.remaining(at: store.now) / 60).rounded(.up)))m" : TimeFormatter.compact(block.seconds))
+                    .font(.system(size: 11.5, weight: .medium).monospacedDigit())
+                    .foregroundStyle(current ? Theme.accent : Theme.secondaryText)
+                    .frame(minWidth: 36)
+                Button("+") { change(i, current: current, by: Self.nudge) }
+                    .buttonStyle(PillButtonStyle(square: true))
+                    .help("5 min longer")
+                if current {
+                    Color.clear.frame(width: 20, height: 20)
+                } else {
+                    BlockRowMenu(canMoveUp: i > timer.step + 1, canMoveDown: i < steps.count - 1, isBreak: block.isBreak) { edit in
+                        withAnimation(Theme.quick) { store.applyEdit(timer.id, edit, at: i) }
+                    }
+                }
+            }
+            .padding(.horizontal, 10 * scale)
+            .frame(height: 28)
+            .background(current ? Theme.accent.opacity(0.12) : Color.clear)
+        }
+    }
+
+    private func nameField(_ i: Int, current: Bool) -> some View {
+        TextField("Name", text: Binding(
+            get: { steps.indices.contains(i) ? steps[i].name : "" },
+            set: { v in
+                if current {
+                    store.renameCurrentBlock(timer.id, to: v)
+                } else {
+                    store.editBlock(timer.id, at: i) { up, k in up[k].name = v }
+                }
+            }
+        ))
+        .noWindowDrag("session-edit-\(i)", ui)
+        .textFieldStyle(.plain)
+        .font(.system(size: 12, weight: current ? .semibold : .regular))
+        .padding(.horizontal, 6)
+        .frame(height: 22)
+        .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+    }
+
+    private func change(_ i: Int, current: Bool, by delta: TimeInterval) {
+        if current {
+            if !store.resizeCurrentBlock(timer.id, by: delta) { NSSound.beep() }
+        } else {
+            store.editBlock(timer.id, at: i) { up, k in up[k].seconds = max(60, up[k].seconds + delta) }
+        }
+    }
+
+    private var editFooter: some View {
+        VStack(alignment: .leading, spacing: 4) {
+            HStack(spacing: 14) {
+                Button {
+                    withAnimation(Theme.quick) {
+                        store.editUpcoming(timer.id) { $0.append(TimeBlock(name: "New block", seconds: 900)) }
+                    }
+                } label: {
+                    HStack(spacing: 5) {
+                        Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                        Text("Add a block")
+                    }
+                }
+                .buttonStyle(QuietButtonStyle(prominent: true))
+                AddBreakMenu(everyTitle: "Between every coming block", atEnd: { kind in
+                    withAnimation(Theme.quick) {
+                        store.editUpcoming(timer.id) { $0.append(.rest(kind, seconds: TimeBlock.breakLength(kind))) }
+                    }
+                }, between: { kind in
+                    withAnimation(Theme.quick) { store.betweenEveryComingBlock(timer.id, kind) }
+                })
+            }
+            Text("The timer keeps running while you edit. Finished blocks are locked.")
+                .font(.system(size: 10.5))
+                .foregroundStyle(Theme.tertiaryText)
+        }
+        .padding(.horizontal, 13 * scale)
+        .padding(.top, 4)
     }
 
     /// When each block starts, from where the session is now.

@@ -58,6 +58,122 @@ struct BreakChip: View {
     }
 }
 
+// MARK: - Block rows (planner and running session)
+
+/// A break row's chip: click it to change the kind.
+struct BreakKindMenu: View {
+    let kind: BreakKind?
+    let pick: (BreakKind?) -> Void
+    let makeWork: () -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(BreakKind.allCases) { k in
+                Button { pick(k) } label: { Label(k.title, systemImage: k.symbol) }
+            }
+            Button("Pick one for me") { pick(nil) }
+            Divider()
+            Button("Make it a work block", action: makeWork)
+        } label: {
+            if let kind {
+                BreakChip(kind: kind, suffix: "break")
+            } else {
+                HStack(spacing: 4) {
+                    Image(systemName: "sparkles").font(.system(size: 9.5, weight: .semibold))
+                    Text("Break · picked for you").font(.system(size: 11, weight: .semibold))
+                }
+                .foregroundStyle(Theme.secondaryText)
+                .padding(.horizontal, 7)
+                .frame(height: 20)
+                .background(RoundedRectangle(cornerRadius: 6, style: .continuous).fill(Theme.control))
+            }
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help("Change the kind of break")
+    }
+}
+
+/// A time block's ⋯ menu: add a break or block after it, move it, delete it.
+struct BlockRowMenu: View {
+    let canMoveUp: Bool
+    let canMoveDown: Bool
+    let isBreak: Bool
+    let edit: (BlockEdit) -> Void
+
+    var body: some View {
+        Menu {
+            Menu("Add a break after") {
+                ForEach(BreakKind.allCases) { k in
+                    Button { edit(.breakAfter(k)) } label: { Label(k.title, systemImage: k.symbol) }
+                }
+                Divider()
+                Button("Pick one for me") { edit(.breakAfter(nil)) }
+            }
+            Button("Add a block after") { edit(.blockAfter) }
+            Divider()
+            Button("Move up") { edit(.moveUp) }.disabled(!canMoveUp)
+            Button("Move down") { edit(.moveDown) }.disabled(!canMoveDown)
+            if isBreak { Button("Make it a work block") { edit(.makeWork) } }
+            Divider()
+            Button("Delete") { edit(.delete) }
+        } label: {
+            Image(systemName: "ellipsis")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(Theme.secondaryText)
+                .frame(width: 20, height: 20)
+                .contentShape(Rectangle())
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help("Add a break after this, move it, or delete it")
+        .accessibilityLabel("More")
+    }
+}
+
+/// "+ Add a break": at the end, or one between every pair of work blocks.
+struct AddBreakMenu: View {
+    var everyTitle = "Between every block"
+    let atEnd: (BreakKind?) -> Void
+    let between: (BreakKind?) -> Void
+
+    var body: some View {
+        Menu {
+            ForEach(BreakKind.allCases) { k in
+                Button { atEnd(k) } label: { Label(k.title, systemImage: k.symbol) }
+            }
+            Button("Pick one for me") { atEnd(nil) }
+            Divider()
+            Menu(everyTitle) {
+                ForEach(BreakKind.allCases) { k in
+                    Button { between(k) } label: { Label(k.title, systemImage: k.symbol) }
+                }
+                Divider()
+                Button("Pick for me each time") { between(nil) }
+            }
+        } label: {
+            HStack(spacing: 5) {
+                Image(systemName: "plus").font(.system(size: 9, weight: .bold))
+                Text("Add a break")
+            }
+            .font(.system(size: 12, weight: .medium))
+            .foregroundStyle(Theme.accent)
+        }
+        .menuStyle(.button)
+        .buttonStyle(.plain)
+        .menuIndicator(.hidden)
+        .fixedSize()
+        .pointer(.pointingHand)
+        .help("A guided break at the end, or one between every block")
+    }
+}
+
 // MARK: - The break card
 
 /// Shown in place of the timer row while a guided break runs: what to do,
