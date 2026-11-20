@@ -1512,6 +1512,7 @@ private struct BlockEditor: View {
     let actions: WidgetActions
     @FocusState private var nameFocused: Bool
     @State private var splitText = ""
+    @State private var rowDrag: RowDrag?
 
     private static let lengths: [TimeInterval] = [900, 1_500, 1_800, 2_700, 3_600, 5_400, 7_200]
 
@@ -1747,6 +1748,10 @@ private struct BlockEditor: View {
     private func stepRow(_ i: Int, _ step: TimeBlock, draft: BlockDraft, steps: [TimeBlock]) -> some View {
         let start = draft.startMinute + Int(steps.prefix(i).reduce(0) { $0 + $1.seconds } / 60)
         return HStack(spacing: 5) {
+            ReorderGrip(index: i, pitch: 25, range: 0...(steps.count - 1), drag: $rowDrag, ui: ui,
+                        zone: "planner-grip-\(i)") { from, to in
+                editSteps { $0.moveBlock(from: from, to: to) }
+            }
             Text(Schedule.time(start, suffix: false))
                 .font(.system(size: 11).monospacedDigit())
                 .foregroundStyle(Theme.tertiaryText)
@@ -1779,6 +1784,8 @@ private struct BlockEditor: View {
                 if edit == .delete { removeStep(i) } else { editSteps { $0.apply(edit, at: i) } }
             }
         }
+        .frame(height: 22)
+        .dragLift(i, rowDrag)
     }
 
     private func setBreak(_ i: Int, _ kind: BreakKind?) {
@@ -1830,11 +1837,11 @@ private struct BlockEditor: View {
         if var d = ui.blockDraft { BlockTimeline.frame(&d); ui.blockDraft = d }
     }
 
-    /// "+ Add a break": at the end, or between every block.
+    /// "+ Add a break": between every block, or one at the end.
     private func addBreakMenu(_ draft: BlockDraft) -> some View {
-        AddBreakMenu(atEnd: { addBreak($0, draft) }, between: { kind in
-            editSteps(draft) { $0.insertBreaksBetween(kind) }
-        })
+        AddBreakMenu(add: { kind in
+            withAnimation(Theme.quick) { editSteps(draft) { $0.addBreaks(kind) } }
+        }, atEnd: { addBreak($0, draft) })
     }
 
     /// Changes the planner's time blocks; the session's length follows.

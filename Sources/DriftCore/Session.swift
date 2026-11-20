@@ -91,6 +91,23 @@ extension Array where Element == TimeBlock {
         return added
     }
 
+    /// "+ Add a break": one in every gap between work blocks from `start` on;
+    /// when there are no gaps left, one at the end. Returns how many went in.
+    @discardableResult
+    public mutating func addBreaks(_ kind: BreakKind?, after start: Int = 0) -> Int {
+        let added = insertBreaksBetween(kind, after: start)
+        if added > 0 { return added }
+        append(.rest(kind, seconds: TimeBlock.breakLength(kind)))
+        return 1
+    }
+
+    /// Moves the block at `from` to `to`, shifting the ones in between.
+    public mutating func moveBlock(from: Int, to: Int) {
+        guard indices.contains(from), indices.contains(to), from != to else { return }
+        let block = remove(at: from)
+        insert(block, at: to)
+    }
+
     /// Swaps a block with its neighbour (`offset` -1 is up, +1 is down).
     /// Returns false when there's nowhere to go.
     @discardableResult

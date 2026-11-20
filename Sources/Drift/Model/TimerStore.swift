@@ -171,11 +171,23 @@ final class TimerStore: ObservableObject {
         editBlock(id, at: i) { up, k in up.apply(edit, at: k) }
     }
 
-    /// A break in every gap from the current block on, including right after it.
-    func betweenEveryComingBlock(_ id: UUID, _ kind: BreakKind?) {
+    /// "+ Add a break" while running: one in every gap from the current block
+    /// on (including right after it), or one at the end when there's no gap.
+    func addBreaks(_ id: UUID, _ kind: BreakKind?) {
         mutate(id) { t in
             guard var s = t.steps else { return }
-            s.insertBreaksBetween(kind, after: t.step)
+            s.addBreaks(kind, after: t.step)
+            t.steps = s
+        }
+    }
+
+    /// Dragging an upcoming block to a new place. Both indices are session
+    /// indices and must be after the current block.
+    func moveBlock(_ id: UUID, from: Int, to: Int) {
+        guard let t = timer(id), from > t.step, to > t.step else { return }
+        mutate(id) { t in
+            guard var s = t.steps else { return }
+            s.moveBlock(from: from, to: to)
             t.steps = s
         }
     }

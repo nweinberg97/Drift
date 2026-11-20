@@ -211,4 +211,21 @@ final class SessionTests: XCTestCase {
         XCTAssertTrue(t.resizeCurrentBlock(by: -300, at: now))
         XCTAssertEqual(t.steps?[1].seconds, 600)
     }
+
+    func testAddBreaksFillsGapsThenTheEnd() {
+        var b = blocks("A", "B", "C")
+        XCTAssertEqual(b.addBreaks(.move), 2)
+        XCTAssertEqual(b.map(\.isBreak), [false, true, false, true, false])
+        XCTAssertEqual(b.addBreaks(.walk), 1, "no gaps left: one at the end")
+        XCTAssertEqual(b.last?.breakKind, .walk)
+        var one = blocks("A")
+        XCTAssertEqual(one.addBreaks(nil), 1)
+        XCTAssertEqual(one.map(\.isBreak), [false, true])
+    }
+
+    func testMoveBlockFromTo() {
+        var b = blocks("A", "B", "C", "D")
+        b.moveBlock(from: 0, to: 2)
+        XCTAssertEqual(b.map(\.name), ["B", "C", "A", "D"])
+    }
 }

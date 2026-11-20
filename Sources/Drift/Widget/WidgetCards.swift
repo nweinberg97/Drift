@@ -485,6 +485,7 @@ struct SessionList: View {
     @ObservedObject var ui: WidgetUIState
     let scale: CGFloat
     private var editing: Bool { ui.editingSession == timer.id }
+    @State private var rowDrag: RowDrag?
 
     private static let nudge: TimeInterval = 300
 
@@ -568,6 +569,14 @@ struct SessionList: View {
             row(i, block, start: start).opacity(0.6)
         } else {
             HStack(spacing: 5) {
+                if current {
+                    Color.clear.frame(width: 14, height: 22)
+                } else {
+                    ReorderGrip(index: i, pitch: 28, range: (timer.step + 1)...max(timer.step + 1, steps.count - 1),
+                                drag: $rowDrag, ui: ui, zone: "session-grip-\(i)") { from, to in
+                        store.moveBlock(timer.id, from: from, to: to)
+                    }
+                }
                 Text(clock(start, suffix: false))
                     .font(.system(size: 11).monospacedDigit())
                     .foregroundStyle(Theme.tertiaryText)
@@ -603,9 +612,10 @@ struct SessionList: View {
                     }
                 }
             }
-            .padding(.horizontal, 10 * scale)
+            .padding(.horizontal, 8 * scale)
             .frame(height: 28)
             .background(current ? Theme.accent.opacity(0.12) : Color.clear)
+            .dragLift(i, rowDrag)
         }
     }
 
@@ -650,15 +660,15 @@ struct SessionList: View {
                     }
                 }
                 .buttonStyle(QuietButtonStyle(prominent: true))
-                AddBreakMenu(everyTitle: "Between every coming block", atEnd: { kind in
+                AddBreakMenu(add: { kind in
+                    withAnimation(Theme.quick) { store.addBreaks(timer.id, kind) }
+                }, atEnd: { kind in
                     withAnimation(Theme.quick) {
                         store.editUpcoming(timer.id) { $0.append(.rest(kind, seconds: TimeBlock.breakLength(kind))) }
                     }
-                }, between: { kind in
-                    withAnimation(Theme.quick) { store.betweenEveryComingBlock(timer.id, kind) }
                 })
             }
-            Text("The timer keeps running while you edit. Finished blocks are locked.")
+            Text("Drag ⠿ to reorder. The timer keeps running; finished blocks are locked.")
                 .font(.system(size: 10.5))
                 .foregroundStyle(Theme.tertiaryText)
         }

@@ -137,25 +137,26 @@ struct BlockRowMenu: View {
     }
 }
 
-/// "+ Add a break": at the end, or one between every pair of work blocks.
+/// "+ Add a break": pick a kind and a break goes in every gap between work
+/// blocks (or at the end, once every gap has one). One at the end is a
+/// submenu away.
 struct AddBreakMenu: View {
-    var everyTitle = "Between every block"
+    let add: (BreakKind?) -> Void
     let atEnd: (BreakKind?) -> Void
-    let between: (BreakKind?) -> Void
 
     var body: some View {
         Menu {
             ForEach(BreakKind.allCases) { k in
-                Button { atEnd(k) } label: { Label(k.title, systemImage: k.symbol) }
+                Button { add(k) } label: { Label(k.title, systemImage: k.symbol) }
             }
-            Button("Pick one for me") { atEnd(nil) }
+            Button("Pick for me each time") { add(nil) }
             Divider()
-            Menu(everyTitle) {
+            Menu("Just one, at the end") {
                 ForEach(BreakKind.allCases) { k in
-                    Button { between(k) } label: { Label(k.title, systemImage: k.symbol) }
+                    Button { atEnd(k) } label: { Label(k.title, systemImage: k.symbol) }
                 }
                 Divider()
-                Button("Pick for me each time") { between(nil) }
+                Button("Pick one for me") { atEnd(nil) }
             }
         } label: {
             HStack(spacing: 5) {
@@ -170,7 +171,80 @@ struct AddBreakMenu: View {
         .menuIndicator(.hidden)
         .fixedSize()
         .pointer(.pointingHand)
-        .help("A guided break at the end, or one between every block")
+        .help("Puts a break between your blocks. Drag the ⠿ handles to reorder.")
+    }
+}
+
+// MARK: - Drag to reorder
+
+/// A row being dragged by its grip: where it is now, and how far it's drawn
+/// from that slot.
+struct RowDrag: Equatable {
+    var index: Int
+    var offset: CGFloat = 0
+    /// Drag distance already turned into moves.
+    var spent: CGFloat = 0
+}
+
+/// The ⠿ handle on a time block row. Dragging it moves the block live: each
+/// time it passes half a row, it swaps with its neighbour.
+struct ReorderGrip: View {
+    let index: Int
+    /// Row height plus spacing.
+    let pitch: CGFloat
+    /// Where the block may go.
+    let range: ClosedRange<Int>
+    @Binding var drag: RowDrag?
+    @ObservedObject var ui: WidgetUIState
+    var zone: String
+    let move: (_ from: Int, _ to: Int) -> Void
+
+    var body: some View {
+        Image(systemName: "line.3.horizontal")
+            .font(.system(size: 9.5, weight: .semibold))
+            .foregroundStyle(drag?.index == index ? Theme.accent : Theme.tertiaryText)
+            .frame(width: 14, height: 22)
+            .contentShape(Rectangle())
+            .pointer(.openHand)
+            .noWindowDrag(zone, ui)
+            .help("Drag to reorder")
+            .accessibilityHidden(true)
+            .gesture(
+                DragGesture(minimumDistance: 2, coordinateSpace: .global)
+                    .onChanged { v in
+                        var d = drag ?? RowDrag(index: index)
+                        var off = v.translation.height - d.spent
+                        while off > pitch / 2, d.index < range.upperBound {
+                            move(d.index, d.index + 1)
+                            d.index += 1; d.spent += pitch; off -= pitch
+                        }
+                        while off < -pitch / 2, d.index > range.lowerBound {
+                            move(d.index, d.index - 1)
+                            d.index -= 1; d.spent -= pitch; off += pitch
+                        }
+                        // Past the ends it only stretches a little.
+                        if d.index == range.upperBound, off > 0 { off = min(off, pitch * 0.4) }
+                        if d.index == range.lowerBound, off < 0 { off = max(off, -pitch * 0.4) }
+                        d.offset = off
+                        drag = d
+                    }
+                    .onEnded { _ in
+                        withAnimation(.spring(response: 0.28, dampingFraction: 0.85)) { drag = nil }
+                    }
+            )
+    }
+}
+
+extension View {
+    /// Lifts the row being dragged and draws it where the pointer is.
+    func dragLift(_ i: Int, _ drag: RowDrag?) -> some View {
+        let lifted = drag?.index == i
+        return self
+            .background(RoundedRectangle(cornerRadius: 7, style: .continuous)
+                .fill(lifted ? Theme.control : Color.clear))
+            .shadow(color: .black.opacity(lifted ? 0.18 : 0), radius: 6, y: 2)
+            .offset(y: lifted ? (drag?.offset ?? 0) : 0)
+            .zIndex(lifted ? 1 : 0)
     }
 }
 
