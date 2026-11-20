@@ -496,11 +496,11 @@ struct SessionList: View {
                 Text(timer.name ?? "Session")
                     .font(.system(size: 12, weight: .semibold))
                     .foregroundStyle(Theme.primaryText)
-                Text("· block \(timer.step + 1) of \(steps.count) · ends \(clock(end))")
+                Text(editing ? "· ends \(clock(end))" : "· block \(timer.step + 1) of \(steps.count) · ends \(clock(end))")
                     .font(.system(size: 11))
                     .foregroundStyle(Theme.tertiaryText)
                 Spacer(minLength: 6)
-                Button(editing ? "Done" : "Edit") {
+                Button(editing ? "Done editing" : "Edit") {
                     if editing { store.finishEditing(timer.id) }
                     withAnimation(Theme.quick) { ui.editingSession = editing ? nil : timer.id }
                 }
